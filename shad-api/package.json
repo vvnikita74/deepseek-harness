@@ -1,0 +1,14 @@
+{
+  "name": "@shad-dsh/api",
+  "private": true,
+  "type": "module",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts"
+    }
+  },
+  "peerDependencies": {
+    "zod": "^4.4.3"
+  }
+}

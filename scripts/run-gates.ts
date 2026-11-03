@@ -362,6 +362,7 @@ export function gatesForMode(selected: Mode): Gate[] {
           docTypecheckScript: 'doc-typecheck:contracts-ready',
         }),
         pnpmScript('module-graph', 'verify-module-graph', { label: 'module graph' }),
+        pnpmScript('shad-api', 'verify-shad-api', { label: 'shad-api types', needs: ['build'] }),
       ]
     case 'hygiene':
       return [
