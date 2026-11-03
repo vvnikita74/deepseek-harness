@@ -1,4 +1,4 @@
-/** The bundle is the only layer that declares the six card rows, so the Plugins page addresses and switches each one. */
+/** The bundle is the only layer that declares the three card rows, so the Plugins page addresses and switches each one. */
 import { readFileSync } from 'node:fs'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -37,31 +37,20 @@ const patch = yaml.load(readFileSync(new URL(`../${manifest.dsh.bundle.patch}`, 
 }) as { insert: Row[] }[]
 const rows = patch[0]?.insert ?? []
 
-/** A browser row's Host entry is an empty `apply`; its contribution loads in the Client. */
-function browserRow(): object {
-  return { apply(): void {} }
-}
-
 /** Source modules standing in for the row packages, which the Loader would otherwise import from their built lib. */
 const MODULES: Readonly<Record<string, object>> = {
   '@deepseek-ai/dsh-action-cards': ActionCards,
-  '@deepseek-ai/dsh-client-ui-action-cards': browserRow(),
   '@deepseek-ai/dsh-creation-recommendations': Pages,
-  '@deepseek-ai/dsh-client-ui-creation-recommendations': browserRow(),
   '@deepseek-ai/dsh-plugin-recommendations': Plugins,
-  '@deepseek-ai/dsh-client-ui-plugin-recommendations': browserRow(),
 }
 
-it('publishes one layer inserting the card service, the card display and both features with their card bodies', () => {
+it('publishes one layer inserting the card service and both features', () => {
   expect(manifest.publishConfig.access).toBe('public')
   expect(manifest.dsh.bundle.patch).toBe('./cordis.patch.yml')
   expect(patch).toEqual([{ insert: [
     { id: 'action-cards', name: '@deepseek-ai/dsh-action-cards' },
-    { id: 'client-ui-action-cards', name: '@deepseek-ai/dsh-client-ui-action-cards' },
     { id: 'creation-recommendations', name: '@deepseek-ai/dsh-creation-recommendations' },
-    { id: 'client-ui-creation-recommendations', name: '@deepseek-ai/dsh-client-ui-creation-recommendations' },
     { id: 'plugin-recommendations', name: '@deepseek-ai/dsh-plugin-recommendations' },
-    { id: 'client-ui-plugin-recommendations', name: '@deepseek-ai/dsh-client-ui-plugin-recommendations' },
   ] }])
   expect(Object.keys(manifest.dependencies).sort()).toEqual(rows.map(row => row.name).sort())
 })

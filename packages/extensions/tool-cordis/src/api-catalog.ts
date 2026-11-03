@@ -593,55 +593,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'clientModules',
-    summary: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle and package-asset route + index injection rows.',
-    description: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle and package-asset route + index injection rows. Construction runs the activation scan synchronously — a malformed declaration or missing bundle among the already-loaded entries aggregates into one loud throw (FAILED fiber; the boot activation audit reports it).',
-    methods: [
-      {
-        signature: 'graph(): WebBootGraph',
-        description: 'Current composed entry graph (stable object between changes).',
-        parameters: [],
-        returns: 'the graph served as `window.__DSH_BOOT__`.',
-      },
-      {
-        signature: 'clientPath(id: string): string | undefined',
-        description: 'Absolute path of an entry\'s client bundle.',
-        parameters: [{ name: 'id', description: 'entry id (package name).' }],
-        returns: 'the path, or undefined for an unknown id.',
-      },
-      {
-        signature: 'async fetchBundle(request: Request): Promise<Response>',
-        description: 'Serve an advertised revisioned bundle, source map, chunk, or package asset without a Web server. Unknown URLs return 404, unsupported methods return 405, and `HEAD` returns the same immutable headers without materializing a body. Each bundle body is built once on its first `GET`; script construction never reads maps. A package asset is read on every request and answers 304 without a body when `If-None-Match` equals its entity tag; its body holds the file open until the caller consumes or cancels it. A bundle, map, or chunk body is the held buffer itself, not a copy, so a caller must not modify its bytes.',
-        parameters: [{ name: 'request', description: 'shell-carrier request for a `/plugins` resource.' }],
-        returns: 'the exact response also exposed by the optional Web route.',
-      },
-      {
-        signature: 'artifactBaseline(id: string): ClientArtifactBaseline | undefined',
-        description: 'Filesystem baseline captured before an entry\'s current bytes were read. HMR compares it with the live files when installing a watch, so a write between startup composition and watch installation cannot disappear into the watcher\'s initial state.',
-        parameters: [{ name: 'id', description: 'entry id (package name).' }],
-        returns: 'the path and baseline, or undefined for an unknown id.',
-      },
-      {
-        signature: 'rebuilt(id: string): string | undefined',
-        description: 'Publish one completed bundle generation (the HMR watch\'s registration hook; an entry restart publishes through reconciliation instead). Unchanged mtime, ctime and size preserve the graph without reading the bundle.',
-        parameters: [{ name: 'id', description: 'entry id (package name).' }],
-        returns: 'the current artifact rev, or undefined for an unknown id.',
-      },
-      {
-        signature: 'onRebuilt(listener: (id: string, rev: string) => void): () => void',
-        description: 'Subscribe to bundle rebuilds; fires when rebuilt changes a rev. A rev an entry restart publishes reaches only onGraphChanged listeners.',
-        parameters: [{ name: 'listener', description: 'receives the entry id and its new bundle rev.' }],
-        returns: 'the unsubscriber.',
-      },
-      {
-        signature: 'onGraphChanged(listener: () => void): () => void',
-        description: 'Fires after any flush that recomposed the graph (row added/removed, or a rebuilt rev change). Pull model: listeners re-read graph.',
-        parameters: [{ name: 'listener', description: 'notified with no payload.' }],
-        returns: 'the unsubscriber.',
-      },
-    ],
-  },
-  {
     key: 'commands',
     summary: 'Human-command registry.',
     description: 'Human-command registry. Plain-context definitions are global; definitions registered through a command-injected child of an agent context shadow globals for that agent.',
@@ -809,25 +760,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Add the fresh process token to an ordinary Web application URL.',
         parameters: [{ name: 'baseUrl', description: 'clean application URL whose authority and mount are preserved.' }],
         returns: 'tokenized URL for initial login; a mount proxy strips its prefix before {@link authorizeIndex}.',
-      },
-    ],
-  },
-  {
-    key: 'cotTranslation',
-    summary: 'Optional reasoning translation delegates Session-bound storage to the translator.',
-    description: 'Optional reasoning translation delegates Session-bound storage to the translator.',
-    methods: [
-      {
-        signature: '@Remote async limits(signal: AbortSignal): Promise<CotTranslationSnapshot>',
-        description: 'Read accepted translation preferences and the current request limit without sending text.',
-        parameters: [{ name: 'signal', description: 'browser query cancellation or Remote contribution withdrawal.' }],
-        returns: 'authoritative preferences, eligible routes, and maximum UTF-16 text length per request.',
-      },
-      {
-        signature: '@Remote async translate(request: TranslationRequest, signal: AbortSignal): Promise<string>',
-        description: 'Translate one displayed fragment through the reader\'s selected provider.',
-        parameters: [{ name: 'request', description: 'original text and Session identity supplied by the Client; provider and explicit target language match accepted preferences, while auto uses the browser locale.' }, { name: 'signal', description: 'browser cancellation or Remote contribution withdrawal.' }],
-        returns: 'translated text; an uncached inactive Session joins ordinary GUI activation before retry. Failures omit the source and provider response. Cancellation stops this caller\'s wait, not shared activation.',
       },
     ],
   },
@@ -1292,138 +1224,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'forgePanel',
-    summary: 'Serves the forge panel.',
-    description: 'Serves the forge panel. Following a Session inspects the checkout of its current directory using the Session\'s permissions and execution world, recognizes the code host of the upstream remote or `origin`, probes sign-in for that host, and polls the Session\'s bound change requests through `ctx.forge` until the last follower of that Session leaves. A worktree request makes the panel create a branch and checkout through an optional `ctx.worktrees` and enter it while the Session\'s first message waits in the inbox, or at the first step proposal of a message no wait took. After a failed or stopped attempt the message keeps waiting for another attempt or for the request to be withdrawn. A message also waits while the worktree the Session works in is gone, until that worktree is checked out again or left for the source checkout. Changes to a Session\'s checkout run as Agent maintenance, so a message that arrives meanwhile waits for them.',
-    methods: [
-      {
-        signature: '@Remote({ mode: \'stream\' }) async *follow(session: Session, signal: AbortSignal): AsyncIterable<ForgePanelState>',
-        description: 'Stream the panel state of a Session: the current state first, then each later state. Intermediate states may be skipped when the reader is slower than the updates. The stream ends when `signal` aborts or the Remote stops.',
-        parameters: [{ name: 'session', description: 'Session to follow.' }, { name: 'signal', description: 'ends the stream.' }],
-        returns: 'panel states in publication order.',
-      },
-      {
-        signature: '@Remote({ mode: \'stream\' }) async *changeRequestStates(signal: AbortSignal): AsyncIterable<ForgeChangeRequestStatesFrame>',
-        description: 'Stream the last known state of every change request that a listed Session the caller may read binds: the stored states first, then each state a poll changes or a new binding reveals. Listing reads no Session log: loaded Sessions report their bindings, others the cached Session summary, and a Session without one shows nothing until it is opened. Closed requests are polled at the idle cadence so reopening is observed. The stream ends when `signal` aborts or the Remote stops.',
-        parameters: [{ name: 'signal', description: 'ends the stream.' }],
-        returns: 'frames in publication order.',
-        throws: ['when the Host lacks the Session query, projection cache, storage, or Session store service.'],
-      },
-      {
-        signature: '@Remote async branches(session: Session, signal: AbortSignal): Promise<ForgeBranches>',
-        description: 'List the local branches that can start a worktree of the Session\'s current checkout.',
-        parameters: [{ name: 'session', description: 'Session whose current directory is listed.' }, { name: 'signal', description: 'request cancellation.' }],
-        returns: 'the checked-out branch and at most `maxBranches` local branches, the checked-out one first.',
-        throws: ['when the current directory is not inside a checkout or Git fails.'],
-      },
-      {
-        signature: '@Remote async track(session: Session, url: string, signal: AbortSignal): Promise<void>',
-        description: 'Bind a change request to a Session by URL, or restore a dismissed binding.',
-        parameters: [{ name: 'session', description: 'Session that receives the binding.' }, { name: 'url', description: 'web URL of the change request.' }, { name: 'signal', description: 'request cancellation.' }],
-        throws: ['`forgePanel/unrecognized-url` when no registered provider serves the URL.'],
-      },
-      {
-        signature: '@Remote async dismiss(session: Session, url: string, signal: AbortSignal): Promise<void>',
-        description: 'Hide a visible binding of a Session; other URLs leave the Session unchanged.',
-        parameters: [{ name: 'session', description: 'Session that owns the binding.' }, { name: 'url', description: 'web URL of the change request.' }, { name: 'signal', description: 'request cancellation.' }],
-      },
-      {
-        signature: '@Remote async refresh(session: Session, signal: AbortSignal): Promise<void>',
-        description: 'Reinspect a followed Session\'s checkout, probe sign-in again, and poll its change requests at once; an unfollowed Session is unchanged.',
-        parameters: [{ name: 'session', description: 'Session whose panel refreshes.' }, { name: 'signal', description: 'request cancellation.' }],
-        returns: 'settles once the inspection and the sign-in probe have ended; poll results reach the panel stream later.',
-      },
-      {
-        signature: '@Remote async localDiff(session: Session, scope: ForgeLocalScope, signal: AbortSignal): Promise<ForgeLocalDiff>',
-        description: 'Read the changes one scope covers in the checkout of the Session\'s current directory, with Git using the Session\'s sandbox policy.',
-        parameters: [{ name: 'session', description: 'Session whose checkout is read.' }, { name: 'scope', description: 'which changes to read.' }, { name: 'signal', description: 'request cancellation.' }],
-        returns: 'the files, the base of the `branch` scope, and the untracked files left out.',
-        throws: ['`forgePanel/not-a-checkout` outside a checkout; `forgePanel/no-fork-point` for the `branch` scope of a checkout without one; `forgePanel/filter-config-failed` when filter configuration cannot be read completely, before any comparison; `forgePanel/diff-too-large` over `maxDiffBytes`; the Git error when Git fails.'],
-      },
-      {
-        signature: '@Remote async localText(session: Session, scope: ForgeLocalScope, path: string, signal: AbortSignal): Promise<string>',
-        description: 'Read the new side of one changed file in a scope, which supplies the unchanged lines between its hunks: the index for `staged`, else the working tree.',
-        parameters: [{ name: 'session', description: 'Session whose checkout is read.' }, { name: 'scope', description: 'the scope the diff was read in.' }, { name: 'path', description: 'path relative to the checkout\'s top-level directory, as the diff names it.' }, { name: 'signal', description: 'request cancellation.' }],
-        returns: 'the text.',
-        throws: ['`forgePanel/not-a-checkout` outside a checkout; `forgePanel/diff-too-large` over `maxDiffBytes`; an error for a path outside the checkout, binary content, or a failed read.'],
-      },
-      {
-        signature: '@Remote async changeRequestChecks(session: Session, url: string, headSha: string, signal: AbortSignal): Promise<ChangeRequestSnapshot>',
-        description: 'Load complete checks for the change request whose list the user opened.',
-        parameters: [{ name: 'session', description: 'Session retaining the visible binding.' }, { name: 'url', description: 'binding URL.' }, { name: 'headSha', description: 'commit displayed by the card; a different head rejects the result.' }, { name: 'signal', description: 'cancellation when the list closes.' }],
-        returns: 'the complete snapshot at the displayed head.',
-        throws: ['`forgePanel/not-bound` for an invisible binding, `forgePanel/stale-head` for a moved head, or `forgePanel/checks-failed` when the provider cannot complete the read.'],
-      },
-      {
-        signature: '@Remote async changeRequestDiff(session: Session, url: string, signal: AbortSignal): Promise<ForgeChangeRequestDiff>',
-        description: 'Read the changes of a change request of a Session as its code host computes them, at the head commit of its latest status. A patch already read at the same head commit and base branch is reused from memory, for any Session, until `maxCachedDiffBytes` evicts it.',
-        parameters: [{ name: 'session', description: 'Session the change request is bound to.' }, { name: 'url', description: 'binding URL of the change request.' }, { name: 'signal', description: 'request cancellation.' }],
-        returns: 'the files, the head commit, each file\'s web page, and the commits the checkout has beyond the head.',
-        throws: ['`forgePanel/not-bound` unless the URL is a visible binding of the Session that a provider serves; `forgePanel/diff-too-large` when the host or its provider refuses the diff over a size limit; `forgePanel/diff-failed` before its status was read and when the host does not provide the diff otherwise.'],
-      },
-      {
-        signature: '@Remote async changeRequestText(session: Session, url: string, commit: string, path: string, signal: AbortSignal): Promise<string>',
-        description: 'Read one file of a change request\'s repository at a commit, which supplies the unchanged lines between the hunks of its diff.',
-        parameters: [{ name: 'session', description: 'Session the change request is bound to.' }, { name: 'url', description: 'binding URL of the change request.' }, { name: 'commit', description: 'commit object name, the head commit of the diff.' }, { name: 'path', description: 'path relative to the repository root.' }, { name: 'signal', description: 'request cancellation.' }],
-        returns: 'the text.',
-        throws: ['`forgePanel/not-bound` unless the URL is a visible binding of the Session that a provider serves; `forgePanel/diff-too-large` when the host or its provider refuses the file over a size limit; `forgePanel/diff-failed` when the host does not provide the file otherwise.'],
-      },
-      {
-        signature: '@Remote async submitReview(session: Session, url: string, request: ForgeReviewRequest, signal: AbortSignal): Promise<ForgeReviewResult>',
-        description: 'Publish a line comment or completed review for a visible Session binding.',
-        parameters: [{ name: 'session', description: 'Session retaining the change request.' }, { name: 'url', description: 'visible binding URL.' }, { name: 'request', description: 'reviewed head, ranges, plain text, and explicit review decision.' }, { name: 'signal', description: 'request cancellation.' }],
-        returns: 'confirmed publication or a typed failure; unknown outcomes require reconciliation on the host.',
-      },
-      {
-        signature: '@Remote async markReady(session: Session, url: string, signal: AbortSignal): Promise<void>',
-        description: 'Mark a draft change request of a Session ready for review; the change request is polled again once the host answers.',
-        parameters: [{ name: 'session', description: 'Session the change request is bound to.' }, { name: 'url', description: 'binding URL of the change request.' }, { name: 'signal', description: 'request cancellation.' }],
-        throws: ['`forgePanel/not-bound` unless the URL is a visible binding of the Session that a provider serves; `forgePanel/action-failed` with the host\'s reason when the host refuses or cannot be reached.'],
-      },
-      {
-        signature: '@Remote async merge(session: Session, url: string, method: MergeMethod, headSha: string, signal: AbortSignal): Promise<void>',
-        description: 'Merge a change request of a Session while its head is still `headSha`; the change request is polled again once the host answers.',
-        parameters: [{ name: 'session', description: 'Session the change request is bound to.' }, { name: 'url', description: 'binding URL of the change request.' }, { name: 'method', description: 'how the commits enter the base branch.' }, { name: 'headSha', description: 'head commit the user confirmed.' }, { name: 'signal', description: 'request cancellation.' }],
-        throws: ['`forgePanel/not-bound` unless the URL is a visible binding of the Session that a provider serves; `forgePanel/stale-head` when the head moved past `headSha`; `forgePanel/action-failed` with the host\'s reason when the host refuses otherwise or cannot be reached.'],
-      },
-      {
-        signature: '@Remote async requestWorktree(session: Session, from: string | null, signal: AbortSignal): Promise<void>',
-        description: 'Ask for a new worktree before the Session\'s first turn, replacing an open request and forgetting a failed attempt. While the next message waits in the inbox, or else at the first step proposal, the panel creates a branch from `from`, or from HEAD of the current checkout when it is null, and enters its checkout. A message that already waits after a failed or stopped attempt keeps waiting for ForgePanelController.retryWorktree.',
-        parameters: [{ name: 'session', description: 'Session without a started turn.' }, { name: 'from', description: 'local base branch, or null for HEAD.' }, { name: 'signal', description: 'request cancellation.' }],
-        throws: ['`forgePanel/invalid-branch` when `from` is empty; `forgePanel/worktrees-unavailable` without a worktree service; `forgePanel/session-started` after a turn started or the worktree was created; `forgePanel/session-busy` while the worktree is being created.'],
-      },
-      {
-        signature: '@Remote async cancelWorktree(session: Session, signal: AbortSignal): Promise<void>',
-        description: 'Withdraw the open worktree request of a Session with its failed attempt, which lets a waiting message go on in the current checkout; without a request the Session is unchanged. Withdrawing needs no worktree service.',
-        parameters: [{ name: 'session', description: 'Session without a started turn.' }, { name: 'signal', description: 'request cancellation.' }],
-        throws: ['`forgePanel/session-started` after a turn started or the worktree was created; `forgePanel/session-busy` while the worktree is being created.'],
-      },
-      {
-        signature: '@Remote async stopCreation(session: Session, signal: AbortSignal): Promise<void>',
-        description: 'Stop the creation a message of the Session waits for; the message keeps waiting with the request still open. Without such a creation the Session is unchanged.',
-        parameters: [{ name: 'session', description: 'Session whose creation stops.' }, { name: 'signal', description: 'request cancellation.' }],
-      },
-      {
-        signature: '@Remote async retryWorktree(session: Session, signal: AbortSignal): Promise<void>',
-        description: 'Make another attempt, with a new branch name, at the worktree a message of the Session waits for after a failed or stopped attempt.',
-        parameters: [{ name: 'session', description: 'Session whose message waits.' }, { name: 'signal', description: 'request cancellation.' }],
-        throws: ['`forgePanel/not-waiting` when no message waits or an attempt is running.'],
-      },
-      {
-        signature: '@Remote async restoreWorktree(session: Session, signal: AbortSignal): Promise<void>',
-        description: 'Check out the created worktree of a Session again at its recorded directory when that directory is gone: its branch when the branch still exists, otherwise a new branch of the same name at the base commit. Changes that were never committed are not recovered. Runs as Agent maintenance, inside the wait of a message that waits for the restoration, which then goes on; without a missing directory the Session is unchanged.',
-        parameters: [{ name: 'session', description: 'Session whose worktree directory is gone.' }, { name: 'signal', description: 'request cancellation, which aborts the restoration.' }],
-        throws: ['`forgePanel/no-worktree` without a created worktree; `forgePanel/worktrees-unavailable` without a worktree service; `forgePanel/session-busy` while the Session\'s Agent is not loaded or has other work; `forgePanel/restore-failed` when Git fails.'],
-      },
-      {
-        signature: '@Remote async continueInProject(session: Session, signal: AbortSignal): Promise<void>',
-        description: 'Move a Session from its created worktree to the source checkout the worktree came from; the Session no longer works in the worktree. Runs as Agent maintenance, inside the wait of a message that waits for the removed worktree, which then goes on.',
-        parameters: [{ name: 'session', description: 'Session with a created worktree.' }, { name: 'signal', description: 'request cancellation.' }],
-        throws: ['`forgePanel/no-worktree` without a created worktree; `forgePanel/session-busy` while the Session\'s Agent is not loaded or has other work; the working-directory service\'s error when the source checkout no longer exists.'],
-      },
-    ],
-  },
-  {
     key: 'forgeSession',
     summary: 'Session-scoped change request bindings.',
     description: 'Session-scoped change request bindings. The `forgeChangeRequests` projection derives them from `gh pr create`, `gh pr view`, `gh pr edit`, `gh pr checkout`, and `git push` results and from `plugin:forge-session/binding` records. After each push result, and when a caller reports the branch a Session works on, the service looks up open change requests whose head is that branch and records the unbound ones as discovered. Watching a Session polls its visible change requests through `ctx.forge`.',
@@ -1724,23 +1524,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'inspector',
-    summary: 'Shared Host/Client service façade over the realm\'s source publisher.',
-    description: 'Shared Host/Client service façade over the realm\'s source publisher.',
-    methods: [
-      {
-        signature: 'publish(topic: string, payload: InspectorJsonValue, monotonicMs?: number): void',
-        description: 'Publish one JSON observation without waiting for Worker delivery.',
-        parameters: [{ name: 'topic', description: 'Domain-owned topic name.' }, { name: 'payload', description: 'JSON value validated before it reaches the carrier.' }, { name: 'monotonicMs', description: 'Source-clock timestamp; defaults to `performance.now()`.' }],
-      },
-      {
-        signature: 'readonly cordis: CordisRuntimeTreeReader',
-        description: 'Read-only Cordis topology queries independent of CDP sessions.',
-        parameters: [],
-      },
-    ],
-  },
-  {
     key: 'jobController',
     summary: 'Host service backing the generated `ctx.remote.job` namespace.',
     description: 'Host service backing the generated `ctx.remote.job` namespace.',
@@ -1827,85 +1610,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Attach an effect-scoped controller that can read and stop jobs. It serves the owners its registering context\'s scope covers, and start refuses an owner no attached controller serves.',
         parameters: [{ name: 'name', description: 'diagnostic label; duplicate names remain independent.' }],
         returns: 'disposer that detaches this controller.',
-      },
-    ],
-  },
-  {
-    key: 'liveshareShares',
-    summary: 'Owner-only Remote surface over the share-management operations.',
-    description: 'Owner-only Remote surface over the share-management operations.\n\nThe Gateway decides each call through remote access, so a `share-viewer` Peer is refused before a method runs; the owner Peer reaches the one implementation that owns each share-management side effect. `create` takes its Session as the `sessionId` of its single request object, so the Session resource kind\'s default resolver names that Session for the call without a reader declared here.',
-    methods: [
-      {
-        signature: '@Remote(\'create\') create(request: CreateShareRequest): Promise<CreatedShare>',
-        description: 'Publish one Session and store the share.',
-        parameters: [{ name: 'request', description: 'Session, title, access, lifetime, and both switches the owner chose.' }],
-        returns: 'The created share\'s link and stored values.',
-      },
-      {
-        signature: '@Remote(\'list\') list(): Promise<OwnerShareList>',
-        description: 'Refresh titles and Liveshare server authority, then list this host\'s shares.',
-        parameters: [],
-        returns: 'Every share this host publishes.',
-      },
-      {
-        signature: '@Remote(\'stop\') stop(request: StopShareRequest): Promise<StopShareResult>',
-        description: 'Stop one share locally, revoke its forks, and delete its row on the Liveshare server when reachable.',
-        parameters: [{ name: 'request', description: 'Share to stop.' }],
-        returns: 'Whether the row on the Liveshare server still needs a retry.',
-      },
-      {
-        signature: '@Remote(\'updatePermissions\') updatePermissions(request: UpdateSharePermissionsRequest): Promise<SharePermissions>',
-        description: 'Change one share\'s tier, fork switch, or both.',
-        parameters: [{ name: 'request', description: 'Share and the switches to change.' }],
-        returns: 'The permissions the share now carries.',
-      },
-      {
-        signature: '@Remote(\'setCapabilities\') setCapabilities(request: SetShareCapabilitiesRequest): Promise<ShareCapabilities>',
-        description: 'Replace one share\'s exposed plugin endpoints.',
-        parameters: [{ name: 'request', description: 'Share and the selection to store.' }],
-        returns: 'The capability selection the share now carries.',
-      },
-      {
-        signature: '@Remote(\'capabilities\') capabilities(): ShareCapabilityOffers',
-        description: 'Read the endpoints plugins currently offer.',
-        parameters: [],
-        returns: 'The live offer list.',
-      },
-      {
-        signature: '@Remote(\'relay\') relay(): OwnerRelayState',
-        description: 'Read the Liveshare server address the owner saved.',
-        parameters: [],
-        returns: 'The current Liveshare server state, with both address fields absent while none is saved.',
-      },
-      {
-        signature: '@Remote(\'setRelay\') setRelay(request: SetRelayRequest): Promise<OwnerRelayState>',
-        description: 'Choose the Liveshare server address later shares publish to.',
-        parameters: [{ name: 'request', description: 'Normalized address or null to clear the saved one.' }],
-        returns: 'The Liveshare server state after the change.',
-      },
-      {
-        signature: '@Remote(\'identity\') identity(request: OwnerIdentityRequest): Promise<OwnerIdentityStatus>',
-        description: 'Report this host\'s owner identity for one Liveshare server address.',
-        parameters: [{ name: 'request', description: 'Address to report, or the effective one when absent.' }],
-        returns: 'The owner identity status, without the credential.',
-      },
-      {
-        signature: '@Remote(\'audit\') audit(request: ShareAuditRequest): Promise<ShareAudit>',
-        description: 'Read the Liveshare server\'s durable audit trail for one share.',
-        parameters: [{ name: 'request', description: 'Share whose audit is read.' }],
-        returns: 'The audit events, or a structured failure when the Liveshare server cannot answer.',
-      },
-      {
-        signature: '@Remote(\'testRelay\') testRelay(): Promise<RelayConnectivityView>',
-        description: 'Check that the effective Liveshare server answers at all.',
-        parameters: [],
-        returns: 'The anonymous connectivity result.',
-      },
-      {
-        signature: '@Remote(\'testPublish\') testPublish(request: TestPublishRequest): Promise<RelayPublishView>',
-        description: 'Register one throwaway share to check whether this host may publish.',
-        parameters: [{ name: 'request', description: 'Session the throwaway registration names.' }],
-        returns: 'The Liveshare server\'s decision about this host\'s credential.',
       },
     ],
   },
@@ -5831,14 +5535,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type CheckState = \'pending\' | \'success\' | \'failure\' | \'neutral\' | \'skipped\' | \'cancelled\';',
   },
   {
-    name: 'ClaimOutcome',
-    declaration: 'export interface ClaimOutcome {\n    readonly claimed: number;\n    readonly skipped: number;\n}',
-  },
-  {
-    name: 'ClientArtifactBaseline',
-    declaration: 'export interface ClientArtifactBaseline {\n    readonly path: string;\n    readonly mtimeMs: number;\n    readonly ctimeMs: number;\n    readonly size: number;\n}',
-  },
-  {
     name: 'CollectedOutput',
     declaration: 'export interface CollectedOutput {\n    text: string;\n    truncated: boolean;\n    spillPath?: string;\n}',
   },
@@ -6043,60 +5739,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type CordisInspectRequestId = Branded<\'CordisInspectRequestId\'>;',
   },
   {
-    name: 'CordisRuntimeConnection',
-    declaration: 'export type CordisRuntimeConnection = {\n    readonly state: \'connected\';\n} | {\n    readonly state: \'disconnected\';\n    readonly reason: string;\n};',
-  },
-  {
-    name: 'CordisRuntimeContext',
-    declaration: 'export interface CordisRuntimeContext {\n    readonly kind: \'context\';\n    readonly children: readonly CordisRuntimeNode[];\n}',
-  },
-  {
-    name: 'CordisRuntimeFiber',
-    declaration: 'export interface CordisRuntimeFiber {\n    readonly kind: \'fiber\';\n    readonly uid: number;\n    readonly children: readonly [\n        CordisRuntimeContext\n    ];\n}',
-  },
-  {
-    name: 'CordisRuntimeNode',
-    declaration: 'export type CordisRuntimeNode = CordisRuntimeContext | CordisRuntimeFiber;',
-  },
-  {
-    name: 'CordisRuntimeRealm',
-    declaration: 'export interface CordisRuntimeRealm {\n    readonly source: CordisRuntimeSource;\n    readonly connection: CordisRuntimeConnection;\n    readonly revision: number;\n    readonly truncated: boolean;\n    readonly root: CordisRuntimeContext;\n}',
-  },
-  {
-    name: 'CordisRuntimeSource',
-    declaration: 'export interface CordisRuntimeSource {\n    readonly sourceId: CordisRuntimeSourceId;\n    readonly kind: CordisRuntimeSourceKind;\n    readonly label: string;\n}',
-  },
-  {
-    name: 'CordisRuntimeSourceId',
-    declaration: 'export type CordisRuntimeSourceId = InspectorId<\'CordisRuntimeSourceId\'>;',
-  },
-  {
-    name: 'CordisRuntimeSourceKind',
-    declaration: 'export type CordisRuntimeSourceKind = \'host\' | \'client\';',
-  },
-  {
-    name: 'CordisRuntimeTree',
-    declaration: 'export interface CordisRuntimeTree {\n    readonly schemaVersion: typeof CORDIS_RUNTIME_TREE_SCHEMA_VERSION;\n    readonly host: CordisRuntimeRealm | null;\n    readonly clients: readonly CordisRuntimeRealm[];\n}',
-  },
-  {
-    name: 'CordisRuntimeTreeReader',
-    declaration: 'export interface CordisRuntimeTreeReader {\n    getTree(): Promise<CordisRuntimeTree>;\n}',
-  },
-  {
-    name: 'CotTranslationPreferences',
-    declaration: 'export interface CotTranslationPreferences {\n    provider: TranslationProvider;\n    targetLanguage: string;\n}',
-  },
-  {
-    name: 'CotTranslationSnapshot',
-    declaration: 'export interface CotTranslationSnapshot {\n    maxTextChars: number;\n    preferences: CotTranslationPreferences;\n    availableProviders: readonly TranslationProvider[];\n}',
-  },
-  {
     name: 'CreateAgentOptions',
     declaration: 'export interface CreateAgentOptions {\n    readonly sessionId: SessionId;\n    readonly meta?: {\n        readonly cwd?: string;\n        readonly parentSession?: SessionId;\n        readonly isSeeded?: boolean;\n        readonly origin?: \'subagent\';\n        readonly delegationDepth?: number;\n        readonly agentPreset?: string;\n    };\n    readonly inheritedEventCount?: SessionLogOffset;\n    readonly seed?: readonly SessionEvent[];\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
-  },
-  {
-    name: 'CreatedShare',
-    declaration: 'export interface CreatedShare {\n    readonly link: string;\n    readonly shareId: string;\n    readonly sessionId: string;\n    readonly sessionMode: \'view\' | \'write\';\n    readonly access: ShareAccess;\n}',
   },
   {
     name: 'CreatedWorktree',
@@ -6113,10 +5757,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CreateSessionOptions',
     declaration: 'export interface CreateSessionOptions {\n    readonly seed?: readonly SessionEvent[];\n    readonly inheritedEventCount?: SessionLogOffset;\n    readonly meta?: {\n        readonly cwd?: string;\n        readonly parentSession?: SessionId;\n        readonly createdAt?: number;\n        readonly isSeeded?: boolean;\n        readonly origin?: \'subagent\';\n        readonly delegationDepth?: number;\n        readonly agentPreset?: string;\n    };\n}',
-  },
-  {
-    name: 'CreateShareRequest',
-    declaration: 'export interface CreateShareRequest {\n    readonly sessionId: string;\n    readonly sessionTitle?: string;\n    readonly accessMode?: \'open\' | \'selected\';\n    readonly ttlMinutes?: number;\n    readonly allowedSubjectIds?: readonly string[];\n    readonly allowsFork?: boolean;\n    readonly sessionMode?: \'view\' | \'write\';\n}',
   },
   {
     name: 'CreateTeamTaskRequest',
@@ -6403,80 +6043,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ForgeActionFailure {\n    readonly code: \'unauthenticated\' | \'stale\' | \'failed\';\n    readonly message: string;\n}',
   },
   {
-    name: 'ForgeBranches',
-    declaration: 'export interface ForgeBranches {\n    readonly current: string | null;\n    readonly branches: readonly string[];\n}',
-  },
-  {
-    name: 'ForgeChangedFile',
-    declaration: 'export interface ForgeChangedFile {\n    readonly path: string;\n    readonly additions: number;\n    readonly deletions: number;\n    readonly binary: boolean;\n}',
-  },
-  {
-    name: 'ForgeChangeRequestDiff',
-    declaration: 'export interface ForgeChangeRequestDiff {\n    readonly headSha: string;\n    readonly files: readonly ForgeDiffFile[];\n    readonly localAhead: number | null;\n    readonly fileUrls: Readonly<Record<string, string>>;\n}',
-  },
-  {
-    name: 'ForgeChangeRequestListState',
-    declaration: 'export type ForgeChangeRequestListState = Pick<ChangeRequestSnapshot, \'url\' | \'title\' | \'state\' | \'draft\' | \'checksRollup\' | \'reviewDecision\' | \'mergeability\'> & {\n    readonly number: number;\n};',
-  },
-  {
-    name: 'ForgeChangeRequestStatesFrame',
-    declaration: 'export type ForgeChangeRequestStatesFrame = {\n    readonly type: \'baseline\';\n    readonly states: readonly ForgeChangeRequestListState[];\n} | {\n    readonly type: \'changed\';\n    readonly states: readonly ForgeChangeRequestListState[];\n};',
-  },
-  {
-    name: 'ForgeCheckout',
-    declaration: 'export interface ForgeCheckout {\n    readonly root: string;\n    readonly branch: string | null;\n    readonly linked: boolean;\n    readonly commit: string | null;\n}',
-  },
-  {
-    name: 'ForgeCheckoutState',
-    declaration: 'export type ForgeCheckoutState = {\n    readonly state: \'pending\';\n} | {\n    readonly state: \'none\';\n} | {\n    readonly state: \'failed\';\n    readonly message: string;\n} | {\n    readonly state: \'ready\';\n    readonly checkout: ForgeCheckout;\n};',
-  },
-  {
-    name: 'ForgeDiffFile',
-    declaration: 'export interface ForgeDiffFile {\n    readonly path: string;\n    readonly previousPath: string | null;\n    readonly status: ForgeDiffStatus;\n    readonly binary: boolean;\n    readonly oversized: boolean;\n    readonly untracked: boolean;\n    readonly additions: number;\n    readonly deletions: number;\n    readonly hunks: readonly ForgeDiffHunk[];\n}',
-  },
-  {
-    name: 'ForgeDiffHunk',
-    declaration: 'export interface ForgeDiffHunk {\n    readonly oldStart: number;\n    readonly oldLines: number;\n    readonly newStart: number;\n    readonly newLines: number;\n    readonly lines: readonly string[];\n}',
-  },
-  {
-    name: 'ForgeDiffStatus',
-    declaration: 'export type ForgeDiffStatus = \'added\' | \'deleted\' | \'modified\' | \'renamed\';',
-  },
-  {
     name: 'ForgeFailure',
     declaration: 'export interface ForgeFailure {\n    readonly code: \'not-found\' | \'unauthenticated\' | \'too-large\' | \'unavailable\';\n    readonly message: string;\n}',
   },
   {
     name: 'ForgeLineComment',
     declaration: 'export interface ForgeLineComment {\n    readonly path: string;\n    readonly side: \'L\' | \'R\';\n    readonly startLine: number;\n    readonly endLine: number;\n    readonly body: string;\n}',
-  },
-  {
-    name: 'ForgeLocalChanges',
-    declaration: 'export interface ForgeLocalChanges {\n    readonly base: string;\n    readonly files: readonly ForgeChangedFile[];\n}',
-  },
-  {
-    name: 'ForgeLocalDiff',
-    declaration: 'export interface ForgeLocalDiff {\n    readonly base: string | null;\n    readonly files: readonly ForgeDiffFile[];\n    readonly omitted: number;\n}',
-  },
-  {
-    name: 'ForgeLocalScope',
-    declaration: 'export type ForgeLocalScope = {\n    readonly kind: \'branch\';\n} | {\n    readonly kind: \'uncommitted\';\n} | {\n    readonly kind: \'unstaged\';\n} | {\n    readonly kind: \'staged\';\n};',
-  },
-  {
-    name: 'ForgeMissingWorktree',
-    declaration: 'export interface ForgeMissingWorktree {\n    readonly branchExists: boolean | null;\n}',
-  },
-  {
-    name: 'ForgePanelChangeRequest',
-    declaration: 'export interface ForgePanelChangeRequest extends SessionChangeRequest {\n    readonly snapshot: ChangeRequestSnapshot | null;\n}',
-  },
-  {
-    name: 'ForgePanelState',
-    declaration: 'export interface ForgePanelState {\n    readonly directory: string;\n    readonly checkout: ForgeCheckoutState;\n    readonly repository: ForgeRepository | null;\n    readonly readiness: ForgeReadiness | null;\n    readonly changeRequests: readonly ForgePanelChangeRequest[];\n    readonly worktree: ForgePanelWorktree;\n    readonly local: ForgeLocalChanges | null;\n}',
-  },
-  {
-    name: 'ForgePanelWorktree',
-    declaration: 'export interface ForgePanelWorktree {\n    readonly editable: boolean;\n    readonly blocker: ForgeWorktreeBlocker | null;\n    readonly request: ForgeWorktreeRequest | null;\n    readonly created: ForgeSessionWorktree | null;\n    readonly creation: ForgeWorktreeCreation | null;\n    readonly failure: ForgeWorktreeFailure | null;\n    readonly missing: ForgeMissingWorktree | null;\n    readonly restoration: ForgeWorktreeRestoration | null;\n    readonly waiting: ForgeWorktreeWaiting | null;\n}',
   },
   {
     name: 'ForgeProvider',
@@ -6497,34 +6069,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ForgeReviewResult',
     declaration: 'export type ForgeReviewResult = {\n    readonly ok: true;\n    readonly url: string;\n} | {\n    readonly ok: false;\n    readonly code: \'unsupported\' | \'stale\' | \'failed\' | \'unknown\';\n    readonly message: string;\n};',
-  },
-  {
-    name: 'ForgeSessionWorktree',
-    declaration: 'export interface ForgeSessionWorktree {\n    readonly path: string;\n    readonly branch: string;\n    readonly from: string | null;\n    readonly baseCommit: string;\n    readonly repositoryRoot: string;\n}',
-  },
-  {
-    name: 'ForgeWorktreeBlocker',
-    declaration: 'export type ForgeWorktreeBlocker = \'not-git\' | \'outside-writable-root\' | \'read-only\';',
-  },
-  {
-    name: 'ForgeWorktreeCreation',
-    declaration: 'export interface ForgeWorktreeCreation {\n    readonly phase: \'prepare\' | \'checkout\';\n    readonly branch: string;\n    readonly from: string | null;\n    readonly held: boolean;\n}',
-  },
-  {
-    name: 'ForgeWorktreeFailure',
-    declaration: 'export interface ForgeWorktreeFailure {\n    readonly branch: string | null;\n    readonly from: string | null;\n    readonly phase: \'prepare\' | \'checkout\';\n    readonly message: string;\n}',
-  },
-  {
-    name: 'ForgeWorktreeRequest',
-    declaration: 'export interface ForgeWorktreeRequest {\n    readonly from: string | null;\n}',
-  },
-  {
-    name: 'ForgeWorktreeRestoration',
-    declaration: 'export interface ForgeWorktreeRestoration {\n    readonly phase: \'prepare\' | \'checkout\';\n}',
-  },
-  {
-    name: 'ForgeWorktreeWaiting',
-    declaration: 'export type ForgeWorktreeWaiting = \'creation\' | \'restoration\';',
   },
   {
     name: 'FsDeleteOutcome',
@@ -6717,22 +6261,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'InspectOptions',
     declaration: 'export interface InspectOptions {\n    readonly registry?: Registry;\n}',
-  },
-  {
-    name: 'InspectorId',
-    declaration: 'export type InspectorId<Role extends string> = Branded<Role>;',
-  },
-  {
-    name: 'InspectorJsonObject',
-    declaration: 'export interface InspectorJsonObject {\n    readonly [key: string]: InspectorJsonValue;\n}',
-  },
-  {
-    name: 'InspectorJsonPrimitive',
-    declaration: 'export type InspectorJsonPrimitive = null | boolean | number | string;',
-  },
-  {
-    name: 'InspectorJsonValue',
-    declaration: 'export type InspectorJsonValue = InspectorJsonPrimitive | readonly InspectorJsonValue[] | InspectorJsonObject;',
   },
   {
     name: 'InstallBundleOptions',
@@ -7419,30 +6947,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type OTelEventScalar = string | number | boolean;',
   },
   {
-    name: 'OwnerIdentityRequest',
-    declaration: 'export interface OwnerIdentityRequest {\n    readonly relay?: string;\n}',
-  },
-  {
-    name: 'OwnerIdentityState',
-    declaration: 'export type OwnerIdentityState = \'verified\' | \'expired\' | \'unverified\' | \'relay-unsupported\';',
-  },
-  {
-    name: 'OwnerIdentityStatus',
-    declaration: 'export interface OwnerIdentityStatus {\n    readonly state: OwnerIdentityState;\n    readonly relay: string;\n    readonly displayName?: string;\n    readonly subjectId?: string;\n    readonly avatarUrl?: string;\n    readonly expiresAt?: string;\n    readonly renewed?: boolean;\n    readonly claim?: ClaimOutcome;\n}',
-  },
-  {
-    name: 'OwnerRelayState',
-    declaration: 'export interface OwnerRelayState {\n    readonly configured?: string;\n    readonly override?: string;\n    readonly effective?: string;\n}',
-  },
-  {
-    name: 'OwnerShareList',
-    declaration: 'export interface OwnerShareList {\n    readonly shares: readonly OwnerShareView[];\n}',
-  },
-  {
-    name: 'OwnerShareView',
-    declaration: 'export interface OwnerShareView {\n    readonly shareId: string;\n    readonly sessionId: string;\n    readonly sessionTitle: string;\n    readonly link: string;\n    readonly createdAt: string;\n    readonly expiresAt?: string;\n    readonly allowsFork: boolean;\n    readonly sessionMode: \'view\' | \'write\';\n    readonly viewerPluginAccess?: ViewerPluginAccess;\n    readonly viewerPlugins: readonly ViewerPluginPolicy[];\n    readonly online: boolean;\n    readonly access?: ShareAccess;\n}',
-  },
-  {
     name: 'PackageResult',
     declaration: 'export interface PackageResult {\n    exitCode: number;\n    output: string;\n    truncated: boolean;\n    logPath: string;\n    kind?: PluginInstallFailureKind;\n    timedOut?: boolean;\n    incompatible?: IncompatiblePlugin[];\n}',
   },
@@ -7849,14 +7353,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RegistryAttempt',
     declaration: 'export interface RegistryAttempt {\n    readonly registry: Registry;\n    readonly problem?: \'not-found\' | \'network\' | \'unknown\';\n    readonly reason?: string;\n}',
-  },
-  {
-    name: 'RelayConnectivityView',
-    declaration: 'export interface RelayConnectivityView {\n    readonly ok: boolean;\n    readonly httpReachable: boolean;\n    readonly blocking: boolean;\n    readonly error?: string;\n}',
-  },
-  {
-    name: 'RelayPublishView',
-    declaration: 'export interface RelayPublishView {\n    readonly ok: boolean;\n    readonly blocking: boolean;\n    readonly error?: string;\n}',
   },
   {
     name: 'Reload',
@@ -8875,14 +8371,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type SessionWorkspacePathApplication = NativeFileApplication;',
   },
   {
-    name: 'SetRelayRequest',
-    declaration: 'export interface SetRelayRequest {\n    readonly relayUrl: string | null;\n}',
-  },
-  {
-    name: 'SetShareCapabilitiesRequest',
-    declaration: 'export interface SetShareCapabilitiesRequest {\n    readonly shareId: string;\n    readonly viewerPluginAccess?: ViewerPluginAccess;\n    readonly viewerPlugins?: readonly ViewerPluginPolicy[];\n}',
-  },
-  {
     name: 'SettingsDescribeOptions',
     declaration: 'export interface SettingsDescribeOptions {\n    redactSecrets?: boolean;\n}',
   },
@@ -8917,38 +8405,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SettingsSecretView',
     declaration: 'export interface SettingsSecretView {\n    path: string[];\n    set: boolean;\n}',
-  },
-  {
-    name: 'ShareAccess',
-    declaration: 'export interface ShareAccess {\n    readonly mode: \'open\' | \'selected\';\n    readonly selected: readonly ShareAccessSelection[];\n    readonly deploymentAllowedSubjectIds: readonly string[];\n    readonly shareAllowedSubjectIds: readonly string[];\n    readonly broadenedByDeploymentSubjects: boolean;\n    readonly identityKeyAcl: true;\n}',
-  },
-  {
-    name: 'ShareAccessSelection',
-    declaration: 'export interface ShareAccessSelection {\n    readonly providerId: string;\n    readonly tenantId: string;\n    readonly subjectId: string;\n    readonly identityKey: string;\n}',
-  },
-  {
-    name: 'ShareAudit',
-    declaration: 'export interface ShareAudit {\n    readonly events: readonly ShareAuditEntryView[];\n}',
-  },
-  {
-    name: 'ShareAuditEntryView',
-    declaration: 'export interface ShareAuditEntryView {\n    readonly id: string;\n    readonly action: string;\n    readonly createdAt: string;\n    readonly actor?: string;\n    readonly detail?: JsonValue;\n}',
-  },
-  {
-    name: 'ShareAuditRequest',
-    declaration: 'export interface ShareAuditRequest {\n    readonly shareId: string;\n}',
-  },
-  {
-    name: 'ShareCapabilities',
-    declaration: 'export interface ShareCapabilities {\n    readonly shareId: string;\n    readonly viewerPluginAccess: ViewerPluginAccess;\n    readonly viewerPlugins: readonly ViewerPluginPolicy[];\n}',
-  },
-  {
-    name: 'ShareCapabilityGroup',
-    declaration: 'export interface ShareCapabilityGroup {\n    readonly plugin: string;\n    readonly package?: string;\n    readonly titles?: Readonly<Record<string, string>>;\n    readonly endpoints: readonly string[];\n    readonly descriptions?: Readonly<Record<string, string>>;\n}',
-  },
-  {
-    name: 'ShareCapabilityOffers',
-    declaration: 'export interface ShareCapabilityOffers {\n    readonly capabilities: readonly ShareCapabilityGroup[];\n}',
   },
   {
     name: 'ShellExecRequest',
@@ -9161,14 +8617,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'StagedAttachment',
     declaration: 'export type StagedAttachment = {\n    readonly type: \'file\';\n    readonly attachment: FileAttachmentRef;\n} | {\n    readonly type: \'image\';\n    readonly attachment: ImageAttachmentRef;\n    readonly encodedBytes: number;\n};',
-  },
-  {
-    name: 'StopShareRequest',
-    declaration: 'export interface StopShareRequest {\n    readonly shareId: string;\n}',
-  },
-  {
-    name: 'StopShareResult',
-    declaration: 'export interface StopShareResult {\n    readonly ok: true;\n    readonly relay?: \'unreachable\';\n}',
   },
   {
     name: 'StorageBackend',
@@ -9505,10 +8953,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TerminalWaitReason',
     declaration: 'export type TerminalWaitReason = \'stdin_read\' | \'inferred_idle\' | \'timeout\' | \'session_exit\';',
-  },
-  {
-    name: 'TestPublishRequest',
-    declaration: 'export interface TestPublishRequest {\n    readonly sessionId: string;\n}',
   },
   {
     name: 'TextProps',
@@ -9911,10 +9355,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface UpdateBundleOptions {\n    readonly registry?: Registry;\n    readonly requestId?: PluginInstallRequestId;\n}',
   },
   {
-    name: 'UpdateSharePermissionsRequest',
-    declaration: 'export interface UpdateSharePermissionsRequest {\n    readonly shareId: string;\n    readonly sessionMode?: \'view\' | \'write\';\n    readonly allowsFork?: boolean;\n    readonly ttlMinutes?: number | null;\n}',
-  },
-  {
     name: 'UpdateTeamTaskRequest',
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: SessionId;\n}',
   },
@@ -9925,34 +9365,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'VerifiedWebhookDelivery',
     declaration: 'export interface VerifiedWebhookDelivery<K extends string = string> {\n    readonly kind: K;\n    readonly source: WebhookSourceId;\n    readonly deliveryId: WebhookDeliveryId;\n    readonly event: WebhookEventOf<K>;\n    readonly receivedAt: number;\n}',
-  },
-  {
-    name: 'ViewerPluginAccess',
-    declaration: 'export type ViewerPluginAccess = \'all\' | \'none\' | \'custom\';',
-  },
-  {
-    name: 'ViewerPluginPolicy',
-    declaration: 'export interface ViewerPluginPolicy {\n    readonly plugin: string;\n    readonly mode: \'all\' | \'none\' | \'selected\';\n    readonly endpoints?: readonly string[];\n}',
-  },
-  {
-    name: 'WebBootBatch',
-    declaration: 'export interface WebBootBatch {\n    phase: WebBootBatchPhase;\n    url: string;\n    rev: string;\n    entries: string[];\n}',
-  },
-  {
-    name: 'WebBootBatchPhase',
-    declaration: 'export type WebBootBatchPhase = \'bootstrap\' | \'application\';',
-  },
-  {
-    name: 'WebBootEntry',
-    declaration: 'export interface WebBootEntry {\n    id: string;\n    url: string;\n    rev: string;\n    inject?: string[];\n    immediately?: boolean;\n    external?: string[];\n}',
-  },
-  {
-    name: 'WebBootGraph',
-    declaration: 'export interface WebBootGraph {\n    rev: string;\n    release?: WebBootRelease;\n    entries: WebBootEntry[];\n    batches: WebBootBatch[];\n}',
-  },
-  {
-    name: 'WebBootRelease',
-    declaration: 'export interface WebBootRelease {\n    version: string;\n    commit?: string;\n}',
   },
   {
     name: 'WebFetchBody',

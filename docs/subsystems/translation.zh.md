@@ -40,33 +40,6 @@ GUI 向 Session 作用域的 `conversation.chat.reasoning.body` single Slot 注�
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
-<a id="ctxcottranslation--cottranslationcontroller"></a>
-
-### `ctx.cotTranslation` — `CotTranslationController`
-
-Optional reasoning translation delegates Session-bound storage to the translator.
-
-```ts cordis-catalog
-/**
- * Read accepted translation preferences and the current request limit without sending text.
- * @param signal - browser query cancellation or Remote contribution withdrawal.
- * @returns authoritative preferences, eligible routes, and maximum UTF-16 text length per request.
- */
-@Remote async limits(signal: AbortSignal): Promise<CotTranslationSnapshot>
-
-/**
- * Translate one displayed fragment through the reader's selected provider.
- * @param request - original text and Session identity supplied by the Client; provider and explicit
- * target language match accepted preferences, while auto uses the browser locale.
- * @param signal - browser cancellation or Remote contribution withdrawal.
- * @returns translated text; an uncached inactive Session joins ordinary GUI activation before retry.
- * Failures omit the source and provider response. Cancellation stops this caller's wait, not shared activation.
- */
-@Remote async translate(request: TranslationRequest, signal: AbortSignal): Promise<string>
-```
-
-Source: [`packages/experimental/client-ui-cot-translation/src/index.ts`](../../packages/experimental/client-ui-cot-translation/src/index.ts)
-
 <a id="ctxtranslator--translator"></a>
 
 ### `ctx.translator` — `Translator`

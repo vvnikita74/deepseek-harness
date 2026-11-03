@@ -52,7 +52,6 @@ export { REGION_BEGIN, REGION_END }
 export const SERVICE_PAGE: Record<string, string> = {
   headlessStartup: 'boot.md',
   translator: 'translation.md',
-  cotTranslation: 'translation.md',
   speechToText: 'voice-input.md',
   speechController: 'voice-input.md',
   otel: 'otel.md',
@@ -78,7 +77,6 @@ export const SERVICE_PAGE: Record<string, string> = {
   attachments: 'attachment.md',
   shell: 'shell.md',
   shellEnv: 'shell.md',
-  clientModules: 'client-modules.md',
   ptcRuntime: 'ptc-runtime.md',
   browserUse: 'browser-use.md',
   computerUse: 'computer-use.md',
@@ -99,7 +97,6 @@ export const SERVICE_PAGE: Record<string, string> = {
   fs: 'filesystem.md',
   goals: 'goal.md',
   schedule: 'schedule.md',
-  inspector: 'extensions.md',
   webServer: 'web-server.md',
   webApp: 'web-server.md',
   llm: 'llm-streaming.md',
@@ -121,7 +118,6 @@ export const SERVICE_PAGE: Record<string, string> = {
   workingDirectory: 'working-directory.md',
   worktrees: 'worktrees.md',
   forge: 'forge.md',
-  forgePanel: 'forge.md',
   forgeSession: 'forge.md',
   sessionController: 'session.md',
   sessionSkillCatalog: 'skills.md',
@@ -140,7 +136,6 @@ export const SERVICE_PAGE: Record<string, string> = {
   jobs: 'jobs.md',
   jobController: 'jobs.md',
   sessionTelemetry: 'session-telemetry.md',
-  liveshareShares: 'liveshare.md',
   agentTeams: 'agent-team.md',
   claudeCodeMods: 'claude-code-mods.md',
   tokenMeter: 'token-meter.md',
@@ -180,8 +175,6 @@ export const SERVICE_PAGE: Record<string, string> = {
  * to a model as `cordis_runtime_inspect what:"client"`).
  */
 export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
-  contextMenus: 'client-side interface-typed menu registry — packages/client/ui-context-menu/README.md owns the API',
-  fileActions: 'client-side interface-typed file actions — packages/client/ui-file-actions/README.md owns the API',
   invocation: 'not a service: per-call accessor (RemoteInvocation | undefined) the Gateway derives for each Remote call — packages/api/gateway/README.md owns the contract',
   webTerminals: 'client-side terminal view models — packages/api/terminal-controller/README.md owns the API',
   appReady: 'not a service: launcher-provided successful-startup signal — packages/boot/cmdline/README.md owns the launcher contract',
@@ -194,34 +187,10 @@ export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
   pluginPackages: 'profile-boot-owned package resolver service used by optional consumers — packages/boot/app-boot/README.md owns this internal API',
   fileUpload: 'client-side browser upload service — packages/client/file-upload/README.md owns the API',
   uiRenderer: 'client-side interface-typed browser service — packages/client/ui-renderer/README.md owns the API',
-  uiSession: 'client-side Session source adapter — packages/client/ui-session/README.md owns the API',
-  uiConversation: 'client-side Conversation registries and assembler — packages/client/ui-conversation/README.md owns the API',
-  uiWorkspace: 'client-side Workspace navigation adapter — packages/client/ui-workspace/README.md owns the API',
-  settingsSchema: 'client-side schema introspection service — packages/client/ui-settings/README.md owns the API',
-  configForms: 'client-side shared entry forms — packages/client/ui-settings/README.md owns the API',
-  chatFileMentions: 'client-side slot-contract accessor (ChatFileMentions) — packages/client/ui-chat/README.md owns the API',
-  shortcuts: 'client-side interface-typed keyboard service — packages/client/shortcuts/README.md owns the API',
-  userQuestionPanels: 'client-side slot-contract accessor (UserQuestionPanels) — packages/client/ui-tool/README.md owns the API',
-  commandUi: 'client-side interface-typed browser service — packages/client/ui-commands/README.md owns the API',
-  fileDrag: 'client-side file preparation and transfer service — packages/client/ui-file-drag/README.md owns the API',
-  feedbackUi: 'client-side feedback dialog service — packages/client/ui-message-feedback/README.md owns the API',
-  conversation: 'client-side interface-typed browser service — packages/client/ui-conversation/README.md owns the API',
-  layout: 'client-side interface-typed browser service — packages/client/ui-layout/README.md owns the API',
-  pluginNavigation: 'client-side bundle navigation — packages/client/ui-plugin-manager/README.md owns the API',
-  pluginChanges: 'client-side read-only management activity — packages/client/ui-plugin-manager/README.md owns the API',
-  locale: 'client-side interface-typed browser service — packages/client/locale/README.md owns the API',
-  modelDirectories: 'client-side interface-typed browser service — packages/client/ui-model-selection/README.md owns the API',
-  modules: 'client-side interface-typed browser service — packages/client/modules/README.md owns the API',
   remote: 'client-side interface-typed gateway accessor (ClientRemote) — packages/api/gateway/README.md owns the API',
-  sessionLogDownload: 'client-side browser download controller — packages/session-query/session-log-export/README.md owns the API',
-  inputTriggers: 'client-side interface-typed browser service — packages/client/ui-input-trigger/README.md owns the API',
   slots: 'client-side interface-typed browser service — packages/client/ui-renderer/README.md owns the API',
-  theme: 'client-side interface-typed browser service — packages/client/ui-theme/README.md owns the API',
   workspaces: 'client-side interface-typed browser service — packages/api/workspace-controller/README.md owns the API',
   resources: 'client-side resource model (protocol providers, pins, live sources) — packages/client/resources/README.md owns the API',
-  sidebarRight: 'client-side right-Sidebar navigation face — packages/client/ui-sidebar-right/README.md owns the API',
-  sidebarRightTabs: 'client-side right-Sidebar tab-type registry — packages/client/ui-sidebar-right/README.md owns the API',
-  documentPreviews: 'client-side document renderer registry — docs/subsystems/sidebar-right.md owns the API',
 }
 
 /**
@@ -284,15 +253,8 @@ export const EVENT_SCOPE_PAGE: Record<string, string> = {
  */
 export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
   'agent/request': 'deprecated compatibility hook — packages/core/agent/README.md documents migration',
-  'command/executed': 'client-face local command acknowledgment — packages/client/ui-commands/README.md owns the API',
   'connection/reset': 'client-face transport signal — packages/api/session-controller/README.md owns the API',
-  'locale/change': 'client-face locale switch signal — packages/client/locale/README.md owns the API',
-  'slash/input-begin-command': 'client-face slash-input protocol — packages/client/ui-input-trigger/README.md owns the API',
-  'slash/input-consume-token': 'client-face slash-input protocol — packages/client/ui-input-trigger/README.md owns the API',
-  'slash/input-insert-reference': 'client-face slash-input protocol — packages/client/ui-input-trigger/README.md owns the API',
-  'slash/input-insert-text': 'client-face slash-input protocol — packages/client/ui-input-trigger/README.md owns the API',
   'slots/changed': 'client-face slot invalidation signal — packages/client/ui-renderer/README.md owns the API',
-  'theme/change': 'client-face theme switch signal — packages/client/ui-theme/README.md owns the API',
 }
 
 /**
