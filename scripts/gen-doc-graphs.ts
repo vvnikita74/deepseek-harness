@@ -355,6 +355,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Lists the Session composition\'s user-invocable skills without activating a cold Agent.',
   },
   {
+    key: 'jevRouterController',
+    pkg: 'api-jev-router',
+    title: 'Jev model router Remote controller',
+    mode: 'core',
+    note: 'Chooses the model tier for one prompt through Jev and switches the Session\'s next model step; Jev failures keep the current model.',
+  },
+  {
     key: 'jobController',
     pkg: 'api-job-controller',
     title: 'Host job Remote controller',

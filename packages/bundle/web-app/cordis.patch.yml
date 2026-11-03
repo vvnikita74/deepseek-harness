@@ -103,6 +103,12 @@
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'
 
+    # Routes each prompt to a model tier through Jev; inert until tiers are configured.
+    - id: jev-router
+      name: '@deepseek-ai/dsh-api-jev-router'
+      config:
+        tiers: []
+
     # One background job's observation record streamed over Typert Remote;
     # the roster rides the session control stream above.
     - id: job-controller

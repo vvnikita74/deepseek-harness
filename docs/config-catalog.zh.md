@@ -239,6 +239,48 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-api-gateway -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-jev-router -->
+<a id="deepseek-aidsh-api-jev-router"></a>
+
+## `@deepseek-ai/dsh-api-jev-router`
+
+- `inject`: `llm` · `sessionController` · `typert`
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/api/jev-router/src/index.ts:36`](../packages/api/jev-router/src/index.ts)
+
+```ts config-catalog
+/** Routing policy and Jev access; every field is read per call. */
+export interface Config {
+  /** Model routes ordered easiest to hardest; index = tier. Two or more enable routing. */
+  tiers: Volatile<Tier[]>
+  /** Credential reference holding the Jev API key. */
+  apiKeyEnv: Volatile<string>
+  /** Jev decisions endpoint. */
+  endpoint: Volatile<string>
+  /** Jev model id. */
+  model: Volatile<string>
+  /** Confidence below which the answer escalates one tier. */
+  minConfidence: Volatile<number>
+  /** Upper bound on one Jev call. */
+  timeoutMs: Volatile<number>
+  /** Maximum prompt code points sent to Jev; the tail is kept. */
+  maxChars: Volatile<number>
+}
+
+/** One model route, easiest tier first. */
+export interface Tier {
+  /** Registered provider route. */
+  readonly provider: string
+  /** Provider-owned model id. */
+  readonly model: string
+  /** Reasoning effort id the adapter validates; omission follows adapter defaults. */
+  readonly reasoningEffort?: string
+  /** Jev score criterion describing tasks for this tier; defaults to `Tier <index>`. */
+  readonly description?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-api-jev-router -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-job-controller -->
 <a id="deepseek-aidsh-api-job-controller"></a>
 

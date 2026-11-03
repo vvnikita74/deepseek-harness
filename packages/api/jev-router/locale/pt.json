@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "API de roteamento de modelos Jev",
+    "description": "Roteia cada prompt para um nível de modelo com uma pontuação de complexidade do Jev."
+  }
+}

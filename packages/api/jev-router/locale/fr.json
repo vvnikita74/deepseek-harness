@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "API de routage de modèles Jev",
+    "description": "Oriente chaque prompt vers un niveau de modèle grâce à un score de complexité Jev."
+  }
+}

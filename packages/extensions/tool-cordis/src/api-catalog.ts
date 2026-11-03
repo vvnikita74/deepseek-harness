@@ -1524,6 +1524,19 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'jevRouterController',
+    summary: 'Routes prompts before submission; Jev failures keep the current model.',
+    description: 'Routes prompts before submission; Jev failures keep the current model.',
+    methods: [
+      {
+        signature: '@Remote(\'route\') async route(request: JevRouteRequest, signal: AbortSignal): Promise<JevRouteResult>',
+        description: 'Choose the model tier for one prompt and switch the Session\'s next model step to it.',
+        parameters: [{ name: 'request', description: 'Session identity and prompt text about to be submitted.' }, { name: 'signal', description: 'Client cancellation or Remote contribution disposal.' }],
+        returns: 'the routing outcome; Jev failures report `jev-unavailable` instead of throwing.',
+      },
+    ],
+  },
+  {
     key: 'jobController',
     summary: 'Host service backing the generated `ctx.remote.job` namespace.',
     description: 'Host service backing the generated `ctx.remote.job` namespace.',
@@ -6285,6 +6298,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'InvokeRemoteRequest',
     declaration: 'export interface InvokeRemoteRequest {\n    readonly namespace: string;\n    readonly method: string;\n    readonly args: Readonly<Record<string, unknown>>;\n    readonly uplink?: AsyncIterable<unknown>;\n    readonly uplinkWindow?: RemoteUplinkWindow | undefined;\n    readonly peer: PeerScope;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'JevRouteRequest',
+    declaration: 'export interface JevRouteRequest {\n    readonly sessionId: SessionId;\n    readonly text: string;\n}',
+  },
+  {
+    name: 'JevRouteResult',
+    declaration: 'export interface JevRouteResult {\n    readonly routed: boolean;\n    readonly tier?: number;\n    readonly selected?: JevRouteSelection;\n    readonly reason?: string;\n}',
+  },
+  {
+    name: 'JevRouteSelection',
+    declaration: 'export interface JevRouteSelection {\n    readonly provider: string;\n    readonly model: string;\n    readonly reasoningEffort?: string;\n}',
   },
   {
     name: 'JobAppendOptions',
