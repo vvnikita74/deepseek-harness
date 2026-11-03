@@ -99,7 +99,6 @@ export function buildGates(
     for (const step of libraryBuildSteps(root, 'all')) {
       gates.push(libraryGate(step, step.id === 'host-src' ? ['native', ...step.needs] : step.needs, env))
     }
-    gates.push(pnpmGate('web', 'Web build', ['run', 'build:web'], ['client-bundle'], env))
   }
   if (scope === 'typecheck') {
     for (const step of contractSteps(root, 'all')) gates.push(libraryGate(step, step.needs, env))

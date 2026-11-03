@@ -104,7 +104,6 @@ describe('internal artifact build order', () => {
     const expected = [
       ['exec', 'tsdown', '--config-loader', 'native', '--env.DSH_BUILD_FACE', 'host'],
       ...hostOnly ? [] : [
-        ['--filter', '@deepseek-ai/dsh-desktop', 'run', 'bundle'],
         ['exec', 'tsdown', '--config-loader', 'native', '--env.DSH_BUILD_FACE', 'client'],
       ],
     ]
@@ -136,7 +135,7 @@ describe('internal artifact build order', () => {
     ])
   })
 
-  it('stops after a failed Host bundler before Desktop and Client builds', () => {
+  it('stops after a failed Host bundler before the Client build', () => {
     const { root } = fixture()
     const commands = recordedCommands(root, true)
 
@@ -154,15 +153,13 @@ describe('internal artifact build order', () => {
     expect(commands()).toEqual([
       ['run', 'build:native-system'],
       ['exec', 'tsdown', '--config-loader', 'native', '--env.DSH_BUILD_FACE', 'host'],
-      ['--filter', '@deepseek-ai/dsh-desktop', 'run', 'bundle'],
       ['exec', 'tsdown', '--config-loader', 'native', '--env.DSH_BUILD_FACE', 'client'],
       ['exec', 'tsdown', '--config-loader', 'native', '--config', 'benchmarks/tsdown.config.ts'],
-      ['run', 'build:web'],
       ['run', 'test:bench:built'],
     ].map(args => ({ args, title: 'Inherited Build Title' })))
 
     expect(() => { buildLibraryArtifacts(root, false) }).toThrow('host compiler exited with')
-    expect(commands()).toHaveLength(7)
+    expect(commands()).toHaveLength(5)
   })
 })
 

@@ -148,7 +148,6 @@ describe('CI workflow', () => {
     const hostSteps = scripts.scripts['build:lib:host']!.split(' && ')
     expect(hostSteps[0]).toBe('tsx scripts/compile-referenced-projects.ts host-libraries')
     expect(hostSteps).toContain('node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc -p tsconfig.host.json')
-    expect(hostSteps.at(-1)).toBe('pnpm --filter @deepseek-ai/dsh-desktop run bundle')
     expect(scripts.scripts['build:lib:client']).toContain('tsc -b tsconfig.client.json')
     expect(scripts.scripts.typecheck).toBe('tsx scripts/build.ts --scope typecheck')
   })
@@ -481,12 +480,6 @@ describe('CI workflow', () => {
 
     expect(windowsWorkflow.jobs['windows-observational']).toBeUndefined()
     expect(windowsBuild['continue-on-error']).not.toBe(true)
-    const channelCheck = buildCommands.find(step => step.name === 'Verify Desktop updater dependency versions')
-    expect(channelCheck).toMatchObject({ shell: 'pwsh' })
-    expect(channelCheck?.['continue-on-error']).not.toBe(true)
-    expect(channelCheck?.run).toContain('node apps/desktop/tests/updates/electron-updater/check-versions.mjs')
-    expect(buildCommands.indexOf(channelCheck!))
-      .toBeGreaterThan(buildCommands.findIndex(step => step.run === 'pnpm run check:ci:windows-blocking'))
     const observational = buildCommands.find(step => step.id === 'observational')
     expect(observational).toMatchObject({
       run: 'pnpm run check:ci:windows-observational-ready',

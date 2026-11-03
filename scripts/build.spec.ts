@@ -10,10 +10,8 @@ const artifactGraph = {
   'host-typert': [],
   'host-src': ['native', 'host-typert'],
   'host-bundle': ['host-src'],
-  'desktop-bundle': ['host-bundle'],
-  'client-src': ['desktop-bundle'],
+  'client-src': ['host-bundle'],
   'client-bundle': ['client-src'],
-  'web': ['client-bundle'],
 }
 
 function graph(gates: ReturnType<typeof buildGates>): Record<string, string[] | undefined> {
@@ -85,7 +83,7 @@ describe('repository build steps', () => {
     }
   })
 
-  it('finishes Host and Desktop readers before Client compilation rewrites shared outputs', () => {
+  it('finishes Host readers before Client compilation rewrites shared outputs', () => {
     expect(graph(buildGates(root, 'artifacts'))).toEqual(artifactGraph)
   })
 
