@@ -2,22 +2,19 @@
  * @deepseek-ai/dsh-web-app — the browser-surface bundle's runtime glue plugin
  * plus the bundle patch (`cordis.patch.yml`, declared by the `dsh.bundle.patch`
  * manifest field). The plugin owns the server-side glue: it registers the
- * bash-visible web runtime variable, the process-token URL line, and the
- * default-browser handoff, and provides the `webApp` service. An advertised
+ * bash-visible web runtime variable and the access-key URL line, and provides
+ * the `webApp` service. An advertised
  * `publicUrl` replaces the published bind-address URL. Non-loopback
  * HTTP binds trigger an exposure warning. App command-line values arrive
  * through the `webStartup` service expressions in the bundle patch.
  * @module @deepseek-ai/dsh-web-app
  */
 
-import { spawn, type ChildProcess } from 'node:child_process'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { auditStartupEntries } from '@deepseek-ai/dsh-app-boot'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import { bindUrlHost, isLoopbackHost } from '@deepseek-ai/dsh-host-webserver'
-import { launchedThroughSsh, launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
-import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-shell-env'
 import { parsePublicUrl } from './public-url.ts'
@@ -48,8 +45,6 @@ export const inject = ['webServer']
 
 /** Plugin config: composed deployment settings plus per-invocation command-line values. */
 export interface Config {
-  /** Permit default-browser handoff after the Loader tree settles; an SSH launch suppresses it. */
-  openBrowser: boolean
   /** Print the URL line on activation; a non-interactive layer can turn it off. */
   printUrl: boolean
   /**
@@ -68,7 +63,6 @@ export interface Config {
 }
 
 export const Config: z<Config> = z.object({
-  openBrowser: z.boolean().default(true),
   printUrl: z.boolean().default(true),
   surfaceContext: z.boolean().default(true),
   publicUrl: z.transform(z.string(), value => parsePublicUrl(value).href),
@@ -77,86 +71,8 @@ export const Config: z<Config> = z.object({
 /** Environment variable naming the advertised URL of this Web GUI. */
 const DSH_WEB_URL = 'DSH_WEB_URL' as const
 
-const BROWSER_OPENER_MODULE = import.meta.resolve('open')
-
-const BROWSER_OPENER_PROGRAM = `
-try {
-  const { default: open } = await import(${JSON.stringify(BROWSER_OPENER_MODULE)})
-  const launcher = await open(process.argv[1])
-  if (process.platform === 'win32') {
-    // open resolves at PowerShell spawn; keep it referenced until that launcher hands the URL to Windows.
-    const code = launcher.exitCode ?? await new Promise((resolve, reject) => {
-      function onError(error) {
-        launcher.off('close', onClose)
-        reject(error)
-      }
-      function onClose(code) {
-        launcher.off('error', onError)
-        resolve(code)
-      }
-      launcher.ref()
-      launcher.once('error', onError)
-      launcher.once('close', onClose)
-    })
-    if (code !== 0) throw new Error('browser operating-system launcher exited with code ' + String(code))
-  }
-  process.exitCode = 0
-} catch (error) {
-  // The parent turns this exit into the manual-URL warning.
-  console.error(error)
-  process.exitCode = 1
-}
-`
-
-/** Start the maintained platform opener without forwarding Harness credentials. */
-function spawnBrowserLauncher(url: string): ChildProcess {
-  return spawn(process.execPath, [
-    '--input-type=module',
-    '--eval', BROWSER_OPENER_PROGRAM,
-    '--', url,
-  ], {
-    env: scrubbedParentEnv(),
-    stdio: ['ignore', 'inherit', 'pipe'],
-  })
-}
-
-/** Hand one URL to the operating system's default browser. */
-async function openBrowser(url: string): Promise<void> {
-  const launcher = spawnBrowserLauncher(url)
-  let launcherStderr = ''
-  launcher.stderr?.setEncoding('utf8')
-  launcher.stderr?.on('data', (chunk: string) => { launcherStderr += chunk })
-  await new Promise<void>((resolve, reject) => {
-    function onError(error: Error): void {
-      launcher.off('close', onClose)
-      reject(error)
-    }
-    function onClose(code: number | null): void {
-      launcher.off('error', onError)
-      if (code !== 0) {
-        const firstLine = launcherStderr.trim().split(/\r?\n/u)[0]
-        const reason = firstLine === undefined || firstLine === ''
-          ? `browser launcher exited with code ${String(code)}`
-          : firstLine.replace(/^(?:[A-Za-z]*Error):\s*/u, '')
-        reject(new Error(reason))
-        return
-      }
-      if (launcherStderr !== '') process.stderr.write(launcherStderr)
-      resolve()
-    }
-    launcher.once('error', onError)
-    launcher.once('close', onClose)
-  })
-}
-
-/** Test hooks for the native browser handoff; production never mutates it. */
-export const internals: {
-  openBrowser: (url: string) => Promise<void>
-} = { openBrowser }
-
 /**
- * Mount the Web runtime: the bash runtime variable, the URL line, and the
- * default-browser handoff.
+ * Mount the Web runtime: the bash runtime variable and the URL line.
  * @param ctx - plugin context carrying the webServer service.
  * @param config - validated {@link Config}.
  */
@@ -174,9 +90,6 @@ export function apply(ctx: Context, config: Config): void {
   if (ctx.webServer.protocol === 'http:' && !isLoopbackHost(boundHost)) {
     console.warn(`dsh web: listening on ${boundHost} over plain HTTP; restrict this port to a trusted proxy or network`)
   }
-  // The bind URL belongs to this host. Under SSH, the operator reaches it
-  // through a local forwarding address that this process cannot derive.
-  const handoffBrowser = config.openBrowser && !launchedThroughSsh(launchEnvironmentOf(ctx))
   /** The advertised root: the canonical `publicUrl`, or the listener's own origin. */
   const appRootUrl = (): string => publicUrl ?? ctx.webServer.getOrigin()
   ctx.provide('webApp', { getAdvertisedUrl: appRootUrl } satisfies WebApp)
@@ -191,11 +104,10 @@ export function apply(ctx: Context, config: Config): void {
       })
     })
   }
-  if (config.printUrl || handoffBrowser) {
+  if (config.printUrl) {
     ctx.inject(['connection'], (connectionCtx) => {
-      // The URL line and browser handoff are readiness signals: supervisors RPC
-      // as soon as they observe the line, while a browser requests the page as
-      // soon as it opens. Neither may run while sibling rows such as the /api
+      // The URL line is a readiness signal: supervisors RPC as soon as they
+      // observe it, so it may not print while sibling rows such as the /api
       // route owner are still mounting. Await Loader settlement first; a
       // hand-built tree without a Loader is already the complete tree.
       const announceReady = (): void => {
@@ -203,16 +115,7 @@ export function apply(ctx: Context, config: Config): void {
         const webUrl = appRootUrl()
         const authenticatedUrl = connectionCtx.connection.authenticatedUrl(webUrl)
         ANNOUNCED_ROOTS.add(connectionCtx.root)
-        if (config.printUrl) {
-          console.log(`dsh web: ${authenticatedUrl}`)
-        }
-        if (handoffBrowser) {
-          console.log('dsh web: opening the default browser; pass --no-open to disable')
-          void internals.openBrowser(authenticatedUrl).catch((error: unknown) => {
-            const reason = error instanceof Error ? error.message : String(error)
-            console.error(`web-app: could not open the default browser because ${reason}; use the dsh web URL printed at startup`)
-          })
-        }
+        console.log(`dsh web: ${authenticatedUrl}`)
       }
       // This row's own activation can precede a sibling failure. The app owns
       // readiness by waiting for its Loader tree, or announces at once in a
@@ -223,7 +126,7 @@ export function apply(ctx: Context, config: Config): void {
         void settled.then(async () => {
           await auditStartupEntries(connectionCtx.root, 'dsh web', () => {})
           // The tree can be disposed while the boot was in flight (early
-          // SIGTERM); a URL line or browser tab for a dead server would only
+          // SIGTERM); a URL line for a dead server would only
           // mislead, and reading torn-down services would turn a clean shutdown
           // into a crash.
           if (connectionCtx.get('webServer') !== undefined

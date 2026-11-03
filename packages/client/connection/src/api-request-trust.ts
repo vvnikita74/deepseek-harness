@@ -15,7 +15,13 @@
 import { isLoopbackHostname } from './loopback-hostname.ts'
 import type { ConnectionTrustRequest } from './rpc.ts'
 
-function header(headers: ConnectionTrustRequest['headers'], name: string): string | undefined {
+/**
+ * Read one request header by lowercase name.
+ * @param headers - Fetch Headers or a node:http header record.
+ * @param name - lowercase header name.
+ * @returns the header value, or undefined when absent or not a single string.
+ */
+export function header(headers: ConnectionTrustRequest['headers'], name: string): string | undefined {
   if (headers instanceof Headers) return headers.get(name) ?? undefined
   const value = headers[name]
   return typeof value === 'string' ? value : undefined
@@ -94,6 +100,45 @@ export function isRemoteAuthority(entry: string): boolean {
   return url === undefined || !isLoopbackHostname(url.hostname)
 }
 
+const ALLOWED_ORIGIN_SCHEMES: ReadonlySet<string> = new Set(['http:', 'https:', 'tauri:'])
+
+/**
+ * Assert one configured `allowedOrigins` entry is an exact origin: `scheme://host[:port]`
+ * with scheme `http`, `https`, or `tauri`, and no path, query, fragment,
+ * credentials, or `*`. The WHATWG `origin` of an `http(s)` URL must equal the
+ * entry verbatim, which refuses uppercase hosts, default ports, and trailing
+ * slashes. A `tauri` origin is opaque (`null`), so it round-trips through
+ * `protocol//host` instead.
+ * @param entry - the configured value, verbatim.
+ */
+export function assertAllowedOrigin(entry: string): void {
+  if (isExactOrigin(entry)) return
+  throw new Error(`client-connection: allowedOrigins entry ${JSON.stringify(entry)} is not an exact http, https, or tauri origin`)
+}
+
+function isExactOrigin(entry: string): boolean {
+  if (entry.includes('*')) return false
+  let url: URL
+  try {
+    url = new URL(entry)
+  } catch {
+    return false
+  }
+  if (!ALLOWED_ORIGIN_SCHEMES.has(url.protocol) || url.hostname === '') return false
+  return url.protocol === 'tauri:' ? `${url.protocol}//${url.host}` === entry : url.origin === entry
+}
+
+/**
+ * The request's Origin when it equals one configured allowed origin exactly.
+ * @param request - request headers that may carry Origin.
+ * @param allowedOrigins - entries validated by {@link assertAllowedOrigin}.
+ * @returns the Origin verbatim, or undefined when it is absent or not listed.
+ */
+export function allowedOriginOf(request: ConnectionTrustRequest, allowedOrigins: readonly string[]): string | undefined {
+  const origin = header(request.headers, 'origin')
+  return origin !== undefined && allowedOrigins.includes(origin) ? origin : undefined
+}
+
 /**
  * Whether a parsed authority names the deployment's own bind address. A browser
  * dialing that literal sends it as Host, and accepting it grants nothing
@@ -116,13 +161,16 @@ function isBindAddressAuthority(hostUrl: URL, bindHost: string | undefined): boo
  * @param trustedHosts - non-loopback authorities this deployment serves: exact `host:port`, or port-less `host` matching any port.
  * @param bindHost - the listener's own bind IP literal, accepted on any port independently of `trustedHosts`.
  * @param protocol - listener protocol for default Host ports; HTTP when no Web carrier is mounted.
- * @returns true when the Host is ours (loopback, the bind address, or trusted) and any attached browser markers are same-origin.
+ * @param allowedOrigins - exact cross-origin browser clients (validated by {@link assertAllowedOrigin}).
+ * @returns true when the Host is ours (loopback, the bind address, or trusted) and any attached
+ *   browser markers are same-origin or an allowed origin.
  */
 export function isTrustedApiRequest(
   request: ConnectionTrustRequest,
   trustedHosts: readonly string[],
   bindHost?: string,
   protocol: 'http:' | 'https:' = 'http:',
+  allowedOrigins: readonly string[] = [],
 ): boolean {
   // Host fence (DNS-rebinding defense), applied to every request: the browser
   // fills Host from the URL it believes it is talking to, so a rebound page
@@ -138,6 +186,9 @@ export function isTrustedApiRequest(
   if (!isLoopbackHostname(hostUrl.hostname)
     && !isTrustedAuthority(hostUrl, trustedHosts, protocol)
     && !isBindAddressAuthority(hostUrl, bindHost)) return false
+  // An allowed Origin is a deliberately configured cross-site client: it
+  // passes the cross-site refusal below, and only it does.
+  if (allowedOriginOf(request, allowedOrigins) !== undefined) return true
   // Cross-site fence: modern browsers label the initiator relationship on
   // every fetch; an explicit cross-site marker is refused regardless of Origin.
   if (header(request.headers, 'sec-fetch-site') === 'cross-site') return false

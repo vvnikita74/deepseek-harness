@@ -41,6 +41,12 @@ export type RemoteStreamFailureMapper = (error: unknown) => RemoteStreamFailure
 
 const MAX_MISSED_HEARTBEATS = 2
 
+/**
+ * The only WebSocket subprotocol this carrier selects. A client's bearer
+ * credential may travel in a second offer, which the server never echoes.
+ */
+export const REMOTE_STREAM_SUBPROTOCOL = 'dsh.v1'
+
 /** Carrier options for {@link RemoteStreamMuxServer}. */
 export interface RemoteStreamMuxServerOptions {
   /** Interval between WebSocket Ping control frames. */
@@ -76,6 +82,7 @@ export class RemoteStreamMuxServer {
     this.compression = options.compression
     this.server = new WebSocketServer({
       noServer: true,
+      handleProtocols: protocols => protocols.has(REMOTE_STREAM_SUBPROTOCOL) ? REMOTE_STREAM_SUBPROTOCOL : false,
       // `ws` ignores its own `threshold` option while context takeover is
       // enabled, so the mux decides per frame in send().
       perMessageDeflate: options.compression ? { zlibDeflateOptions: { level: 1 } } : false,

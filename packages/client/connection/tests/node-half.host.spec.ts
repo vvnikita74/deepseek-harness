@@ -20,7 +20,7 @@ import {
   type PeerScope,
 } from '../src/index.ts'
 import { DEFAULT_MAX_REQUEST_BODY_BYTES } from '../src/http-bridge.ts'
-import { provideBrowserCredentials } from './browser-credentials.ts'
+import { ACCESS_KEY_KEY, RecordCredentials, provideBrowserCredentials } from './browser-credentials.ts'
 
 /** The Peer an index render speaks for; this listener reads no field of it. */
 const PAGE_PEER = { principal: { kind: 'owner' } } as Parameters<WebServer['renderIndex']>[1]
@@ -52,9 +52,9 @@ function fakeHttpServer(
 }
 
 /** Bodyless GET carrying the given headers (enough for the trust fence + bridge). */
-function fakeRequest(headers: Record<string, string>, url = `${API_PATH}/session.list`): IncomingMessage {
+function fakeRequest(headers: Record<string, string>, url = `${API_PATH}/session.list`, method = 'GET'): IncomingMessage {
   const request = Readable.from([]) as IncomingMessage
-  Object.assign(request, { url, method: 'GET', headers })
+  Object.assign(request, { url, method, headers })
   return request
 }
 
@@ -79,11 +79,14 @@ function fakeResponse(): {
 } {
   const state: { status?: number; headers?: Record<string, string>; body?: unknown } = {}
   const chunks: Buffer[] = []
+  // Headers set with setHeader merge into the writeHead call, as node:http does.
+  const pending: Record<string, string> = {}
   const response = Object.assign(new EventEmitter(), {
     writableEnded: false,
+    setHeader(name: string, value: string) { pending[name] = value },
     writeHead(value: number, headers?: Record<string, string>) {
       state.status = value
-      if (headers !== undefined) state.headers = headers
+      if (headers !== undefined || Object.keys(pending).length > 0) state.headers = { ...pending, ...headers }
       return this
     },
     write(value: string | Uint8Array) { chunks.push(Buffer.from(value)); return true },
@@ -959,6 +962,166 @@ describe('connection node half over a real HTTP server', () => {
     } finally {
       await close()
       await dispose()
+    }
+  })
+})
+
+describe('allowed cross-origin clients on the shared carrier', () => {
+  const app = 'https://app.example'
+  const allowedOrigins = [app, 'tauri://localhost', 'http://tauri.localhost', 'http://localhost:5180']
+  type Host = Awaited<ReturnType<typeof mounted>>
+
+  function route(host: Host, path: string): WebRoute {
+    return host.routes.find(candidate => candidate.path === path)!
+  }
+
+  function accessKey(host: Host): string {
+    const key = new URL(host.connection.authenticatedUrl('http://localhost')).searchParams.get('token')
+    if (key === null) throw new Error('authenticated URL carries no access key')
+    return key
+  }
+
+  async function postConnect(host: Host, headers: Record<string, string>, body: string): Promise<ReturnType<typeof fakeResponse>> {
+    const response = fakeResponse()
+    await route(host, '/connect').handler(
+      fakeRawPost({ host: 'localhost', 'content-type': 'application/json', ...headers }, '/connect', body),
+      response.response,
+    )
+    return response
+  }
+
+  async function exchangeBearer(host: Host, origin: string): Promise<string> {
+    const exchanged = await postConnect(host, { origin }, JSON.stringify({ token: accessKey(host), interactions: 'answer' }))
+    if (exchanged.state.status !== 200) throw new Error(`exchange refused: ${String(exchanged.state.status)}`)
+    return (JSON.parse(String(exchanged.state.body)) as { token: string }).token
+  }
+
+  async function apiStatus(host: Host, headers: Record<string, string>, method = 'GET'): Promise<ReturnType<typeof fakeResponse>> {
+    const response = fakeResponse()
+    await route(host, API_PATH).handler(fakeRequest({ host: 'localhost', ...headers }, `${API_PATH}/session.list`, method), response.response)
+    return response
+  }
+
+  it('answers a preflight from an allowed origin with 204 and no authentication', async () => {
+    const host = await mounted({ allowedOrigins })
+    try {
+      for (const origin of allowedOrigins) {
+        const preflight = await apiStatus(host, { origin, 'access-control-request-method': 'POST' }, 'OPTIONS')
+        expect(preflight.state, origin).toEqual({
+          status: 204,
+          headers: {
+            'access-control-allow-origin': origin,
+            'vary': 'Origin',
+            'access-control-allow-methods': 'GET, POST, OPTIONS',
+            'access-control-allow-headers': 'authorization, content-type',
+            'access-control-max-age': '600',
+          },
+        })
+      }
+    } finally { await host.dispose() }
+  })
+
+  it('refuses a preflight from an unlisted origin with no CORS headers', async () => {
+    const host = await mounted({ allowedOrigins })
+    try {
+      for (const origin of ['https://evil.example', 'null', 'https://app.example:443', 'https://APP.example', 'file://app']) {
+        const preflight = await apiStatus(host, { origin, 'access-control-request-method': 'POST' }, 'OPTIONS')
+        expect(preflight.state.status, origin).toBe(403)
+        expect(preflight.state.headers?.['access-control-allow-origin'], origin).toBeUndefined()
+        expect(preflight.state.headers?.['access-control-allow-methods'], origin).toBeUndefined()
+      }
+    } finally { await host.dispose() }
+  })
+
+  it('keeps the Host fence for preflight and bearer requests from an allowed origin', async () => {
+    const host = await mounted({ allowedOrigins })
+    try {
+      const token = await exchangeBearer(host, app)
+      const rebound = await apiStatus(host, { host: 'evil.example', origin: app, authorization: `Bearer ${token}` })
+      expect(rebound.state.status).toBe(403)
+      const reboundPreflight = await apiStatus(host, { host: 'evil.example', origin: app }, 'OPTIONS')
+      expect(reboundPreflight.state.status).toBe(403)
+      expect(reboundPreflight.state.headers?.['access-control-allow-methods']).toBeUndefined()
+    } finally { await host.dispose() }
+  })
+
+  it('authenticates a bearer from an allowed origin and echoes that origin on every status', async () => {
+    const host = await mounted({ allowedOrigins })
+    try {
+      const token = await exchangeBearer(host, app)
+      const admitted = await apiStatus(host, { origin: app, authorization: `Bearer ${token}` })
+      expect(admitted.state).toMatchObject({ status: 404, headers: { 'access-control-allow-origin': app, vary: 'Origin' } })
+      expect(admitted.state.headers?.['access-control-allow-credentials']).toBeUndefined()
+
+      const withoutToken = await apiStatus(host, { origin: app })
+      expect(withoutToken.state).toMatchObject({ status: 401, headers: { 'access-control-allow-origin': app } })
+      const launchKey = await apiStatus(host, { origin: app, authorization: `Bearer ${accessKey(host)}` })
+      expect(launchKey.state).toMatchObject({ status: 401, headers: { 'access-control-allow-origin': app } })
+      const tampered = await apiStatus(host, { origin: app, authorization: `Bearer ${token.slice(0, -1)}!` })
+      expect(tampered.state.status).toBe(401)
+    } finally { await host.dispose() }
+  })
+
+  it('lets an allowed origin bypass only the cross-site refusal', async () => {
+    const host = await mounted({ allowedOrigins })
+    try {
+      const token = await exchangeBearer(host, app)
+      const crossSite = { origin: app, 'sec-fetch-site': 'cross-site', authorization: `Bearer ${token}` }
+      expect((await apiStatus(host, crossSite)).state.status).toBe(404)
+      const unlisted = { origin: 'https://evil.example', 'sec-fetch-site': 'cross-site', authorization: `Bearer ${token}` }
+      expect((await apiStatus(host, unlisted)).state.status).toBe(403)
+    } finally { await host.dispose() }
+  })
+
+  it('exchanges a valid access key over POST /connect and refuses wrong keys and malformed bodies', async () => {
+    const host = await mounted({ allowedOrigins })
+    try {
+      const ok = await postConnect(host, { origin: app }, JSON.stringify({ token: accessKey(host), interactions: 'none' }))
+      expect(ok.state).toMatchObject({
+        status: 200,
+        headers: { 'cache-control': 'no-store', 'access-control-allow-origin': app, 'vary': 'Origin' },
+      })
+      expect(ok.state.headers?.['set-cookie']).toBeUndefined()
+      const exchangedBody = JSON.parse(String(ok.state.body)) as { token: string; expiresAt: number }
+      expect(typeof exchangedBody.token).toBe('string')
+      expect(typeof exchangedBody.expiresAt).toBe('number')
+
+      const wrong = await postConnect(host, { origin: app }, JSON.stringify({ token: 'wrong' }))
+      expect(wrong.state).toMatchObject({ status: 401, headers: { 'access-control-allow-origin': app }, body: '{"error":"unauthorized"}' })
+      const notJson = await postConnect(host, { origin: app }, '{"token":')
+      expect(notJson.state.status).toBe(400)
+      const oversized = await postConnect(host, { origin: app }, JSON.stringify({ token: accessKey(host), pad: 'x'.repeat(5000) }))
+      expect(oversized.state.status).toBe(413)
+      const plain = await postConnect(host, { origin: app, 'content-type': 'text/plain' }, JSON.stringify({ token: accessKey(host) }))
+      expect(plain.state.status).toBe(415)
+      const unlisted = await postConnect(host, { origin: 'https://evil.example' }, JSON.stringify({ token: accessKey(host) }))
+      expect(unlisted.state).toEqual({ status: 403, body: 'forbidden' })
+    } finally { await host.dispose() }
+  })
+
+  it.each(['*', 'https://app.example/', 'null', 'https://*.example'])('fails the plugin load on allowedOrigins entry %s', async (entry) => {
+    const ctx = new Context()
+    await expect(apply(ctx, { allowedOrigins: [entry] })).rejects.toThrow(/allowedOrigins entry/)
+    expect(ctx.get('connection')).toBeUndefined()
+  })
+
+  it('keeps the access key across activations that share credentials and rotates it when deleted', async () => {
+    const store = new RecordCredentials()
+    const first = await mounted(undefined, 'http:', store as unknown as CredentialProvider)
+    const key = accessKey(first)
+    await first.dispose()
+    const second = await mounted(undefined, 'http:', store as unknown as CredentialProvider)
+    try {
+      expect(accessKey(second)).toBe(key)
+    } finally {
+      await second.dispose()
+    }
+    await store.deleteRecord(ACCESS_KEY_KEY)
+    const third = await mounted(undefined, 'http:', store as unknown as CredentialProvider)
+    try {
+      expect(accessKey(third)).not.toBe(key)
+    } finally {
+      await third.dispose()
     }
   })
 })

@@ -200,9 +200,44 @@ describe('operator connect through Loader composition', () => {
     expect(passive.frames.filter(item => item.type === 'item')).toEqual([])
   })
 
+  it('admits a bearer subprotocol offer, selects dsh.v1, and never echoes the credential', async () => {
+    const host = await boot()
+    const token = await bearer(host)
+    const client = socketClient(host, '', ['dsh.v1', `dsh.auth.${token}`])
+    await once(client.socket, 'open')
+    expect(client.socket.protocol).toBe('dsh.v1')
+    await events(client)
+    await close(client)
+  })
+
+  it('refuses a tampered, foreign, launch-key, or ambiguous subprotocol credential with 401 before upgrade', async () => {
+    const host = await boot()
+    const token = await bearer(host)
+    const key = new URL(host.ctx.connection.authenticatedUrl(host.origin)).searchParams.get('token')
+    for (const protocols of [
+      ['dsh.v1', `dsh.auth.${token.slice(0, -1)}!`],
+      ['dsh.v1', `dsh.auth.${String(key)}`],
+      ['dsh.v1', `dsh.auth.${token}`, `dsh.auth.${token.slice(0, -1)}x`],
+      ['dsh.v1', 'dsh.auth.not-a-credential'],
+    ]) {
+      expect(await upgradeStatus(socketClient(host, '', protocols)), protocols.join(' ')).toBe(401)
+    }
+    expect(host.fixture.calls.size).toBe(0)
+  })
+
+  it('applies the allowed-origin trust decision to the upgrade and refuses unlisted origins with 403', async () => {
+    const host = await boot({ allowedOrigins: ['https://app.example'] })
+    const token = await bearer(host, 'answer', 'https://app.example')
+    const allowed = socketClient(host, '', ['dsh.v1', `dsh.auth.${token}`], { origin: 'https://app.example' })
+    await once(allowed.socket, 'open')
+    expect(allowed.socket.protocol).toBe('dsh.v1')
+    await close(allowed)
+    expect(await upgradeStatus(socketClient(host, '', ['dsh.v1', `dsh.auth.${token}`], { origin: 'https://evil.example' }))).toBe(403)
+    expect(await upgradeStatus(socketClient(host, '', ['dsh.v1', `dsh.auth.${token}`], { origin: 'null' }))).toBe(403)
+  })
 })
 
-async function boot(): Promise<Host> {
+async function boot(connection?: Record<string, unknown>): Promise<Host> {
   const root = await mkdtemp(join(tmpdir(), 'dsh-operator-connect-'))
   roots.push(root)
   const distIndex = join(root, 'index.html')
@@ -211,7 +246,7 @@ async function boot(): Promise<Host> {
   const rows = [
     { name: '@deepseek-ai/dsh-credentials-local', config: { path: join(root, '.credentials.yaml'), watch: false } },
     { name: '@deepseek-ai/dsh-host-webserver', config: { host: '127.0.0.1', port: 0 } },
-    { name: '@deepseek-ai/dsh-client-connection' },
+    { name: '@deepseek-ai/dsh-client-connection', ...connection === undefined ? {} : { config: connection } },
     { name: '@deepseek-ai/dsh-host-frontend-static', config: { distIndex } },
     { name: '@deepseek-ai/dsh-typert-registry' },
     { name: '@deepseek-ai/dsh-api-remote-access' },
@@ -257,8 +292,10 @@ async function exchange(host: Host, mode: 'html' | 'none' | 'answer'): Promise<s
   return cookie.split(';', 1)[0]!
 }
 
-function socketClient(host: Host, cookie: string): SocketClient {
-  const socket = new WebSocket(`${host.origin.replace('http:', 'ws:')}/api/remote.mux`, { headers: { cookie } })
+function socketClient(host: Host, cookie: string, protocols: string[] = [], headers: Record<string, string> = {}): SocketClient {
+  const socket = new WebSocket(`${host.origin.replace('http:', 'ws:')}/api/remote.mux`, protocols, {
+    headers: { ...cookie === '' ? {} : { cookie }, ...headers },
+  })
   const closed = new Promise<void>((resolve) => { socket.once('close', () => { resolve() }) })
   const frames: RemoteStreamServerMessage[] = []
   const errors: Error[] = []
@@ -292,6 +329,31 @@ async function refusedMux(host: Host, cookie: string): Promise<number> {
   })
   await client.closed
   return status
+}
+
+/** Status of a refused upgrade, or 101 when the server accepted it. */
+async function upgradeStatus(client: SocketClient): Promise<number> {
+  return await new Promise<number>((resolve, reject) => {
+    client.socket.once('open', () => { resolve(101) })
+    client.socket.once('unexpected-response', (_request, response) => {
+      response.resume()
+      resolve(response.statusCode ?? 0)
+      client.socket.terminate()
+    })
+    client.socket.once('error', reject)
+  })
+}
+
+/** Exchange the persistent access key over POST /connect for a bearer credential. */
+async function bearer(host: Host, interactions: 'none' | 'answer' = 'answer', origin?: string): Promise<string> {
+  const key = new URL(host.ctx.connection.authenticatedUrl(host.origin)).searchParams.get('token')
+  const response = await fetch(`${host.origin}/connect`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...origin === undefined ? {} : { origin } },
+    body: JSON.stringify({ token: key, interactions }),
+  })
+  expect(response.status).toBe(200)
+  return (await response.json() as { token: string }).token
 }
 
 async function close(client: SocketClient): Promise<void> {

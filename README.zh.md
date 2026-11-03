@@ -26,7 +26,7 @@ DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来
 npx @deepseek-ai/dsh web
 ```
 
-该命令默认会在 `http://127.0.0.1:3080` 启动 Web UI，本机启动时还会用默认浏览器打开页面。通过 SSH 启动时只打印宿主机 URL，因为本地转发地址由 SSH 客户端或编辑器持有。传入 `--no-open` 可仅运行服务器而不打开浏览器。详见 [Web UI 指南](docs/user/guide/index.zh.md)。
+该命令默认会在 `http://127.0.0.1:3080` 启动 Web UI，并打印一个可在浏览器中打开的访问 URL。传入 `--allowed-origin https://app.example` 可让独立托管的前端调用该服务器。详见 [Web UI 指南](docs/user/guide/index.zh.md)。
 
 <a id="run-from-source"></a>
 

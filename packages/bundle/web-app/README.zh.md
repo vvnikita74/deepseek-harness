@@ -13,7 +13,7 @@ kind: "package-bundle"
 
 ## 概述
 
-运行 `dsh --profile web`，获得浏览器内的聊天、模型与设置管理以及会话历史，并与其他 dsh 表层共用同一套模型访问、工具与安全默认值。启动时会打印带 token 的 URL，通常还会在默认浏览器中打开；SSH 会话和 `--no-open` 需要手动打开。你可以更改端口、允许额外 authority、绑定一个具体的本机 IP，并用自己提供的证书直接提供 HTTPS；通配地址会被拒绝。跨机访问使用剥离前缀代理后公告的 HTTP(S) URL、监听器 TLS，或非 loopback 绑定上的明文 HTTP。一次性的命令行任务应使用 headless 配置。
+运行 `dsh --profile web`，获得浏览器内的聊天、模型与设置管理以及会话历史，并与其他 dsh 表层共用同一套模型访问、工具与安全默认值。启动时会打印带访问密钥的 URL，需要你手动打开。你可以更改端口、允许额外 authority 与跨源前端、绑定一个具体的本机 IP，并用自己提供的证书直接提供 HTTPS；通配地址会被拒绝。跨机访问使用剥离前缀代理后公告的 HTTP(S) URL、监听器 TLS，或非 loopback 绑定上的明文 HTTP。一次性的命令行任务应使用 headless 配置。
 
 ## 目录
 
@@ -37,10 +37,10 @@ Agent Teams UI 随本 bundle 加载。在模型与推理等级菜单中按 Sessi
 
 ```sh
 dsh --profile web
-dsh --profile web --no-open --port 8080
+dsh --profile web --port 8080
 ```
 
-启动后你会看到 `dsh web:` 行，其根 URL 携带新的进程 token。除非 `--no-open` 或 SSH 会话抑制，否则默认浏览器会打开该 URL、取得签名 cookie，再重定向到不含认证参数的同一目录。页面加载且你可以与 agent 对话，就说明成功了。两种可预期的失败：前端未构建时，启动会以构建提示停止（checkout 中运行 `pnpm run build`）；浏览器无法打开时，stderr 会打印不含凭据的诊断，但服务器会继续运行——请自行打开已打印的启动 URL。
+启动后你会看到 `dsh web:` 行，其根 URL 携带持久的访问密钥。打开该 URL 后页面取得签名 cookie，再重定向到同一目录且不带 token。如果前端尚未构建，启动会以构建提示（源码检出中为 `pnpm run build`）停止。
 
 **设置 → 模型**显示 **DeepSeek**，使用 `DEEPSEEK_API_KEY`。默认模型为 `deepseek-official` / `deepseek-flash`（DeepSeek-V4.1-Flash）。[DeepSeek 插件](../../llm/llm-deepseek/README.zh.md#endpoint-and-wire-format)使用 Messages API。
 
@@ -54,7 +54,6 @@ dsh --profile web --no-open --port 8080
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `openBrowser` | `true` | 启动后用默认浏览器打开；SSH 启动会抑制它 |
 | `printUrl` | `true` | 启动时打印 `dsh web:` URL 行 |
 | `surfaceContext` | `true` | 把 `DSH_WEB_URL` 暴露给 agent 的 shell 命令 |
 | `publicUrl` | 未设置 | 对外公告的 HTTP(S) 应用根；否则公告绑定地址 URL |
@@ -71,7 +70,7 @@ dsh --profile web --no-open --port 8080
 容器可以绑定其 Pod 地址，并公告前置的 ingress：
 
 ```sh
-dsh --profile web --no-open --host "$(hostname -i | awk '{print $1}')" --public-url https://app.example/ --trusted-host app.example
+dsh --profile web --host "$(hostname -i | awk '{print $1}')" --public-url https://app.example/ --trusted-host app.example
 ```
 
 `hostname -i` 可能列出多个地址；`--host` 只接受一个，因此命令取第一个。`fe80::1%eth0` 这样的 zone ID 不能出现在 URL 中，因此公告根会剥离多余的 loopback zone，而非 loopback zone 则要求显式提供 `--public-url`。
@@ -86,7 +85,7 @@ dsh --profile web --no-open --host "$(hostname -i | awk '{print $1}')" --public-
 
 ### 通过 SSH 运行
 
-通过 SSH 启动 `dsh --profile web` 时，URL 行仍会打印，但不会为你打开浏览器：本地转发地址由 SSH 客户端或编辑器持有。没有公告根时，打印的 URL 指向远端宿主机的绑定地址端点——绑定 loopback 时即 loopback——你通过自己的转发地址访问它。配置了 `--public-url` 时，打印的 URL 是带认证的公告根；浏览器交接仍被抑制，因为在远端宿主机上打开浏览器无法到达你的屏幕。
+通过 SSH 启动 `dsh --profile web` 时，URL 行会打印；本地转发地址由 SSH 客户端或编辑器持有，请通过你的转发地址打开打印的 URL。没有公告根时，打印的 URL 指向远端宿主机的绑定地址（loopback 绑定时为 loopback），你需要通过转发地址访问它。配置了 `--public-url` 时，打印的 URL 即已认证的公告根。
 
 ### 按会话的 agent 设置
 
@@ -108,19 +107,19 @@ patch 会替换目标行的整个 `config`，因此每个 Web 行都重述自己
 
 ### 公告应用 URL
 
-启动显示与浏览器交接接收附带启动 token 的公告根；agent 的运行时上下文与 `DSH_WEB_URL` 接收不含凭据的形式。根本身由[监听、信任与公开部署](#public-deployments)定义。
+启动显示接收附带访问密钥的公告根；agent 的运行时上下文与 `DSH_WEB_URL` 接收不含凭据的形式。根本身由[监听、信任与公开部署](#public-deployments)定义。
 
 ### 就绪宣告
 
-URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发起 RPC，浏览器一打开就请求页面，因此两者只在 Loader 配置树结算、通过 required 启动检查且 Connection 认证可用后运行——在没有 Loader 的手工构建树中则立即运行。此时 client combo JavaScript 和 source map 仍未物化。可选插件失败不会阻止就绪宣告；required 启动失败或启动中途被释放的树不会宣告任何内容。
+URL 行是就绪信号：监督方一观察到该行就发起 RPC，因此它只在 Loader 配置树结算、通过 required 启动检查且 Connection 认证可用之后输出——或在没有 Loader 的手工树中立即输出。
 
 ### 源码地图
 
 | 文件 | 职责 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | `web-app` 粘合插件：dist 解析、公告应用 URL、bash 变量、URL 行、浏览器交接 |
+| [`src/index.ts`](src/index.ts) | `web-app` 粘合插件：dist 解析、公告应用 URL、bash 变量、URL 行 |
 | [`src/public-url.ts`](src/public-url.ts) | 公告根的校验与尾斜杠归一化；供本地导入的叶子模块，不属于包 API |
-| [`src/startup.ts`](src/startup.ts) | `web-startup` 提供方：`--host`、`--port`、`--tls-cert`、`--tls-key`、`--public-url`、`--trusted-host`、`--no-open`、`--help` |
+| [`src/startup.ts`](src/startup.ts) | `web-startup` 提供方：`--host`、`--port`、`--tls-cert`、`--tls-key`、`--public-url`、`--trusted-host`、`--allowed-origin`、`--help` |
 | [`cordis.patch.yml`](cordis.patch.yml) | Web patch：重述的基础值、Web 宿主行、浏览器名录、preset 注册表 |
 | [`presets/`](presets) | 每个随发行版交付的 preset（`standard`、`ptc`、`minimal`、`cordis`）各一条 `@deepseek-ai/dsh-agent-preset` 声明，各自一个补丁文件 |
 | [`tests/web-app.spec.ts`](tests/web-app.spec.ts) | dist index 锚定、公告 URL 发布与警告、bash 变量、就绪宣告发布 |
@@ -170,9 +169,7 @@ URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发�
 - **前端必须已构建**——源码 checkout 需要先运行 `pnpm run build`；dist 缺失时启动会以构建提示停止，且没有从源码直接服务的回退路径。
 - **TLS 需自行启用且不代管**——只有传入 `--tls-cert` 与 `--tls-key`（完整证书链与不带口令的密钥）时监听器才提供 HTTPS；DSH 从不获取、续期或监视证书，更换文件需要重新加载监听器或重启进程。浏览器必须信任该证书，其名称必须覆盖你所访问的 authority，且证书与 `--public-url` 相互独立。
 - **未启用 TLS 时外部链路是明文 HTTP**——请用终止 TLS 的代理保护它，不要在不受信任的网络上发送启动 URL。
-- **只能观察到交接的启动**——GUI 只报告浏览器被请求打开，而不是它确实打开了；之后的浏览器退出永远不会上报，打印的 URL 是你的手动回退路径。
-- **SSH 会话保留 URL 但跳过浏览器交接**——没有公告根时，打印的 URL 指向远端宿主机的绑定地址；SSH 客户端或编辑器必须暴露并打开本地转发地址。
-- **`BROWSER` 覆盖只能来自环境**——被发现的 `.env` 不能设置 `BROWSER`；只有继承值能为自动交接选择可执行文件。
+- **SSH 会话保留 URL**——没有公告根时，打印的 URL 指向远端宿主机的绑定地址；SSH 客户端或编辑器必须暴露并打开本地转发地址。
 - **不支持绑定所有网络接口**——出于安全考虑，通配 `--host`（含 Linux 视为 IPv4 any 的 IPv4-mapped 形式）会在启动时被拒绝；请改为绑定本机某个接口的一个具体 IPv4 或 IPv6 地址。
 
 <a id="dev-note"></a>

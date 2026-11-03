@@ -107,7 +107,7 @@ describe.skipIf(!existsSync(join(root, 'apps/cli/lib/bin.js')))('Official option
         return () => { listeners.delete(listener) }
       } })
       await owner.plugin(app.PluginPackages, { resolution })
-      cmdline.provideCmdline(owner, { args: ['--no-open', '--port', '0'], exit: (code) => { throw new Error(`Web command exited ${String(code)}`) } })
+      cmdline.provideCmdline(owner, { args: ['--port', '0'], exit: (code) => { throw new Error(`Web command exited ${String(code)}`) } })
     })
     ready = true
     for (const listener of listeners) listener()

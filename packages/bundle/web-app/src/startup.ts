@@ -1,6 +1,6 @@
 /**
  * The web app's command-line provider: it parses the `dsh --profile web` flag
- * family (`--host`, `--port`, `--public-url`, `--trusted-host`, `--no-open`, TLS)
+ * family (`--host`, `--port`, `--public-url`, `--trusted-host`, `--allowed-origin`, TLS)
  * and its `--help` text, then provides the immutable values as
  * {@link WEB_STARTUP_SERVICE}. Ordinary rows inject that service before
  * reading it from lazy config.
@@ -24,8 +24,6 @@ export const WEB_STARTUP_SERVICE = 'webStartup'
 
 /** What the web rows read from {@link WEB_STARTUP_SERVICE}. */
 export interface WebStartupValues {
-  /** Whether this invocation opens the default browser after startup. */
-  openBrowser: boolean
   /** `--host`, absent when the invocation did not name one. */
   host?: string
   /** `--port`, absent when the invocation did not name one. */
@@ -37,6 +35,8 @@ export interface WebStartupValues {
   publicUrl?: string
   /** Explicit `--trusted-host` authorities, in argument order. */
   trustedHosts: string[]
+  /** Explicit `--allowed-origin` browser origins, in argument order. */
+  allowedOrigins: string[]
   /** Server certificate chain and unencrypted private key supplied together. */
   tls?: TlsConfig
 }
@@ -44,10 +44,10 @@ export interface WebStartupValues {
 /** The web flag family, as commander parsed it. */
 interface WebOptions {
   host?: string
-  open: boolean
   port?: string
   publicUrl?: string
   trustedHost?: string[]
+  allowedOrigin?: string[]
   tlsCert?: string
   tlsKey?: string
 }
@@ -59,19 +59,20 @@ interface WebOptions {
 function webCommand(): Command {
   return new Command()
     .name('dsh --profile web')
-    .description('Serve the DeepSeek Harness browser UI.')
+    .description('Serve the DeepSeek Harness Web API.')
     .helpOption('-h, --help', 'show this help')
     .option('--host <host>', 'bind address: one concrete IPv4 or IPv6 literal of a local interface; wildcard addresses are rejected')
-    .option('--no-open', 'do not open the Web UI in the default browser')
     .option('--port <port>', 'listen port; pass 0 to let the OS pick a free one')
     .option('--public-url <url>', 'advertise this HTTP(S) root in the printed, opened, runtime-context, and DSH_WEB_URL forms; grants no trust')
     .option('--trusted-host <authority...>', 'extra authority the /api browser-trust fence accepts (host or host:port; repeatable)')
+    .option('--allowed-origin <origin...>', 'exact browser origin (scheme://host[:port], http, https, or tauri) allowed to call the Web API cross-origin (repeatable)')
     .option('--tls-cert <file>', 'PEM server certificate chain; requires --tls-key')
     .option('--tls-key <file>', 'unencrypted PEM private key; requires --tls-cert')
     .addHelpText('after', `
 Examples:
   dsh --profile web                          serve on the composed host and port
-  dsh --profile web --no-open                serve without opening a browser
+  dsh --profile web --allowed-origin https://app.example
+                                             accept API calls from a separately hosted frontend
   dsh --profile web --port 8080              serve on another port
   dsh --profile web --host 10.0.0.7          bind one local interface address
   dsh --profile web --public-url https://app.example/ui/ --trusted-host app.example
@@ -112,12 +113,12 @@ export function apply(ctx: Context): void {
       }
     }
     ctx.provide(WEB_STARTUP_SERVICE, {
-      openBrowser: options.open,
       ...options.host !== undefined && { host: options.host },
       ...options.port !== undefined && { port: Number(options.port) },
       ...options.publicUrl !== undefined && { publicUrl: options.publicUrl },
       ...tls !== undefined && { tls },
       trustedHosts: options.trustedHost ?? [],
+      allowedOrigins: options.allowedOrigin ?? [],
     } satisfies WebStartupValues)
   })
   parseCmdline(ctx, program)
