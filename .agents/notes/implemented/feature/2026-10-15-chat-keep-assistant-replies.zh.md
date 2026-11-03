@@ -6,7 +6,7 @@ Status: implemented
 
 ## Problem
 
-简洁、标准、详细模式下，正常结束的 Turn 会整轮折叠。原规则下读者只看到输入、整轮控件、**最终答案**和页脚。最终答案按位置选取，即最后一个 Step 里最后一条有可见回复、且不带工具调用块的 Assistant 消息（[turn-process.ts](../../../../packages/client/ui-chat/src/client/conversation-nodes/turn-process.ts) 的 `latestAnswer`）；在它之前的阶段回复和过程一起被隐藏。
+简洁、标准、详细模式下，正常结束的 Turn 会整轮折叠。原规则下读者只看到输入、整轮控件、**最终答案**和页脚。最终答案按位置选取，即最后一个 Step 里最后一条有可见回复、且不带工具调用块的 Assistant 消息（turn-process.ts 的 `latestAnswer`）；在它之前的阶段回复和过程一起被隐藏。
 
 位置不等于内容。回答之后 Turn 往往还会继续：子 agent 结束的通知唤醒一步，Agent 记账、收尾，或回答后又调用了工具。这时最后一条变成一句简短补充，或者根本没有纯文字收尾，真正的回答被折进了过程（#6132、#5429）。例如一段很长的调研汇总之后，子 agent 结束的通知又唤醒一步，最后一条只写了一句补充；读者看到的就只有这句补充。
 
@@ -64,15 +64,8 @@ Status: implemented
 
 | 位置 | 内容 |
 |---|---|
-| [chat-settings.ts](../../../../packages/client/ui-chat/src/chat-settings.ts)、[index.ts](../../../../packages/client/ui-chat/src/index.ts) | `FOLDED_REPLIES_FIELD`、`FOLDED_REPLIES = ['all', 'final']`、`DEFAULT_FOLDED_REPLIES = 'all'`，登记在 `ChatSettingsFields` 与 Host `Config` |
-| [transcript-view.ts](../../../../packages/client/ui-chat/src/client/transcript-view.ts) | `TranscriptViewPolicy` 的 `foldedReplies` 快照与 `setFoldedReplies`，读写方式与 `collapseTiming` 相同 |
-| [presentation-policy.ts](../../../../packages/client/ui-chat/src/client/presentation-policy.ts) | `ChatPresentationPolicy.foldedReplies`；`presentationPolicyFor(mode, timing, replies)` 对 16 种组合各返回固定对象；`derivePresentationPolicy` 订阅三项偏好 |
-| [apply.ts](../../../../packages/client/ui-chat/src/client/apply.ts)、[settings/TranscriptViewRow.tsx](../../../../packages/client/ui-chat/src/client/settings/TranscriptViewRow.tsx)、[locale.ts](../../../../packages/client/ui-chat/src/client/locale.ts) | 设置行在收起时机下方的选择框，完全展开模式下不渲染；中英文案 |
-| [chat/ChatNodeSeat.tsx](../../../../packages/client/ui-chat/src/client/chat/ChatNodeSeat.tsx) | `foldedReplies === 'all'` 时的 `replyRow`（`assistant-step` 中非推理部分且有回复内容的行）不是 `processMember`，并拥有开合状态（`ownsDisclosure`）以读取 `foldable`/`open`；可折叠内容按设置取 `hasNonReplyProcess` 或 `hasExternalProcess` |
-| [chat/AssistantNodeView.tsx](../../../../packages/client/ui-chat/src/client/chat/AssistantNodeView.tsx) | `all` 时整轮收起隐藏回复行自带的内联推理；`final` 时只隐藏最终答案的内联推理 |
-| [conversation-nodes/turn-process-presentation.ts](../../../../packages/client/ui-chat/src/client/conversation-nodes/turn-process-presentation.ts) | `hasExternalProcess` 之外的 `hasNonReplyProcess`：非答案 Step 的 `assistant-step` 只有带推理时才算过程内容 |
 
-[Chat 节点业务规则](../../../../packages/client/ui-chat/src/client/conversation-nodes/README.zh.md)描述读者可见的规则与设置；[Chat 分组树位置与交互段](../architecture/2026-10-11-chat-group-tree-exchanges.zh.md)记录 `assistant-step` 回复行留在整轮折叠之外。
+Chat 节点业务规则描述读者可见的规则与设置；[Chat 分组树位置与交互段](../architecture/2026-10-11-chat-group-tree-exchanges.zh.md)记录 `assistant-step` 回复行留在整轮折叠之外。
 
 ## Alternatives considered
 

@@ -10,7 +10,7 @@ Status: implemented
 
 ## Decision
 
-[文件拖放插件](../../../../packages/client/ui-file-drag/README.zh.md) 持有通用文件准备、浏览器传递令牌、原始文件、桌面桥接选择和临时失败提示。消费方通过 slot 或 Factory 注入接收准备及错误回调。插件通过 `shell.overlay` 注册提示，布局只声明通用插槽，不依赖图片功能。共享图片原语负责手势与取消。图片是首个调用方，MIME 命名与传输也接受其他文件。
+文件拖放插件 持有通用文件准备、浏览器传递令牌、原始文件、桌面桥接选择和临时失败提示。消费方通过 slot 或 Factory 注入接收准备及错误回调。插件通过 `shell.overlay` 注册提示，布局只声明通用插槽，不依赖图片功能。共享图片原语负责手势与取消。图片是首个调用方，MIME 命名与传输也接受其他文件。
 
 ## Alternatives considered
 

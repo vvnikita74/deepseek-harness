@@ -20,7 +20,7 @@ Status: implemented
 
 目录监听跟随可见的绘制，而不是保留的记录。隐藏的目录树不持有 Host 目录监听；再次显示时保留行并刷新根目录与已展开目录。同一分栏内切换 tab 时，替代绘制之间保留目录列表与监听。这把[目录监听生命周期](../feature/2026-09-17-sidebar-file-and-directory-auto-refresh.zh.md)从单个 tab 扩展为分栏中已绘制的目录树。
 
-files face 负责跨绘制的祖先定位、滚动、行宽测量与焦点，因此替换绘制不会丢弃进行中的交互。[导航栏参考](../../../../packages/client/ui-sidebar-files/README.zh.md#the-navigator)定义布局、工作区命令与键盘规则。
+files face 负责跨绘制的祖先定位、滚动、行宽测量与焦点，因此替换绘制不会丢弃进行中的交互。导航栏参考定义布局、工作区命令与键盘规则。
 
 ### 各行是以扁平条目为输入的受控 Component Factory
 
@@ -30,13 +30,13 @@ root 作用域的 `sidebar.files.tree` Factory 将可复用的行、局部 `acce
 
 `FileNavigatorInput.onOpen(address)` 是容纳导航栏的插件提供的回调。导航栏构造文件地址，但不选择落位，也不在调用后关闭发起侧目录树。`page` 输入只控制布局。回调使同一导航栏能同时用于文件页与文档预览，不必让各行知道这两种宿主的打开策略。
 
-[预览与文件页的回调](../../../../packages/client/ui-sidebar-files/README.zh.md#the-navigator)表达不同的生命周期：预览让位给新内容，文件页则保持为目录浏览器。[右侧 Sidebar 落位](../../../../packages/client/ui-sidebar-right/README.zh.md#ctxsidebarright)负责替换与揭示，导航栏不重复这些策略。
+预览与文件页的回调表达不同的生命周期：预览让位给新内容，文件页则保持为目录浏览器。右侧 Sidebar 落位负责替换与揭示，导航栏不重复这些策略。
 
 ### 导航由目标 tab 消费
 
 files face 仅跟随已关联到其导航栏的 tab 的现有导航可观察值。它独立于绘制保留各 tab 已消费的 revision，并在 tab 关闭或插件卸载时释放订阅。它不需要右侧 Sidebar 提供布局清单、导航来源字段或打开结果。
 
-face 等待目标绘制并测量其当前行宽，因此上一个 tab 的宽度不能决定内容是否被覆盖。隐藏期间也消费导航，防止之后手动显示时重放旧的关闭操作。[导航栏参考](../../../../packages/client/ui-sidebar-files/README.zh.md#the-navigator)定义导航来源与 revision 排除规则。
+face 等待目标绘制并测量其当前行宽，因此上一个 tab 的宽度不能决定内容是否被覆盖。隐藏期间也消费导航，防止之后手动显示时重放旧的关闭操作。导航栏参考定义导航来源与 revision 排除规则。
 
 ### 每个包都可以单独工作
 

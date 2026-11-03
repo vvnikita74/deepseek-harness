@@ -15,8 +15,8 @@
   en: 36b54ef989c331af
   zh: 58cad4e07a800ba9
 /agent-note-client-conversation-business-node-assembly-and-keyed-chat-snapshots/decision/overall-conversationnodedefinition-contract:
-  en: 74f17ca7ae05af83
-  zh: 591fbc6c98f90262
+  en: 29f2a2233d653750
+  zh: 440d5ab1e3082a4c
 /agent-note-client-conversation-business-node-assembly-and-keyed-chat-snapshots/decision/overall-conversationnodedefinition-contract/kind-business-id-and-context-key:
   en: 3081736d55350c67
   zh: bfa89f127c16c59f
@@ -51,8 +51,8 @@
   en: d5a57346207b0da3
   zh: cb4a4f22ce237c34
 /agent-note-client-conversation-business-node-assembly-and-keyed-chat-snapshots/decision/location-is-a-first-class-engine-fact:
-  en: c66d870529588ea6
-  zh: c9af12feb1e3fae2
+  en: 57c7e4c968b3c403
+  zh: 3900ccb34aa1cbe2
 /agent-note-client-conversation-business-node-assembly-and-keyed-chat-snapshots/three-input-window-paths:
   en: cc8d60a4ceba6f41
   zh: 552220db9f839429
@@ -75,11 +75,11 @@
   en: 130f5db917574545
   zh: 9bf13c96abdc3a4e
 /agent-note-client-conversation-business-node-assembly-and-keyed-chat-snapshots/how-built-in-businesses-use-definitions/chat-node-and-history-live-behavior:
-  en: 0c52c9ae98f84a86
-  zh: d1c7587ad427d8fc
+  en: 44c4203c9abef359
+  zh: e0eb3d1f5960790b
 /agent-note-client-conversation-business-node-assembly-and-keyed-chat-snapshots/view-builder-and-react-identity:
-  en: ced7ab385e5a81a8
-  zh: 5c319ed7ca40e5b8
+  en: bdab24bf1a3d2949
+  zh: d81da3ea3d5403a0
 /agent-note-client-conversation-business-node-assembly-and-keyed-chat-snapshots/runtime-and-render-path:
   en: 114ca8db361d22e5
   zh: 37b6d474e855c187

@@ -15,5 +15,4 @@ The `@deepseek-ai/dsh-client-ui-context-menu/client` export `MenuTarget` is rena
 
 1. Replace `MenuTarget` imports and type references with `ContextMenuTarget`.
 2. Rename injected `menuTarget` sources and `useMenuTarget` consumers to `contextMenuTarget` and `useContextMenuTarget`.
-3. Replace action icon elements with `{ key: 'my-plugin.action' }`; carry a captured image URL in `src` when needed. Register the icon component under that key through `ctx.slots.inject('contextMenu.icon', ...)` and `ctx.slots.register()`. See the [menu package](../../../../packages/client/ui-context-menu/README.md#use-this-package).
 4. Rebuild custom Client plugins, confirm that type checks pass, and open their menus to verify icon rendering and plugin-unload cleanup.

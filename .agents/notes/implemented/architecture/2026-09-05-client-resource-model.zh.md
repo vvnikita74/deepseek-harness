@@ -16,7 +16,7 @@ Status: implemented
 
 ### 地址
 
-资源地址是 `dsh-resource://<type>/…` 形式的 URL。host 是协议键——`ResourceProtocolMap` 的键——路径归协议拥有者。`RESOURCE_SCHEME = 'dsh-resource'` 是唯一的 scheme 常量；`protocolOf(address)` 用 `new URL` 解析字串，要求 `protocol === 'dsh-resource:'`，返回小写 host；解析器拒绝的字串、其它 scheme 或空 host 返回 `undefined`。`dsh-resource` 不是 URL 规范里的特殊 scheme，解析器会保留 host 的大小写并把路径当作不透明串，所以小写化是显式做的，每段路径由定义它的协议做百分号编码。需要作用域的协议把作用域编进路径：`dsh-resource://file/session/<sessionId>/<path>`，`session/<sessionId>` 命名由其 Host 工作区解析相对或绝对路径的 Session（[语法](../../../../packages/util/workspace-path/README.zh.md)）。其它任何 scheme——`sidebar://guide`——是导航地址：它命名一个 tab 而非数据，模型对它回答 `none`（[tab 类型与导航](../../../../packages/client/ui-sidebar-right/README.zh.md)）。
+资源地址是 `dsh-resource://<type>/…` 形式的 URL。host 是协议键——`ResourceProtocolMap` 的键——路径归协议拥有者。`RESOURCE_SCHEME = 'dsh-resource'` 是唯一的 scheme 常量；`protocolOf(address)` 用 `new URL` 解析字串，要求 `protocol === 'dsh-resource:'`，返回小写 host；解析器拒绝的字串、其它 scheme 或空 host 返回 `undefined`。`dsh-resource` 不是 URL 规范里的特殊 scheme，解析器会保留 host 的大小写并把路径当作不透明串，所以小写化是显式做的，每段路径由定义它的协议做百分号编码。需要作用域的协议把作用域编进路径：`dsh-resource://file/session/<sessionId>/<path>`，`session/<sessionId>` 命名由其 Host 工作区解析相对或绝对路径的 Session（[语法](../../../../packages/util/workspace-path/README.zh.md)）。其它任何 scheme——`sidebar://guide`——是导航地址：它命名一个 tab 而非数据，模型对它回答 `none`（tab 类型与导航）。
 
 ### 服务
 
@@ -55,7 +55,7 @@ type UseResource = <P extends ResourceProtocol>(address: string) => ResourceSnap
 
 每个地址一条记录。持有只控制观察的启停，不控制底层文件或 Session 的生灭。持有者是 hook 的订阅者加 pin；第一个持有者在 `AbortController` 下打开提供方的流，之后的持有者共享它并立刻读到最新值，最后一个释放时中止流并把快照重置为空闲——有提供方注册时为 `loading`，否则为 `none`。地址已被持有时到达的提供方会打开该地址的流；离开的提供方中止它，地址读作 `none`。记录在页面存续期内保留，使 `source(address)` 在 React 渲染到订阅的窗口与 StrictMode 重挂载之间保持引用稳定，否则重建记录会让每次渲染重订阅、重开流。
 
-右侧 Sidebar 的 Tab 域在每条打开的 tab 记录存续期内钉住其地址，所以切 tab 卸载正文不关流、切回读到最新值；撤销恢复的记录是一次新的钉住，模型已放掉的资源会重新读取（[tab 类型与导航](../../../../packages/client/ui-sidebar-right/README.zh.md)）。`openResource(address)` 只收资源地址；引导页与文件树这类页面按 kind 打开，从不进入资源模型。
+右侧 Sidebar 的 Tab 域在每条打开的 tab 记录存续期内钉住其地址，所以切 tab 卸载正文不关流、切回读到最新值；撤销恢复的记录是一次新的钉住，模型已放掉的资源会重新读取（tab 类型与导航）。`openResource(address)` 只收资源地址；引导页与文件树这类页面按 kind 打开，从不进入资源模型。
 
 ## Alternatives considered
 
@@ -79,7 +79,6 @@ type UseResource = <P extends ResourceProtocol>(address: string) => ResourceSnap
 
 ## Testing
 
-`packages/client/resources/tests/resources.client.spec.ts` 用脚本化的 feed 驱动注册表：协议归属与注销、无提供方的协议与导航地址都为 `none`、提供方在地址已被持有后到达与在持有中离开、注册随 fiber 消失、首个持有者开流末个关流、一址一源、包括已中止信号在内的 pin、重挂读到最新值且不重开、重开为新流、中止后帧丢弃且迭代器归还、流自行结束、失败帧与最后值并存。`tests/apply.client.spec.ts` 在 `SlotTestRuntime` 里挂载插件，经一个根作用域探针组件验证 `useResource` 到达 props、渲染它即打开提供方的流、dispose 插件同时撤走服务与 hook。
 
 ## Deferred
 

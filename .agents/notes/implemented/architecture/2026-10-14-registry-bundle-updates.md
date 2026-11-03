@@ -43,5 +43,3 @@ Third-party bundles installed from a registry had no update path. The plugin pag
 | Listing, registry fallback, refusals, compatibility, prereleases, deprecation, and the version limit | `packages/boot/plugin-manager/tests/manager.spec.ts` |
 | Update through removal and installation, reinstallation after a failed, cancelled, or rejected target, a failed reinstallation, refusal before any change, removal failure, and the no-HMR path | `packages/boot/plugin-manager/tests/manager.spec.ts` |
 | `pnpm view` answer parsing | `packages/boot/plugin-manager/tests/versions.spec.ts` |
-| Version checks, update state, and step progress in the store | `packages/client/ui-plugin-manager/tests/manager-store.client.spec.ts` |
-| Versions section, toolbar check, and every update outcome | `packages/client/ui-plugin-manager/tests/components.client.spec.tsx` |

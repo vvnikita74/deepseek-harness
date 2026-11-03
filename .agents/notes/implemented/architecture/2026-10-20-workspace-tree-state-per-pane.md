@@ -20,7 +20,7 @@ A pane's records follow the tabs whose navigator last drew there, using each tab
 
 Directory watches follow visible drawings rather than retained records. Hidden trees hold no Host directory watch; showing them again refreshes the root and expanded directories while retaining rows. A same-pane tab switch keeps the listing and watches across the replacement drawing. This extends the [directory watch lifetimes](../feature/2026-09-17-sidebar-file-and-directory-auto-refresh.md) from one tab to the pane's drawn tree.
 
-The files face owns ancestor reveal, scrolling, row measurement, and focus across drawings, so replacing a drawing does not discard an ongoing interaction. [The navigator reference](../../../../packages/client/ui-sidebar-files/README.md#the-navigator) owns layout, workspace-command, and keyboard rules.
+The files face owns ancestor reveal, scrolling, row measurement, and focus across drawings, so replacing a drawing does not discard an ongoing interaction. The navigator reference owns layout, workspace-command, and keyboard rules.
 
 ### The rows are a controlled Component Factory over flat entries
 
@@ -30,13 +30,13 @@ The root-scoped `sidebar.files.tree` Factory keeps reusable rows, its local `acc
 
 `FileNavigatorInput.onOpen(address)` is the containing plugin's callback. The navigator constructs the file address but neither chooses placement nor closes the initiating tree after the call. Its `page` input controls layout only. A callback keeps the same navigator usable for the files page and document previews without teaching its rows either host's opening policy.
 
-The [preview and files-page callbacks](../../../../packages/client/ui-sidebar-files/README.md#the-navigator) express different lifetimes: the preview gives way to new content, while the files page remains a directory browser. [Right Sidebar placement](../../../../packages/client/ui-sidebar-right/README.md#ctxsidebarright) owns replacement and reveal; the navigator does not duplicate those policies.
+The preview and files-page callbacks express different lifetimes: the preview gives way to new content, while the files page remains a directory browser. Right Sidebar placement owns replacement and reveal; the navigator does not duplicate those policies.
 
 ### Navigation is consumed by the destination tab
 
 The files face follows the existing navigation observable only for tabs attached to its navigator. It retains each tab's consumed revision independently of the drawing and releases that subscription on tab closure or plugin disposal. It does not require a layout inventory, navigation-origin field, or an opening result from the right Sidebar.
 
-The face waits for the destination drawing and measures its current row, so the previous tab's width cannot decide whether content is covered. It consumes navigation even while hidden to prevent a later manual show from replaying an old close. [The navigator reference](../../../../packages/client/ui-sidebar-files/README.md#the-navigator) defines the navigation sources and revision exclusions.
+The face waits for the destination drawing and measures its current row, so the previous tab's width cannot decide whether content is covered. It consumes navigation even while hidden to prevent a later manual show from replaying an old close. The navigator reference defines the navigation sources and revision exclusions.
 
 ### Each package works without the others
 

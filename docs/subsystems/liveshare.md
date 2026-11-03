@@ -2,15 +2,15 @@
 
 English | [中文](liveshare.zh.md)
 
-The opt-in LiveShare bundle (`@deepseek-ai/dsh-experimental-liveshare`) lets one owner share a single Session with an external viewer through the separate Liveshare server. A viewer never receives the owner's tools: the owner host reads each viewer request itself, dispatches it as that viewer's own Peer, whose `share-viewer` principal the Gateway decides through the [remote access](../../packages/api/remote-access/README.md) policy this package registers, and constrains everything a shared Session runs on the viewer's behalf to the workspace the share granted. The [package README](../../packages/experimental/liveshare/README.md) owns configuration, the client faces, and the limitations; the [Owner note](../../.agents/notes/implemented/feature/2026-09-13-liveshare-protocol-and-owner-surfaces.md) owns the security posture behind them.
+The opt-in LiveShare bundle (`@deepseek-ai/dsh-experimental-liveshare`) lets one owner share a single Session with an external viewer through the separate Liveshare server. A viewer never receives the owner's tools: the owner host reads each viewer request itself, dispatches it as that viewer's own Peer, whose `share-viewer` principal the Gateway decides through the [remote access](../../packages/api/remote-access/README.md) policy this package registers, and constrains everything a shared Session runs on the viewer's behalf to the workspace the share granted. The package README owns configuration, the client faces, and the limitations; the [Owner note](../../.agents/notes/implemented/feature/2026-09-13-liveshare-protocol-and-owner-surfaces.md) owns the security posture behind them.
 
-Source: [`packages/experimental/liveshare/src/host/fork-enforcement.ts`](../../packages/experimental/liveshare/src/host/fork-enforcement.ts)
+Source: `packages/experimental/liveshare/src/host/fork-enforcement.ts`
 
 <a id="enabling-and-visibility"></a>
 
 ## Enabling and visibility
 
-The package ships with dsh but stays out of the plugin manager's lists until a profile enables it. A profile either inserts the two rows the bundle declares into its own `cordis.patch.yml`, which keeps the bundle unselected while its plugins run, or selects the bundle in `dsh.profile.bundles`. The [package README](../../packages/experimental/liveshare/README.md#default-visibility-and-enabling) owns the exact entries and the placeholders a deployment replaces.
+The package ships with dsh but stays out of the plugin manager's lists until a profile enables it. A profile either inserts the two rows the bundle declares into its own `cordis.patch.yml`, which keeps the bundle unselected while its plugins run, or selects the bundle in `dsh.profile.bundles`. The package README owns the exact entries and the placeholders a deployment replaces.
 
 The plugin manager lists the card under **Experimental plugins** only while at least one row the bundle declares runs, and removing the rows, disabling them, or deselecting the bundle takes it out of both that list and **More** again. Both routes apply on the profile's next recomposition rather than mid-task: with HMR enabled the profile is re-read, and without it the change waits for the next start.
 
@@ -154,5 +154,5 @@ The Gateway decides each call through remote access, so a `share-viewer` Peer is
 @Remote('testPublish') testPublish(request: TestPublishRequest): Promise<RelayPublishView>
 ```
 
-Source: [`packages/experimental/liveshare/src/host/share-remote.ts`](../../packages/experimental/liveshare/src/host/share-remote.ts)
+Source: `packages/experimental/liveshare/src/host/share-remote.ts`
 <!-- END GENERATED cordis-surface -->

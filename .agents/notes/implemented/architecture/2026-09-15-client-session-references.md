@@ -156,7 +156,7 @@ The main view privately persists its target identity and subagent address under 
 | Chat/Trajectory restoration | Restore the view for the explicitly selected main target; independently bound views keep their own state |
 | Cordis inventory panel | One list without current/other grouping; no public runner getter for main-area selection |
 
-Source metadata does not change when DOM focus moves or when a global panel hides a retained view. The [global main-panel design](../../../../packages/client/ui-layout/README.md) owns panel selection and layout; Session reference ownership does not replace it.
+Source metadata does not change when DOM focus moves or when a global panel hides a retained view. The global main-panel design owns panel selection and layout; Session reference ownership does not replace it.
 
 Conversation retains its `hero`, `settling`, and `active` composition and existing history-loading and `openError` handling. Acquisition adds no outer loading/error phase presentation, extra composer-hiding condition, Retry button, or replacement Sidebar recovery panel. Existing error handlers continue to handle their errors; call sites without error presentation gain none. Promise rejection and correct reference release do not imply an additional UI handler.
 

@@ -40,11 +40,8 @@ macOS 桌面窗口的可拖区域被写了两遍。布局决定 chrome 行在哪
 
 ## Testing
 
-- `packages/client/web/tests/window-drag-regions.client.spec.ts` —— 合成规则，含顺序敏感与盒子边界。
-- `packages/client/web/tests/base-styles.client.spec.ts` —— base.css 声明的正是模型的交互选择器、唯一那条 darwin drag 规则，以及 recall 标记的减除。
 - `packages/client/ui-theme/tests/app-region-styles.client.spec.ts` —— 拖拽所有权、行清单与每行的标记；清单之外的标记或行高变化即失败。
 - `packages/client/ui-dockkit/tests/app-region-styles.client.spec.ts` —— strip 行自己的减除；它的 drag 属于 markup 标记，因此样式表一条都不声明。
-- `packages/client/web/tests/window-drag-recall.client.spec.ts` —— 通过两个 seam 驱动 watcher：什么会重新启动它、什么被它忽略、收敛循环、外壳默认值，以及销毁。
 - `apps/web/tests/window-drag-coverage.e2e.ts` —— 真 Chromium：无控件被吞、逐行探测、一个页头行可拖而正文不可拖的详情页，以及右栏滑动期间外壳发出的 recall 脉冲。
 - 真机验收（2026-09-20，双平台，HID 级指针输入 + 窗口矩形读数）：上面的 macOS 矩阵在真实 `hiddenInset` 窗口上跑过，Windows 各格在 Windows 11 ARM64 虚拟机上跑过——chrome 行可拖、正文与覆盖浮层不可拖、控件保留点击、右栏 strip 行在滑入后可拖。
 

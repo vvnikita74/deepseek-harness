@@ -43,5 +43,3 @@ Status: implemented
 | 列表、注册表回退、拒绝、兼容性、预发布、弃用与版本上限 | `packages/boot/plugin-manager/tests/manager.spec.ts` |
 | 经移除与安装的更新、目标失败、取消或被拒绝后的重新安装、重新安装失败、改动前的拒绝、移除失败与无 HMR 路径 | `packages/boot/plugin-manager/tests/manager.spec.ts` |
 | `pnpm view` 答复解析 | `packages/boot/plugin-manager/tests/versions.spec.ts` |
-| store 中的版本检查、更新状态与步骤进度 | `packages/client/ui-plugin-manager/tests/manager-store.client.spec.ts` |
-| 版本区块、工具栏检查与每种更新结果 | `packages/client/ui-plugin-manager/tests/components.client.spec.tsx` |

@@ -132,13 +132,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Supplies parsed task and run options to the headless runner and its sandbox-policy configuration.',
   },
   {
-    key: 'cotTranslation',
-    pkg: 'experimental-client-ui-cot-translation',
-    title: 'Reasoning translation Remote',
-    mode: 'service',
-    note: 'Serves reasoning translations, reuses saved results, and joins ordinary Session activation for uncached inactive Sessions.',
-  },
-  {
     key: 'translator',
     pkg: 'experimental-translator',
     title: 'Anonymous text translation',
@@ -210,13 +203,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     mode: 'service',
     consumers: ['experimental-client-ui-forge'],
     note: 'A Session projection derives bindings from shell results and binding records and publishes their URLs without status to clients; push results trigger head-branch discovery, and Session watchers poll bound change requests through the forge registry.',
-  },
-  {
-    key: 'forgePanel',
-    pkg: 'experimental-client-ui-forge',
-    title: 'Forge panel Remote',
-    mode: 'service',
-    note: 'Streams one panel state per followed Session: Git inspection using Session permissions, the recognized code host and its sign-in, and the bound change requests with polled status.',
   },
   {
     key: 'worktrees',
@@ -866,13 +852,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Loads mods that defineMod plugins add, raises their hook chains from harness extension points, and draws the band above the prompt over its Remote.',
   },
   {
-    key: 'inspector',
-    pkg: 'inspector',
-    title: 'Cross-realm runtime inspection',
-    mode: 'core',
-    note: 'Owns the Worker-hosted CDP target and the transport-independent Host and Client observation and Cordis-tree query API.',
-  },
-  {
     key: 'jobs',
     pkg: 'jobs',
     title: 'Background job registry',
@@ -925,14 +904,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'The web-runtime row advertises one URL for its Web GUI: the configured publicUrl, otherwise the listener origin; DSH_WEB_URL, the startup URL, and harness-dev-context read the same value.',
   },
   {
-    key: 'clientModules',
-    pkg: 'client-modules',
-    title: 'Client plugin graph host',
-    mode: 'core',
-    consumers: ['client-hmr'],
-    note: 'Composes the __DSH_BOOT__ entry graph from an incremental dsh.client scan, serves plugin bundles, and notifies rebuilt/graph-changed subscribers.',
-  },
-  {
     key: 'workflowEngine',
     pkg: 'workflow',
     title: 'Workflow script engine',
@@ -973,13 +944,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     mode: 'core',
     consumers: ['tool-cordis'],
     note: 'Registers host inspect providers, mirrors the client provider manifest, and routes client queries through the dynamic Cordis transport.',
-  },
-  {
-    key: 'liveshareShares',
-    pkg: 'experimental-liveshare',
-    title: 'Owner share management Remote',
-    mode: 'service',
-    note: 'Publishes the owner share-management operations as one Typert Remote namespace that the owner client face calls; every method delegates to the same operations the same-origin routes used.',
   },
 ]
 
@@ -1568,7 +1532,7 @@ function renderEventRelations(pkgs: Pkg[], events: readonly EventEntry[]): strin
   lines.push(
     'This matrix shows which packages dispatch each harness-owned event and which packages listen to it. Events are many-to-many, so the dense relation data is presented as a table rather than one large graph. Receiver and event-name types also cover contained dispatch sites that deliberately bypass `ctx.emit`, such as subagent lifecycle containment.',
     '',
-    'Application listeners are outside this package matrix. Desktop Host subscribes to `plugin-manager/operation` through [`installOperationDiagnostics`](../apps/desktop-host/src/operation-diagnostics.ts) and forwards bounded records to the shell.',
+    'Application listeners are outside this package matrix.',
     '',
   )
   const rows = ['| Event | Mode | Declared in | Dispatchers | Listeners |', '| --- | --- | --- | --- | --- |']

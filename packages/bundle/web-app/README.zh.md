@@ -31,7 +31,7 @@ kind: "package-bundle"
 
 启动 GUI、打开浏览器，然后开始与 agent（智能体）对话。flag 用于微调本次调用。
 
-[Agent Teams UI](../../client/ui-agent-team/README.zh.md) 随本 bundle 加载。在模型与推理等级菜单中按 Session 开启；通过 Subagent 控件打开成员树，下方显示共享任务。
+Agent Teams UI 随本 bundle 加载。在模型与推理等级菜单中按 Session 开启；通过 Subagent 控件打开成员树，下方显示共享任务。
 
 ### 启动 Web GUI
 
@@ -126,7 +126,6 @@ URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发�
 | [`tests/web-app.spec.ts`](tests/web-app.spec.ts) | dist index 锚定、公告 URL 发布与警告、bash 变量、就绪宣告发布 |
 | [`tests/startup.spec.ts`](tests/startup.spec.ts) | 在真实 Loader 树上的命令行解析 |
 | [`tests/public-url.spec.ts`](tests/public-url.spec.ts) | 公告根的解析与归一化 |
-| [`tests/browser-open.spec.ts`](tests/browser-open.spec.ts) | 页面可达后的默认浏览器交接 |
 
 </details>
 
@@ -139,7 +138,6 @@ URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发�
 
 - [组合包索引](../README.zh.md)——基于同一核心构建的表层。
 - [dsh-base](../base/README.zh.md)——GUI 运行其上的共享核心。
-- [dsh-client-hmr](../../client/hmr/README.zh.md)——开发期间客户端插件变更如何重载。
 - [frontend-static](../../host/frontend-static/README.zh.md)——已构建的前端如何被服务。
 - [生成配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-web-app)——每个受支持配置字段及其源声明。
 

@@ -170,9 +170,7 @@ export const SERVICE_PAGE: Record<string, string> = {
  * close. An OPTIONAL key (`key?: X`) is a value the launcher or boot code
  * installs before the tree mounts, which the analyzer skips by rule because no
  * plugin provides it and `inject` cannot reach it. A client-face key belongs to
- * the browser Context, which this host-face program never sees; the browser
- * surface has its own generated catalog (`scripts/gen-client-catalog.ts`, served
- * to a model as `cordis_runtime_inspect what:"client"`).
+ * the browser Context, which this host-face program never sees.
  */
 export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
   invocation: 'not a service: per-call accessor (RemoteInvocation | undefined) the Gateway derives for each Remote call — packages/api/gateway/README.md owns the contract',
@@ -888,8 +886,6 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   WorkspaceUnarchiveSessionRequest: 'workspace.md',
   WorkspaceUnpinSessionRequest: 'workspace.md',
   WorkspaceValue: 'workspace.md',
-  ClientArtifactBaseline: 'client-modules.md',
-  WebBootGraph: 'client-modules.md',
   SessionTelemetryRecord: 'session-telemetry.md',
   WorkflowRunInfo: 'workflow.md',
   WorkflowStartRequest: 'workflow.md',

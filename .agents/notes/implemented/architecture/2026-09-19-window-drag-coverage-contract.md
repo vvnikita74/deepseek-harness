@@ -40,11 +40,8 @@ The native half — whether a press really drags or reaches the page — stays a
 
 ## Testing
 
-- `packages/client/web/tests/window-drag-regions.client.spec.ts` — the composition rule, including order sensitivity and box edges.
-- `packages/client/web/tests/base-styles.client.spec.ts` — base.css declares the model's interactive selector, the one darwin drag rule, and the recall mark's subtraction.
 - `packages/client/ui-theme/tests/app-region-styles.client.spec.ts` — drag ownership, the row manifest, and each row's mark; a mark outside the manifest or a changed row height fails.
 - `packages/client/ui-dockkit/tests/app-region-styles.client.spec.ts` — the strip row's own subtraction; its drag is the markup mark's, so the sheet declares none.
-- `packages/client/web/tests/window-drag-recall.client.spec.ts` — the watcher through its two seams: what re-arms it, what it ignores, the settle loop, the shell defaults, and disposal.
 - `apps/web/tests/window-drag-coverage.e2e.ts` — real Chromium: no swallowed control, per-row probes, a detail page whose head row drags while its body does not, and the recall pulse the shell fires while the right panel slides.
 - Real-machine verification (2026-09-20, both platforms, HID-level pointer input plus window-frame readback): the macOS matrix above ran on a real `hiddenInset` window and the Windows cells ran on a Windows 11 ARM64 VM — chrome rows drag, content and the covering overlay do not, controls keep their clicks, and the right panel's strip row drags after its slide.
 

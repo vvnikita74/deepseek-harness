@@ -11,7 +11,7 @@ English | [中文](guide.zh.md)
 
 Contributions to `conversation.chat.reasoning.body` receive the model output in the new `rawText` field. The existing `text` field supplies Chat's prepared display text instead of the original output. `running` is unchanged. This affects custom reasoning renderers and translation wrappers.
 
-The `conversation.chat.reasoning.content` Factory still accepts `text`, `running`, and optional `labels`. It renders the caller-selected Markdown. The [Chat README](../../../../packages/client/ui-chat/README.md#grouped-rendering) documents the Slot.
+The `conversation.chat.reasoning.content` Factory still accepts `text`, `running`, and optional `labels`. It renders the caller-selected Markdown. The Chat README documents the Slot.
 
 ## Migration
 

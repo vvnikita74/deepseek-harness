@@ -81,7 +81,6 @@ export interface WhenAccess {
 | 注册跟随授权变化 | 迁移的插件在非 owner 无授权时不注册相应入口，授予后出现，撤销后消失；owner 的答案恒为 true，注册与直接注册相同 |
 | 回调必须交还 disposer | 回调里经插件 `ctx` 注册的效果也挂在插件 fiber 上；不 yield 其 disposer 的注册在失权时不会撤销，只在插件卸载时撤销 |
 | 读者拿到全部插件代码 | 插件照常加载；访问由 Gateway 逐次判定，界面由 `whenAccess` 与 Hook 控制 |
-| 测试替身 | [`dsh-client-test-runtime`](../../../../packages/test-support/client-runtime/README.zh.md) 的 `StaticRemoteAccess`、`staticAccessPlugin` 与 `TestClientOptions.access` 以固定答案替换 remote-access，供插件测试无权限路径 |
 
 ## 相关
 

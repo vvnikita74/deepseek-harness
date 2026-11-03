@@ -59,7 +59,6 @@ Host 入口是函数插件。它的 `apply` 通过 `ctx.plugin` 组装内部的 
 
 - [插件管理器](../../boot/plugin-manager/README.zh.md) — 配置档案变更。
 - [操作卡片](../action-cards/README.zh.md) — 卡片工具、卡片状态和用户操作。
-- [推荐卡片](../client-ui-plugin-recommendations/README.zh.md) — 卡片正文。
 - [个性化页面](../creation-recommendations/README.zh.md) — 另一种卡片。
 
 <a id="model-experience"></a>

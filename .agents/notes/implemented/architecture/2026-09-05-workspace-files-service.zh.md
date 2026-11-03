@@ -107,7 +107,7 @@ Client 导出向 `ctx.resources` 注册一个 `ResourceProvider<'file'>`，存�
 
 ### 相关记录
 
-[资源模型](2026-09-05-client-resource-model.zh.md)拥有 `ctx.resources`、`useResource`、`dsh-resource://<type>/…` 地址语法以及"每个地址一份资源"的推理；[文本预览与文件树](../../../../packages/client/ui-sidebar-documentpreview/README.zh.md)是 `read`、`list` 与 `file` 提供者随包交付的消费方；[右侧 Sidebar 停靠基础设施](../feature/2026-09-04-right-sidebar-docking-infrastructure.zh.md)是它们打开进去的界面；[历史工作区文件链接](../../archived/feature/2026-07-31-web-workspace-file-links.md)是经 HTTP 供文件被否决之处。任何在这套体系上扩展的人都经 `remote.workspaceFiles` 触达同样的五个方法、经 `useResource<'file'>` 触达同样的 `file` 资源；线路类型以 `@deepseek-ai/dsh-api-workspace-files/types` 发布。[工作区文件读取权限](2026-09-09-workspace-file-read-authority.zh.md)负责 Host 读取权限与 HTML 安全取舍；[Document Preview](2026-09-08-document-preview-operations.zh.md)负责内容加载和逐 tab 新鲜度。
+[资源模型](2026-09-05-client-resource-model.zh.md)拥有 `ctx.resources`、`useResource`、`dsh-resource://<type>/…` 地址语法以及"每个地址一份资源"的推理；文本预览与文件树是 `read`、`list` 与 `file` 提供者随包交付的消费方；[右侧 Sidebar 停靠基础设施](../feature/2026-09-04-right-sidebar-docking-infrastructure.zh.md)是它们打开进去的界面；[历史工作区文件链接](../../archived/feature/2026-07-31-web-workspace-file-links.md)是经 HTTP 供文件被否决之处。任何在这套体系上扩展的人都经 `remote.workspaceFiles` 触达同样的五个方法、经 `useResource<'file'>` 触达同样的 `file` 资源；线路类型以 `@deepseek-ai/dsh-api-workspace-files/types` 发布。[工作区文件读取权限](2026-09-09-workspace-file-read-authority.zh.md)负责 Host 读取权限与 HTML 安全取舍；[Document Preview](2026-09-08-document-preview-operations.zh.md)负责内容加载和逐 tab 新鲜度。
 
 ## Alternatives considered
 

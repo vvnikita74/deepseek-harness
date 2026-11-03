@@ -10,7 +10,7 @@ Keyboard bindings depend on the receiving device's operating system and browser 
 
 ## Decision
 
-[The shortcut service](../../../../packages/client/shortcuts/README.md) stores only versioned overrides per runtime/platform. Web owns origin-local browser storage; Electron main owns `userData/keybindings.json`, independently of Harness home. Both adapters share validation and transaction logic. Successful persistence publishes one accepted configuration from which command matching, keycaps, and native interception derive.
+The shortcut service stores only versioned overrides per runtime/platform. Web owns origin-local browser storage; Electron main owns `userData/keybindings.json`, independently of Harness home. Both adapters share validation and transaction logic. Successful persistence publishes one accepted configuration from which command matching, keycaps, and native interception derive.
 
 Missing commands retain dormant overrides. Explicit overrides win over newly introduced defaults; conflicting explicit overrides are all disabled. Unreadable configuration blocks ordinary edits and preserves the last accepted values. Restore All clears only the accepted current profile and cannot overwrite unreadable or future-version data.
 

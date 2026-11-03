@@ -37,7 +37,6 @@ kind: "package-group"
 - [Schedule 子系统](../../docs/subsystems/schedule.zh.md)——任务记录、重复规则、投递目标、最近一次回执与投递约定。
 - [生成的工具目录](../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-schedule)——挂载 preset 所贡献的 `schedule_create`／`schedule_list`／`schedule_view`／`schedule_edit` schema。
 - [Schedule 用户指南](../../docs/user/guide/schedule.zh.md)——创建、查看、执行、修改和删除计划任务。
-- [自动化任务页面](../client/ui-schedule/README.zh.md)——在浏览器中管理宿主所有任务的侧栏页面。
 
 -----
 

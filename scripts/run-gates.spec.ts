@@ -20,7 +20,6 @@ import {
 // sets, not from the lane that runs this file (a partitioned lane exports
 // DSH_COVERAGE_PARTITIONS to every child).
 beforeEach(() => {
-  vi.stubEnv('DSH_WEB_SNAPSHOT_WORKERS', undefined)
   vi.stubEnv('DSH_COVERAGE_MAX_WORKERS', undefined)
   vi.stubEnv('DSH_COVERAGE_PARTITIONS', undefined)
   vi.stubEnv('DSH_CLI_HELP_CONCURRENCY', undefined)
@@ -182,7 +181,6 @@ describe('CI worker allocation', () => {
       DSH_PUBLINT_CONCURRENCY: '8',
       DSH_SNAPSHOT_MAX_WORKERS: '1',
       DSH_SNAPSHOT_MAX_CONCURRENCY: '8',
-      DSH_WEB_SNAPSHOT_WORKERS: '16',
     })
   })
 
@@ -191,7 +189,6 @@ describe('CI worker allocation', () => {
       DSH_OXLINT_THREADS: '6',
       DSH_COVERAGE_MAX_WORKERS: '48',
       DSH_COVERAGE_PARTITIONS: '32',
-      DSH_WEB_SNAPSHOT_WORKERS: '12',
     })
     expect(defaultConcurrency('ci-static', 60, 256, {})).toEqual({
       workers: 12,
@@ -207,7 +204,6 @@ describe('CI worker allocation', () => {
       DSH_OXLINT_THREADS: '1',
       DSH_PUBLINT_CONCURRENCY: '1',
       DSH_SNAPSHOT_MAX_CONCURRENCY: '1',
-      DSH_WEB_SNAPSHOT_WORKERS: '1',
     }
     const additions = ciWorkerEnvironment('ci-primary', inherited, 64)
     expect(additions).toEqual({ DSH_SNAPSHOT_MAX_WORKERS: '1' })
@@ -278,7 +274,7 @@ describe('gate graph validation', () => {
       displayCommand: 'pnpm exec tsx scripts/run-ci-bench.ts',
       args: ['/private/pnpm.cjs', 'exec', 'tsx', 'scripts/run-ci-bench.ts'],
     })
-    expect(scripts['test:bench']).toBe('npm run build:bench && npm run build:web && npm run test:bench:built')
+    expect(scripts['test:bench']).toBe('npm run build:bench && npm run test:bench:built')
     expect(scripts['build:bench']).toBe(
       'npm run build:native-system && npm run build:lib && tsdown --config-loader native --config benchmarks/tsdown.config.ts',
     )
@@ -379,7 +375,7 @@ describe('gate graph validation', () => {
     expect(ids).toEqual([
       'rescope-vendor', 'publint', 'constraints', 'default-product-isolation', 'product-use', 'official-bundle-catalog', 'provider-data', 'package-dependencies', 'application-entrypoints',
       'dsh-package-licenses', 'node-next-types',
-      'optional-dependency-imports', 'client-packages', 'installer-locales', 'locale-metadata', 'client-ui-i18n', 'client-route-resolution', 'no-bare-dispatcher',
+      'optional-dependency-imports', 'client-packages', 'locale-metadata', 'client-ui-i18n', 'client-route-resolution', 'no-bare-dispatcher',
       'plugin-record-callers', 'no-unknown-casts', 'no-top-level-await',
       'cordis-config', 'runtime-closure',
     ])
@@ -388,11 +384,11 @@ describe('gate graph validation', () => {
   it('includes JSON resource checks in local and CI aggregates', () => {
     for (const mode of ['i18n', 'check-all', 'ci-static', 'hygiene'] as const) {
       const ids = withPnpmEntrypoint(() => gatesForMode(mode).map(gate => gate.id))
-      expect(ids).toEqual(expect.arrayContaining(['installer-locales', 'locale-metadata']))
+      expect(ids).toEqual(expect.arrayContaining(['locale-metadata']))
       if (mode !== 'i18n') expect(ids).not.toContain('locale-dictionaries')
     }
     expect(withPnpmEntrypoint(() => gatesForMode('i18n').map(gate => gate.id)))
-      .toEqual(['installer-locales', 'locale-metadata', 'locale-dictionaries'])
+      .toEqual(['locale-metadata', 'locale-dictionaries'])
   })
 
   it('caps the local hygiene aggregate at eight workers', () => {
@@ -412,8 +408,9 @@ describe('gate graph validation', () => {
     const ids = withPnpmEntrypoint(() => gatesForMode('doc-sync').map(subject => subject.id))
 
     expect(ids.slice(0, 11)).toEqual([
-      'doc-typecheck', 'docs-site-build', 'doc-graphs', 'cli-help', 'markdown-links', 'type-equivalence',
-      'cordis-catalog', 'cordis-inspect-catalog', 'workflow-guest', 'mermaid', 'translation-pairing',
+      'doc-typecheck', 'doc-graphs', 'cli-help', 'markdown-links', 'type-equivalence',
+      'cordis-catalog', 'workflow-guest', 'mermaid', 'translation-pairing',
+      'markdown-wrap', 'export-jsdoc',
     ])
   })
 
@@ -514,7 +511,7 @@ describe('gate graph validation', () => {
   it('keeps native Windows coverage blocking and behind the complete build', () => {
     const complete = withPnpmEntrypoint(() => gatesForMode('ci-windows-complete'))
     const observational = withPnpmEntrypoint(() => gatesForMode('ci-windows-observational-ready'))
-      .filter(gate => gate.id !== 'docs-site-build' && gate.id !== 'electron-install')
+      .filter(gate => gate.id !== 'electron-install')
     const byId = new Map(complete.map(subject => [subject.id, subject]))
 
     expect(byId.get('coverage')?.allowFailure).not.toBe(true)
@@ -545,10 +542,6 @@ describe('gate graph validation', () => {
       observational.filter(gate => gate.id !== 'built-bin-smoke').map(gate => gate.id),
     )
 
-    const completeBuiltBin = withPnpmEntrypoint(() => gatesForMode('ci-windows-complete'))
-      .find(gate => gate.id === 'built-bin-smoke')
-    expect(completeBuiltBin?.after).toContain('windows-site')
-    expect(completeBuiltBin?.after).not.toContain('docs-site-build')
   })
 
   it('reuses the Windows build without dropping diagnostics or rebuilding the workspace', () => {
@@ -560,11 +553,10 @@ describe('gate graph validation', () => {
 
     expect(scripts['check:ci:windows-observational-ready']).toBe('tsx scripts/run-gates.ts ci-windows-observational-ready')
     expect(scripts).not.toHaveProperty('check:ci:windows-observational')
-    const completeOnly = new Set(['build', 'windows-site', 'native-system', 'coverage', 'coverage-exempt-heavy'])
+    const completeOnly = new Set(['build', 'native-system', 'coverage', 'coverage-exempt-heavy'])
     const shared = complete.filter(gate => !completeOnly.has(gate.id))
-    expect(ready.map(gate => gate.id).sort()).toEqual([...shared.map(gate => gate.id), 'docs-site-build'].sort())
+    expect(ready.map(gate => gate.id).sort()).toEqual(shared.map(gate => gate.id).sort())
     expect(ready.some(gate => gate.id === 'build')).toBe(false)
-    expect(ready.find(gate => gate.id === 'docs-site-build')?.displayCommand).toBe('pnpm run docs:build:mpa')
     for (const diagnostic of shared) {
       expect(ready.find(gate => gate.id === diagnostic.id)).toMatchObject({
         command: diagnostic.command,
@@ -917,7 +909,6 @@ describe('Node compatibility graph', () => {
     expect(subject.find(item => item.id === 'build')?.args).toEqual([
       '/private/pnpm.cjs', 'run', 'build:artifacts',
     ])
-    expect(subject.map(item => item.id)).not.toContain('build:web')
     expect(subject.find(item => item.id === 'cli-lazy-search-startup-smoke')).toMatchObject({
       needs: ['build'],
       env: { DSH_REQUIRE_BUILT_CLI_SMOKE: '1' },
@@ -969,7 +960,6 @@ describe('Node 24 lane ownership', () => {
       'publint',
       'snapshot',
       'expected-output',
-      'web-snapshot',
       'doc-typecheck',
       'node-next-types',
       'built-bin-smoke',
@@ -987,7 +977,6 @@ describe('Node 24 lane ownership', () => {
     for (const id of [
       'snapshot',
       'expected-output',
-      'web-snapshot',
       'doc-typecheck',
       'node-next-types',
       'built-bin-smoke',
@@ -1010,31 +999,6 @@ describe('Node 24 lane ownership', () => {
         'packages/team/agent-team/tests/built-lib.e2e.ts',
       ]),
     )
-    expect(subject.find(item => item.id === 'web-snapshot')).toMatchObject({
-      displayCommand: 'DSH_SNAPSHOT=replay pnpm run test:web:built',
-      env: { DSH_SNAPSHOT: 'replay' },
-      after: [
-        'publint',
-        'snapshot',
-        'expected-output',
-        'doc-typecheck',
-        'node-next-types',
-        'built-bin-smoke',
-      ],
-    })
-  })
-})
-
-describe('Linux primary graph', () => {
-  it('adds the same compare-only web gate after built client artifacts', () => {
-    const subject = withPnpmEntrypoint(() => gatesForMode('ci-linux-primary'))
-    const web = subject.find(item => item.id === 'web-snapshot')
-
-    expect(web).toMatchObject({
-      displayCommand: 'DSH_SNAPSHOT=replay pnpm run test:web:built',
-      env: { DSH_SNAPSHOT: 'replay' },
-      needs: ['build'],
-    })
   })
 })
 

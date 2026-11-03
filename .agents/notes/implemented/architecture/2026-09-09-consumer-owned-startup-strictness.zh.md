@@ -20,7 +20,7 @@ Required id 为 `agent-loop`、`webserver`、`modules`、`connection`、`headles
 
 该策略适用于 [Web host 启动](../../../../packages/boot/app-boot/README.zh.md)，包括其 [client 插件名册](2026-07-23-client-plugin-loading-model.zh.md)。[按会话的 preset](2026-09-18-declarative-agent-presets.zh.md)持有独立的严格子树审计。
 
-浏览器启动审计以同一策略审计客户端插件树，使用 [`boot-client.ts`](../../../../packages/client/web/src/boot-client.ts) 中独立的全局名单：模块系统、Session 控制、渲染器、应用框架、Session 视图及其侧栏。浏览器 entry 以包名命名，因此名单写包名；启动图中不存在的名字不产生影响，两份名单互不推导。名单是最小致命集合：已列出 entry 所等待的 entry 同样会阻止启动。功能插件（包括凭据遮挡）保持可选。失败 entry 报告其激活错误。可选失败出现在一条控制台警告中；只有后续图同步调和之后，才会出现在「设置 → 插件 → 插件列表」。重命名名单中的包需要同步更新名单及其测试。
+浏览器启动审计以同一策略审计客户端插件树，使用 `boot-client.ts` 中独立的全局名单：模块系统、Session 控制、渲染器、应用框架、Session 视图及其侧栏。浏览器 entry 以包名命名，因此名单写包名；启动图中不存在的名字不产生影响，两份名单互不推导。名单是最小致命集合：已列出 entry 所等待的 entry 同样会阻止启动。功能插件（包括凭据遮挡）保持可选。失败 entry 报告其激活错误。可选失败出现在一条控制台警告中；只有后续图同步调和之后，才会出现在「设置 → 插件 → 插件列表」。重命名名单中的包需要同步更新名单及其测试。
 
 ## 考虑过的替代方案
 

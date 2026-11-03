@@ -20,7 +20,7 @@ Status: implemented
 
 每个返回的条目携带 profile 中的安装状态、由 `evaluatePluginCompatibility` 结合 profile 版本豁免计算出的兼容性，以及 `install`，即 `marketInstallTarget` 给出的精确参数。这是唯一构建安装参数的位置；Web 页面和模型工具都使用它。
 
-Web 的[发现标签页](../../../../packages/client/ui-plugin-market/README.zh.md)是独立的 Client 插件。[`ui-plugin-manager`](../../../../packages/client/ui-plugin-manager/README.zh.md) 声明 `plugins.tab` slot，并在页头下方显示**已安装**和每个贡献的标签页，因为浏览市场与管理已安装组合包是两项同等重要的独立任务。owner props 提供 `install(spec, registry?)` 和 `openPackage(name)`：前者用于用户已在标签页中确认的 spec，在检查界面打开现有的安装对话框，不显示 spec 表单；后者打开已安装组合包的页面。条目指定的注册表只用于这一次安装，从不作为对话框的选择被记住，因此一个市场无法改变之后手动安装所用的注册表。发现标签页在每次安装前显示条目来源和信任提示以供确认，并把会引入代码来源的索引源管理放在带有自身信任提示的对话框中。每个条目都有一个页面，显示其完整描述、来源信息和列出的每个版本；卡片上的**安装**选择默认版本，页面可以安装安装检查接受的任何其他版本。索引一次浏览一个；分类、标签和排序键保持不透明，按本地化标题顺序显示；缺少所选排序值的条目在两个方向上都排在最后。
+Web 的发现标签页是独立的 Client 插件。[`ui-plugin-manager`](../../../../packages/client/ui-plugin-manager/README.zh.md) 声明 `plugins.tab` slot，并在页头下方显示**已安装**和每个贡献的标签页，因为浏览市场与管理已安装组合包是两项同等重要的独立任务。owner props 提供 `install(spec, registry?)` 和 `openPackage(name)`：前者用于用户已在标签页中确认的 spec，在检查界面打开现有的安装对话框，不显示 spec 表单；后者打开已安装组合包的页面。条目指定的注册表只用于这一次安装，从不作为对话框的选择被记住，因此一个市场无法改变之后手动安装所用的注册表。发现标签页在每次安装前显示条目来源和信任提示以供确认，并把会引入代码来源的索引源管理放在带有自身信任提示的对话框中。每个条目都有一个页面，显示其完整描述、来源信息和列出的每个版本；卡片上的**安装**选择默认版本，页面可以安装安装检查接受的任何其他版本。索引一次浏览一个；分类、标签和排序键保持不透明，按本地化标题顺序显示；缺少所选排序值的条目在两个方向上都排在最后。
 
 只读的 `plugin_market` 工具列出索引并分页列出条目，返回 `plugin_manager` 的 `install_bundle` 接受的 `target` 和 `registry`。它不需要批准；安装仍保留 `plugin_manager` 的批准。该工具不能修改索引源，因为添加索引源会引入新的代码来源。
 

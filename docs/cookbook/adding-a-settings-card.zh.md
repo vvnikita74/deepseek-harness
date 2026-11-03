@@ -39,7 +39,7 @@ export function apply(ctx: Context, config: Config): void {
 
 在插件页面修改字段并保存。验证 profile patch、消费者下一次操作、插件实例标识不变，以及重启后的恢复。提交无效值，并确认文件和即时值均未改变。
 
-自定义插件页面从 Plugins 页面所有者接收 `form.state` 和 `form.mutate(operations, expectedRevision)`。Host 校验完整 Config，并通过 ConfigEditor 和 volatile HMR 应用修改。[插件设置包](../../packages/client/ui-settings-plugins/README.zh.md) 提供现有卡片示例。
+自定义插件页面从 Plugins 页面所有者接收 `form.state` 和 `form.mutate(operations, expectedRevision)`。Host 校验完整 Config，并通过 ConfigEditor 和 volatile HMR 应用修改。插件设置包 提供现有卡片示例。
 
 ## 4. 向其他插件的页面贡献内容
 
@@ -55,9 +55,9 @@ ctx.slots.inject('plugins.detail.badge', () => ctx.slots.register({
 
 ## 5. 浏览器半侧挂在哪里
 
-浏览器半侧由[客户端模块系统](../../packages/client/modules)送到页面：它扫描已启用的 Loader 条目，找出声明了 `dsh.client` 的包，送出每个包构建好的 `./client` 导出——但它只把一个包的半侧挂在说明符恰为裸包名的那一行上。从子路径导出挂载的行永远不带半侧，因此把一个包拆成多行的组合包，其半侧留在根行上，它注册的每个页面都随根行关闭而消失。需要在其他行关闭时仍保留页面的子插件，应作为独立的包发布。
+浏览器半侧由客户端模块系统送到页面：它扫描已启用的 Loader 条目，找出声明了 `dsh.client` 的包，送出每个包构建好的 `./client` 导出——但它只把一个包的半侧挂在说明符恰为裸包名的那一行上。从子路径导出挂载的行永远不带半侧，因此把一个包拆成多行的组合包，其半侧留在根行上，它注册的每个页面都随根行关闭而消失。需要在其他行关闭时仍保留页面的子插件，应作为独立的包发布。
 
-构建出的 `./client` 文件必须是客户端模块系统的 lazy-CJS factory 格式：一段脚本，向页面的模块加载器登记包名和一个 `factory(require)`，见[客户端模块系统的 README](../../packages/client/modules/README.zh.md)。生成它的 `clientBundle` tsdown 预设位于 `packages/client/tsdown.client.ts`，而不在任何已发布的包里，因此仓库之外的包要自己复刻这一步构建。
+构建出的 `./client` 文件必须是客户端模块系统的 lazy-CJS factory 格式：一段脚本，向页面的模块加载器登记包名和一个 `factory(require)`，见客户端模块系统的 README。生成它的 `clientBundle` tsdown 预设位于 `packages/client/tsdown.client.ts`，而不在任何已发布的包里，因此仓库之外的包要自己复刻这一步构建。
 
 ```jsonc
 {

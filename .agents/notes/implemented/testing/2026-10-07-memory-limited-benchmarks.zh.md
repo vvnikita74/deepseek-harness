@@ -14,7 +14,7 @@ Status: implemented
 
 ### 用例
 
-列表包含常驻内存实测最大的文件和长历史 UI 路径：[session-corpus](../../../../benchmarks/session-corpus/README.zh.md)（3,000 个 Session 的列表、1,000 个 Session 的内容搜索、fork）、其 projection-list 文件、[session-open](2026-09-04-session-open-performance-gate.zh.md)（127,400 个事件的 Session）和 [long-session-browser](../../../../benchmarks/long-session-browser/README.zh.md)（Chromium 及其 Host）。终端、fold、重连和续写文件测量的是较小的进程内负载，不在列表中。
+列表包含常驻内存实测最大的文件和长历史 UI 路径：[session-corpus](../../../../benchmarks/session-corpus/README.zh.md)（3,000 个 Session 的列表、1,000 个 Session 的内容搜索、fork）、其 projection-list 文件、[session-open](2026-09-04-session-open-performance-gate.zh.md)（127,400 个事件的 Session）和 long-session-browser（Chromium 及其 Host）。终端、fold、重连和续写文件测量的是较小的进程内负载，不在列表中。
 
 ### 上限与端点
 

@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-此可选组合包（bundle）挂载自定义插件索引：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件索引，Web 端提供插件页的[发现标签页](../../client/ui-plugin-market/README.zh.md)。随包配置默认禁用。
+此可选组合包（bundle）挂载自定义插件索引：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件索引，Web 端提供插件页的发现标签页。随包配置默认禁用。
 
 ## 目录
 

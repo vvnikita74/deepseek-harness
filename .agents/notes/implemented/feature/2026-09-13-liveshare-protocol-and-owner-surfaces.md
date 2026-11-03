@@ -49,7 +49,7 @@ The sandbox is a property of the Session, but it applies per turn: the Host reco
 
 ### Default visibility
 
-The package ships as a runtime dependency of every dsh installation, but a default installation must show it nowhere in the plugin manager: neither under **Built-in plugin settings**, nor under **Experimental plugins**, nor on the **More** page. A person enables it deliberately — by inserting the bundle's rows in the active profile's `cordis.patch.yml`, or by selecting the bundle in `dsh.profile.bundles`; the [package README](../../../../packages/experimental/liveshare/README.md) owns both routes. The package must still ship with the release and stay installable, and users who enabled it before this rule keep seeing it.
+The package ships as a runtime dependency of every dsh installation, but a default installation must show it nowhere in the plugin manager: neither under **Built-in plugin settings**, nor under **Experimental plugins**, nor on the **More** page. A person enables it deliberately — by inserting the bundle's rows in the active profile's `cordis.patch.yml`, or by selecting the bundle in `dsh.profile.bundles`; the package README owns both routes. The package must still ship with the release and stay installable, and users who enabled it before this rule keep seeing it.
 
 The Host's bundle `enabled` flag states whether the profile selected the bundle, which is not the same as whether the bundle's plugins run: inserting the bundle's rows through `cordis.patch.yml` starts its plugins while leaving the bundle unselected, so a visibility rule built on `enabled` would hide a bundle the person had just enabled and would strand the documented enable path.
 

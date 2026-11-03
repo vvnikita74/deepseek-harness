@@ -36,7 +36,7 @@ Tell the Agent what to do and when to do it. For example: “Remind me every wee
 
 The [tool reference](../tool-schedule/README.md) describes the inputs and results. Creating a task saves its instruction for later delivery. Say whether it should use the current conversation or open a new one.
 
-The [Automation tasks page](../../client/ui-schedule/README.md) also provides manual creation, editing, pause and resume, Run now, and deletion. Records confirm that an instruction reached a conversation inbox; check the receiving conversation for the execution result.
+The Automation tasks page also provides manual creation, editing, pause and resume, Run now, and deletion. Records confirm that an instruction reached a conversation inbox; check the receiving conversation for the execution result.
 
 -----
 

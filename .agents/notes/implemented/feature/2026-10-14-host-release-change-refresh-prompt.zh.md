@@ -10,10 +10,8 @@ Status: implemented
 
 技术原因：
 
-- 重连后，[client-hmr](../../../../packages/client/hmr/src/client/index.ts) 会收到新 Host 的完整 graph，[ClientEntries](../../../../packages/client/modules/src/client/entries.ts) 按每行的 `rev`（bundle 的 mtime、ctime 和大小）热替换插件。Vite shell、静态库和 bootstrap 在页面生命周期内从不替换。
 - API 连接按精确键集合校验 ready 帧（[remote-events.ts](../../../../packages/api/gateway/src/client/remote-events.ts)），协议一变，旧页面无法自行恢复。
 - 页面没有任何途径得知 Host 已换成另一个 release。
-- Desktop 不受影响：Host 被替换后，main 进程会重新导航窗口（[main.ts](../../../../apps/desktop/src/main.ts)）。
 
 [client plugin loading model](../architecture/2026-07-23-client-plugin-loading-model.zh.md) 负责加载链与热替换，它写明静态库和 shell 需要刷新页面；本 Note 负责页面如何得知 Host 的 release 变了，以及之后怎么处理。
 
@@ -59,13 +57,12 @@ WebBootGraph {
 BootManifest { ...; release?: WebBootRelease }
 ```
 
-- [ClientModuleRegistry](../../../../packages/client/modules/src/index.ts) 在构造时计算一次 release，由 `compose()` 写入每个 graph；`release` 不计入 `graph.rev`。不新增配置项，组合配置不变。
 - `__DSH_BOOT__` 和每个 SSE `graph` 帧都带这个字段，所以一个 graph 帧同时携带 Host 的 release 和完整模块图；client-hmr 的 Host 半侧不变。rebuilt 帧与同一条 SSE 连接上前一个 graph 帧来自同一个 Host 进程，因此沿用那一帧的 release。
 - `parseBootManifest` 允许 `release` 缺省，拒绝非字符串的 `version` 或 `commit`，并丢弃身份以外的成员，因此相等判断只看这两个字段。`readRelease` 只读取收到的 graph 的 `release` 成员，所以页面先比较 release，再校验其余内容；读不出的 release 视为缺省。不认识该字段的旧页面会忽略它。
 
 ### 页面侧
 
-release 比较在 [release-change.ts](../../../../packages/client/modules/src/client/release-change.ts)；`ClientEntries` 在 `sync` 和 `reload` 中调用它。
+release 比较在 release-change.ts；`ClientEntries` 在 `sync` 和 `reload` 中调用它。
 
 ```
 interface ClientReleaseChange {
@@ -106,7 +103,6 @@ class ClientEntries {
 
 ### UI
 
-- 归属：[ui-settings-general](../../../../packages/client/ui-settings-general/src/client/index.ts)，它已经拥有连接状态药丸（`ConnectionIndicator`）和 Desktop 更新提示；其 `inject` 增加 `modules`。
 - 它通过 `ctx.slots.inject('shell.overlay', ...)` 注册 `shell.overlay` 条目 `host-release-change`，用 `Modal` 渲染。inject 面提供 `hooks: { releaseChange: ctx.modules.entries.releaseChange }`、`dismissRelease` 和 `reloadPage`。
 - 文案在中英 locale 字典里：一个标题、一句说明热更新已暂停直到刷新，以及两行灰色标签的版本：
   - **服务**：`previous`（灰）→ `host`（实色），1px 绿色实线箭头，表示 Host 已经切换。

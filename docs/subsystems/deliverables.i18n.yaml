@@ -3,8 +3,8 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/deliverables.md
 /deliverables:
-  en: b7a2665f103d3e99
-  zh: ee642ed0d3385f67
+  en: 3877334f2b134577
+  zh: f93fb5a9a563a0e3
 /deliverables/presentedfile-one-declared-delivery:
   en: bf10a8aa233c61d9
   zh: fdab894f8448c843

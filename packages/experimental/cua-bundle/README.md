@@ -31,7 +31,7 @@ pnpm run build
 pnpm dsh web
 ```
 
-For the source Desktop launcher and its separate development profile, follow [Desktop development](../../../apps/desktop/README.md). Enable Computer Use in each profile that needs it.
+For the source Desktop launcher and its separate development profile, follow Desktop development. Enable Computer Use in each profile that needs it.
 
 The switch saves bundle selection in the profile’s `package.json`. Computer Use is installed only in PTC sessions. Enabling through its card or detail page offers setup guidance when system permissions need attention. The detail page offers **Set to PTC** for the new-session default; existing sessions keep their preset. The switch leaves PTC execution mode and other settings unchanged. The detail page’s **Use persistent mode** action separately enables in-memory state across PTC calls; its effects and reload behavior are described in the [permission page](../cua/README.md). Native preparation runs when the provider loads and reuses the source-hashed executable when available.
 

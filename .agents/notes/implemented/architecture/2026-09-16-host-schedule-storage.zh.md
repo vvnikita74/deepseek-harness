@@ -40,4 +40,4 @@ Session 收件箱持久化和任务 put 发生在两个持久化系统中。收�
 
 ## Consequences
 
-任务发现和定时器无需已加载 Session。历史保留在同一任务行中，与确认一同提交；读取不虚构缺失指令、时间戳或更早投递。历史 Session 日志 After、At、Every 保持冻结，不填充此领域。[Schedule 参考](../../../../docs/subsystems/schedule.zh.md)拥有时间、管理、UI 投影和保留契约。[构建后 CLI 测试](../../../../apps/cli/tests/profiles/web/tests/schedule-timing.expected.e2e.ts)通过公开 Remote 请求检查旧原始行、编辑时规范化、冲突和冷重启；种入回执是保留数据证据，不是投递证据。
+任务发现和定时器无需已加载 Session。历史保留在同一任务行中，与确认一同提交；读取不虚构缺失指令、时间戳或更早投递。历史 Session 日志 After、At、Every 保持冻结，不填充此领域。[Schedule 参考](../../../../docs/subsystems/schedule.zh.md)拥有时间、管理、UI 投影和保留契约。构建后 CLI 测试通过公开 Remote 请求检查旧原始行、编辑时规范化、冲突和冷重启；种入回执是保留数据证据，不是投递证据。

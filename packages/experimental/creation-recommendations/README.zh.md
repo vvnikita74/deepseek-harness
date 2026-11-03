@@ -87,7 +87,6 @@ Creator 收到已接受的完整方案、优先于早先位置描述的用户最
 
 - [插件管理](../../boot/plugin-manager/README.zh.md) — 安装和移除。
 - [子 Agent](../../subagent/subagent/README.zh.md) — 后台任务生命周期。
-- [创建卡片](../client-ui-creation-recommendations/README.zh.md) — 位置选择与操作记录。
 - [操作卡片](../action-cards/README.zh.md) — 卡片工具、卡片状态与用户操作。
 
 <a id="model-experience"></a>

@@ -84,7 +84,7 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 <a id="listing-providers"></a>
 ### 列出提供方
 
-`listProviders()` 以 `{ id, title?, description? }` 条目返回所有已注册的搜索与抓取提供方，每个列表按注册顺序排列；不可用的提供方同样列出，因为选择器展示的是可以固定的提供方。`title` 是提供方可选的显示名，缺省时选择器显示 `id`。`description` 是可选的 `LocalizedText`（来自 `dsh-package-manifest`），可以是纯字符串，也可以是以小写语言 id 为键、必须含 `en` 的翻译表，说明该提供方适合什么、有什么代价或做不到什么；选择器在选中该提供方时把它显示在下方，缺省时不显示。每次注册与每次注销都会在注册表变更后发出无载荷的 `web/providers-changed` 事件，观察者失败不能否决该变更。客户端通过 `web` Remote 命名空间调用同一方法，即 `ctx.remote.web.listProviders()`；它返回 Remote 结果，只有 `ok` 为 true 时 `value` 才带有列表。客户端在转发的 `web/providers-changed` 事件上刷新；[网页搜索与获取设置页](../../client/ui-settings-web-search/README.zh.md)以此填充搜索与获取下拉框。插件（包括在创造模式中编写的插件）注册带 `title` 的提供方后，即以该名称出现在对应下拉框中，选中时显示其 `description`，选中它会把 `searchProvider` 或 `fetchProvider` 固定为它的 `id`。
+`listProviders()` 以 `{ id, title?, description? }` 条目返回所有已注册的搜索与抓取提供方，每个列表按注册顺序排列；不可用的提供方同样列出，因为选择器展示的是可以固定的提供方。`title` 是提供方可选的显示名，缺省时选择器显示 `id`。`description` 是可选的 `LocalizedText`（来自 `dsh-package-manifest`），可以是纯字符串，也可以是以小写语言 id 为键、必须含 `en` 的翻译表，说明该提供方适合什么、有什么代价或做不到什么；选择器在选中该提供方时把它显示在下方，缺省时不显示。每次注册与每次注销都会在注册表变更后发出无载荷的 `web/providers-changed` 事件，观察者失败不能否决该变更。客户端通过 `web` Remote 命名空间调用同一方法，即 `ctx.remote.web.listProviders()`；它返回 Remote 结果，只有 `ok` 为 true 时 `value` 才带有列表。客户端在转发的 `web/providers-changed` 事件上刷新；网页搜索与获取设置页以此填充搜索与获取下拉框。插件（包括在创造模式中编写的插件）注册带 `title` 的提供方后，即以该名称出现在对应下拉框中，选中时显示其 `description`，选中它会把 `searchProvider` 或 `fetchProvider` 固定为它的 `id`。
 
 ```text
 // Remote: web/listProviders; Host event: web/providers-changed
@@ -106,7 +106,7 @@ ctx.remote.$on('web/providers-changed', () => { /* re-read the lists */ })
       name: '@example/dsh-web-search-acme'
 ```
 
-`dsh --profile <name> --dump-config` 会在该 patch 文件的层下打印这一行。重启后，该提供方以其 `title`（没有 `title` 时以其 `id`）出现在[设置页](../../client/ui-settings-web-search/README.zh.md)的**网页搜索提供方**或**网页获取提供方**下拉框中，设置页无需任何修改。选中它会把 `searchProvider` 或 `fetchProvider` 固定为它的 `id`。如果之后在该提供方被选中时删除了这一行，下拉框会把已保存的 id 显示为 **（未加载）**，每次调用都会以 `WEB_PROVIDER_CONFIGURED_MISSING` 失败，直到选择其他提供方。
+`dsh --profile <name> --dump-config` 会在该 patch 文件的层下打印这一行。重启后，该提供方以其 `title`（没有 `title` 时以其 `id`）出现在设置页的**网页搜索提供方**或**网页获取提供方**下拉框中，设置页无需任何修改。选中它会把 `searchProvider` 或 `fetchProvider` 固定为它的 `id`。如果之后在该提供方被选中时删除了这一行，下拉框会把已保存的 id 显示为 **（未加载）**，每次调用都会以 `WEB_PROVIDER_CONFIGURED_MISSING` 失败，直到选择其他提供方。
 
 <a id="search-readiness"></a>
 ### 搜索与抓取就绪

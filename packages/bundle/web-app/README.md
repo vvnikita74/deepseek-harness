@@ -31,7 +31,7 @@ Run `dsh --profile web` for browser chat, model and settings management, and ses
 
 Start the GUI, open your browser, and start talking to the agent. The flags fine-tune the invocation.
 
-[Agent Teams UI](../../client/ui-agent-team/README.md) loads with this bundle. Enable it per Session in the model and reasoning menu; shared tasks open below the member tree from the Subagent control.
+Agent Teams UI loads with this bundle. Enable it per Session in the model and reasoning menu; shared tasks open below the member tree from the Subagent control.
 
 ### Starting the Web GUI
 
@@ -126,7 +126,6 @@ The URL line and browser handoff are readiness signals: supervisors RPC as soon 
 | [`tests/web-app.spec.ts`](tests/web-app.spec.ts) | Dist index anchoring, advertised-URL publication and warnings, bash variable, readiness publication |
 | [`tests/startup.spec.ts`](tests/startup.spec.ts) | Command-line parsing over a real Loader tree |
 | [`tests/public-url.spec.ts`](tests/public-url.spec.ts) | Advertised-root parsing and normalization |
-| [`tests/browser-open.spec.ts`](tests/browser-open.spec.ts) | Default-browser handoff after the page is reachable |
 
 </details>
 
@@ -139,7 +138,6 @@ Read these pages when you want to go deeper into the shared core, the browser re
 
 - [Bundle package map](../README.md) — the surfaces built on the same core.
 - [dsh-base](../base/README.md) — the shared core the GUI runs on.
-- [dsh-client-hmr](../../client/hmr/README.md) — how client-plugin changes reload during development.
 - [frontend-static](../../host/frontend-static/README.md) — how the built frontend is served.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-app) — every accepted config field and its source declaration.
 

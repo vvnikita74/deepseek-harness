@@ -87,7 +87,6 @@ Both fields survive replay and reach Creator unchanged. This preserves submitted
 
 - [Plugin manager](../../boot/plugin-manager/README.md) — installation and removal.
 - [Subagents](../../subagent/subagent/README.md) — owned background activations.
-- [Creation cards](../client-ui-creation-recommendations/README.md) — location selection and receipts.
 - [Action cards](../action-cards/README.md) — the card tool, card state and user actions.
 
 <a id="model-experience"></a>

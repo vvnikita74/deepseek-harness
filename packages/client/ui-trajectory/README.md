@@ -86,7 +86,6 @@ Trajectory asks the conversation shell to float the composer over the full-heigh
 
 These pages cover the conversation host and the session data this view projects.
 
-- [ui-conversation](../ui-conversation/README.md) — the chat surface hosting the `conversation.view` ring.
 - [session-projection](../../session/session-projection/README.md) — the projection registry serving client-facing read models of session state.
 - [session](../../core/session/README.md) — the session seam whose window holds the raw events.
 - [compaction](../../compaction/compaction/README.md) — the compaction seam whose requests appear in the ledger.

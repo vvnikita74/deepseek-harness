@@ -91,7 +91,6 @@ Name, instruction, timing, and target editing, pausing, and resuming are availab
 ## Further Exploration
 
 - [Schedule reference](../../../packages/schedule/schedule/README.md) documents task fields, delivery targets, recurrence rules, persistence, and delivery limits.
-- [Automation tasks page reference](../../../packages/client/ui-schedule/README.md) describes the global page and conversation-header catalog.
 
 ## Dev Note
 

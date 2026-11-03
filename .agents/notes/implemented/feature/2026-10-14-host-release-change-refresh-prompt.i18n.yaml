@@ -6,8 +6,8 @@
   en: 559df9281e9994e0
   zh: c51f2b1f9973127f
 /agent-note-prompt-to-reload-when-the-host-release-changes-instead-of-hot-replacing-across-releases/problem:
-  en: d98f5657dd30d9da
-  zh: 19d1210e57eb663b
+  en: 71d4e3648daa3456
+  zh: 224208bba066c06a
 /agent-note-prompt-to-reload-when-the-host-release-changes-instead-of-hot-replacing-across-releases/decision:
   en: d39be9788fe2a0c9
   zh: 1a68a3ae4d73930d
@@ -18,14 +18,14 @@
   en: e7cae8876e688f92
   zh: 1d326330c34d128d
 /agent-note-prompt-to-reload-when-the-host-release-changes-instead-of-hot-replacing-across-releases/decision/wire:
-  en: f15c4106f228f5f6
-  zh: ab80cf4ce62ae84c
+  en: b1c5a16e690fb26e
+  zh: 0aae7c6e5b24274d
 /agent-note-prompt-to-reload-when-the-host-release-changes-instead-of-hot-replacing-across-releases/decision/page-side:
-  en: c0610c8f5a0882f3
-  zh: d309cbc53183ec6e
+  en: acb70c140d78fec5
+  zh: 63c835d7f7559aba
 /agent-note-prompt-to-reload-when-the-host-release-changes-instead-of-hot-replacing-across-releases/decision/ui:
-  en: 41b5a3346a7edffa
-  zh: a05ed84017556760
+  en: befc969d1084280f
+  zh: 33ec7a91b3b30095
 /agent-note-prompt-to-reload-when-the-host-release-changes-instead-of-hot-replacing-across-releases/alternatives-considered:
   en: abb9d7ab9ef1df15
   zh: 1704732daf5f2886

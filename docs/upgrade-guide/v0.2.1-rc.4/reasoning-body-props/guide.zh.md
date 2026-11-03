@@ -11,7 +11,7 @@ description: "推理 Body Slot 的 text 提供显示文本，rawText 保留原�
 
 `conversation.chat.reasoning.body` 扩展通过新增的 `rawText` 字段接收模型输出。现有的 `text` 字段提供 Chat 处理后的显示文本，替代原始输出。`running` 保持不变。这会影响自定义推理渲染器和翻译包装组件。
 
-`conversation.chat.reasoning.content` Factory 仍接收 `text`、`running` 和可选的 `labels`。它渲染调用方选定的 Markdown。[Chat README](../../../../packages/client/ui-chat/README.zh.md#grouped-rendering) 介绍了该 Slot。
+`conversation.chat.reasoning.content` Factory 仍接收 `text`、`running` 和可选的 `labels`。它渲染调用方选定的 Markdown。Chat README 介绍了该 Slot。
 
 ## 迁移
 

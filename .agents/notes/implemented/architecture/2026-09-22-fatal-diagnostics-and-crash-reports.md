@@ -32,7 +32,7 @@ This partially supersedes the [native Desktop fatal recovery](2026-09-15-desktop
 
 ## Relationship to the Desktop logging design
 
-Desktop continuously persists a bounded plugin-management journal with whitelisted facts, two rotating segments and a bounded write queue; its budgets and failure guarantees belong to the [Desktop README](../../../../apps/desktop/README.md). It excludes raw installation specs, error text and package-manager output. The broader Worker-owned continuous log remains deferred. Fatal crash reports independently retain raw errors and bounded stderr and renderer-console tails because these contain the field-diagnosis evidence; files are local and owner-only where supported. An isolated Worker appends bounded management history after the basic report is saved, preserving access to the basic report when collection fails or is still running. Recent operations provide context, not causal attribution.
+Desktop continuously persists a bounded plugin-management journal with whitelisted facts, two rotating segments and a bounded write queue; its budgets and failure guarantees belong to the Desktop README. It excludes raw installation specs, error text and package-manager output. The broader Worker-owned continuous log remains deferred. Fatal crash reports independently retain raw errors and bounded stderr and renderer-console tails because these contain the field-diagnosis evidence; files are local and owner-only where supported. An isolated Worker appends bounded management history after the basic report is saved, preserving access to the basic report when collection fails or is still running. Recent operations provide context, not causal attribution.
 
 ## Testing
 

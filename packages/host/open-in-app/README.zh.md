@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-将 `dsh-host-open-in-app` 与其[浏览器配套包](../../client/ui-open-in-app/README.zh.md)一起使用，让用户能在已安装的编辑器、Git GUI、终端或文件管理器中打开 workspace 目录。本包提供固定的应用目录，并只显示主机能够验证的条目；新安装的应用在重启后出现，而检测到启动器缺失时会移除对应条目。请求须通过部署的浏览器认证与主机来源信任检查。检测与启动命令使用可配置的期限，且不会把继承的凭据传给启动的应用。
+将 `dsh-host-open-in-app` 与其浏览器配套包一起使用，让用户能在已安装的编辑器、Git GUI、终端或文件管理器中打开 workspace 目录。本包提供固定的应用目录，并只显示主机能够验证的条目；新安装的应用在重启后出现，而检测到启动器缺失时会移除对应条目。请求须通过部署的浏览器认证与主机来源信任检查。检测与启动命令使用可配置的期限，且不会把继承的凭据传给启动的应用。
 
 ## 目录
 
@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-把本包挂进携带 `webServer`、`connection` 与 `subprocess` 的组合，通常与其浏览器表面 [`dsh-client-ui-open-in-app`](../../client/ui-open-in-app/README.zh.md) 并排；只要主机解析出目录中至少一个已安装的应用，这对包就会在 Web 会话头部放上 "Open In..." 分体按钮。
+把本包挂进携带 `webServer`、`connection` 与 `subprocess` 的组合，通常与其浏览器表面 `dsh-client-ui-open-in-app` 并排；只要主机解析出目录中至少一个已安装的应用，这对包就会在 Web 会话头部放上 "Open In..." 分体按钮。
 
 ### 何时选择
 
@@ -88,7 +88,6 @@ Linux 桌面文件字段和图标使用共享的 [native-command](../../util/nat
 <a id="further-exploration"></a>
 ## 进一步探索
 
-- [dsh-client-ui-open-in-app](../../client/ui-open-in-app/README.zh.md)——消费这三条路由的浏览器分体按钮。
 - [dsh-subprocess](../../subprocess/subprocess/README.zh.md)——提供进程内 PATH 解析与清理过的子进程环境的能力。
 - [dsh-native-command](../../util/native-command/README.zh.md)——解析与图标命令的免 shell 主机命令运行器。
 - [dsh-host-webserver](../webserver/README.zh.md)——承载三条 HTTP 端点的路由注册表。

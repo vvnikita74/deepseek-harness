@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-[个性化推荐](../personalized-recommendations/README.zh.md) Bundle 会插入本服务及其[浏览器端](../client-ui-action-cards/README.zh.md)。本服务只有一个配置字段：
+[个性化推荐](../personalized-recommendations/README.zh.md) Bundle 会插入本服务及其浏览器端。本服务只有一个配置字段：
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
@@ -73,7 +73,6 @@ Remote `act(sessionId, callId, verb, payload?)` 先检查服务所有者、在�
 <a id="further-exploration"></a>
 ## 延伸阅读
 
-- [操作卡片显示](../client-ui-action-cards/README.zh.md) — 浏览器端卡片框架、种类正文与过程行。
 - [个性化页面](../creation-recommendations/README.zh.md)和[插件推荐](../plugin-recommendations/README.zh.md) — 随产品提供的卡片种类。
 - [工具](../../core/tools/README.zh.md) — 条件注册与每步准入。
 - [会话投影](../../session/session-projection/README.zh.md) — 浏览器读取的卡片状态。

@@ -33,7 +33,7 @@ Status: implemented
 
 ### 解析在 Tool Definition 层，不在 React
 
-[Tool Definition](../../../../packages/client/ui-chat/src/client/conversation-nodes/tool.ts) 把每个带 id 的 `tool-call-delta` 都匹配为 start 候选：最早的一个打开 Context（无论是否带名），后续折叠为 update。带名 delta 创建 preparing 根并挂上一个新的流式视图；每个 delta 只做 `args.append(delta)`。在 `animation-frame` 发布点，`buildViewNode()` 刷新已观察答案，仅在变化时替换根块，否则复用当前已发布根块。Context 和已发布 Node 持有这些身份，不另建准备阶段缓存。参数在名字之前到达的流不扫描：迟开的视图看到非对象前缀即 invalid、零字段。
+Tool Definition 把每个带 id 的 `tool-call-delta` 都匹配为 start 候选：最早的一个打开 Context（无论是否带名），后续折叠为 update。带名 delta 创建 preparing 根并挂上一个新的流式视图；每个 delta 只做 `args.append(delta)`。在 `animation-frame` 发布点，`buildViewNode()` 刷新已观察答案，仅在变化时替换根块，否则复用当前已发布根块。Context 和已发布 Node 持有这些身份，不另建准备阶段缓存。参数在名字之前到达的流不扫描：迟开的视图看到非对象前缀即 invalid、零字段。
 
 三个阶段的块都提供 `name` 和 `args`，原有 `argsRaw` 和 result 的 `call: { name, argsRaw } | null` 仍可使用。`block-end` 和 `tool/call` 通过长度及逐分片精确比较，将流式参数与权威全文核对。文本一致时封存原读器并保留字段索引，分片缺失或冲突时创建新的 `fromText()` 视图。不需要累加字符串或概率性 hash。PTC 读器使用 `fromObject(payload)`，结果复用已派发读器，未配对结果使用共享空视图。卡片模型继续读取最终 `argsRaw`。
 
@@ -72,7 +72,7 @@ Assembler 为同一输入和生命周期角色共享一个不可变 Match 及其
 - 负控恢复读取时确认变化、重复分配 Match 和短文本字素遍历；四项聚焦测试在对应断言失败，恢复后通过。各 Definition 保留独立 State，Turn 与 Step 记录仍归各 Session 所有。
 - 另有负控提前解析未读容器、接受同长度的冲突文本，或为纯参数 delta 重建 Assistant State。每项都在所属断言失败，恢复边界索引实现后通过。
 
-必跑的 [conversation-fold benchmark](../../../../benchmarks/conversation-fold/conversation-fold.bench.client.ts) 使用真实 Tool Definition、Assembler、Chat 分组及发布后的 write 行读取，以 16 字符分片输入，每 64 片 flush。三个独立的已编译 Node worker 报告全部样本及中位数；准备工作和显式 GC 不计时，保留 Assembler 与参数视图后测量驻留堆。行读取校验解码进度与文件路径；worker 还报告进程峰值 RSS。
+必跑的 conversation-fold benchmark 使用真实 Tool Definition、Assembler、Chat 分组及发布后的 write 行读取，以 16 字符分片输入，每 64 片 flush。三个独立的已编译 Node worker 报告全部样本及中位数；准备工作和显式 GC 不计时，保留 Assembler 与参数视图后测量驻留堆。行读取校验解码进度与文件路径；worker 还报告进程峰值 RSS。
 
 2026-09-29 的本地 Chat 专项测量，以 512 KiB write 内容和 32,769 个正文 delta 对比功能改造前基线与优化实现。在 Linux x64、AMD EPYC 7763、Node 24.18.0 上，无探针处理耗时中位数为 212.16 → 176.12 ms，包含已回收对象的累计分配为 132.06 → 76.65 MiB，驻留堆为 24.89 → 21.84 MiB。测量不含模型、网络、浏览器渲染和非 Chat 目标，不代表整页或 CI runner 延迟。
 

@@ -25,7 +25,7 @@ An experiment can offer one optional action below an answer, such as creating a 
 <a id="use-this-package"></a>
 ## Use this package
 
-The [Personalized recommendations](../personalized-recommendations/README.md) bundle inserts this service and its [browser half](../client-ui-action-cards/README.md). The service has one configuration field:
+The [Personalized recommendations](../personalized-recommendations/README.md) bundle inserts this service and its browser half. The service has one configuration field:
 
 | Field | Default | Meaning |
 |---|---|---|
@@ -73,7 +73,6 @@ The Remote `act(sessionId, callId, verb, payload?)` checks the owner, the live r
 <a id="further-exploration"></a>
 ## Further Exploration
 
-- [Action card display](../client-ui-action-cards/README.md) — the browser frame, kind bodies and the process row.
 - [Personalized pages](../creation-recommendations/README.md) and [Plugin recommendations](../plugin-recommendations/README.md) — the shipped card kinds.
 - [Tools](../../core/tools/README.md) — conditional registration and step admission.
 - [Session projection](../../session/session-projection/README.md) — the card state the browser reads.

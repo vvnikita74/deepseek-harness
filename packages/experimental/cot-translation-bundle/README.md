@@ -48,7 +48,7 @@ The bundle patch inserts `translator` and `cot-translation`, selecting Bing and 
 <a id="further-exploration"></a>
 ## Further Exploration
 
-[Text translation subsystem](../../../docs/subsystems/translation.md) · [Translator service](../translator/README.md) · [GUI consumer](../client-ui-cot-translation/README.md)
+[Text translation subsystem](../../../docs/subsystems/translation.md) · [Translator service](../translator/README.md) · GUI consumer
 
 -----
 
@@ -59,7 +59,7 @@ Indirectly, through optional independent paid Flash requests and normal Session 
 
 #### KV Cache effect
 
-Translation records leave original reasoning intact; normal Session activation and optional paid queries have the cache effects described by the [GUI consumer](../client-ui-cot-translation/README.md#model-experience).
+Translation records leave original reasoning intact; normal Session activation and optional paid queries have the cache effects described by the GUI consumer.
 
 ## Known Limitations and Deferred Work
 

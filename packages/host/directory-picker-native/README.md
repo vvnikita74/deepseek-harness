@@ -29,7 +29,7 @@ Compose this backend when the operator works at the host's display and a native 
 
 ### When to choose it
 
-Choose this backend for a workstation-local operator on macOS, Windows, or desktop Linux. Choose the [browse backend](../directory-picker-browse/README.md) when clients cannot reach an OS chooser — remote browsers, SSH-forwarded sessions, or unattended hosts. When the situation varies, the [adaptive chooser](../directory-picker-auto/README.md) resolves it at boot.
+Choose this backend for a workstation-local operator on macOS, Windows, or desktop Linux. Choose the [browse backend](../directory-picker-browse/README.md) when clients cannot reach an OS chooser — remote browsers, SSH-forwarded sessions, or unattended hosts. When the situation varies, the adaptive chooser resolves it at boot.
 
 ### What an operator experiences
 
@@ -75,7 +75,6 @@ Read these when the backend contract is not enough: the seam definition first, t
 - [Directory-picker seam](../directory-picker/README.md) — the `native` capability contract and the typed error vocabulary.
 - [Directory-picker capability seam decision](../../../.agents/notes/archived/architecture/2026-07-28-directory-picker-capability-seam.md) — why backends differ in interaction shape.
 - [Browse backend](../directory-picker-browse/README.md) — the in-app alternative for remote clients.
-- [Adaptive chooser](../directory-picker-auto/README.md) — boot-time resolution between native and browse.
 - [No-shell subprocess runner](../../util/native-command/README.md) — the shared subprocess primitive the chooser runs on.
 
 -----

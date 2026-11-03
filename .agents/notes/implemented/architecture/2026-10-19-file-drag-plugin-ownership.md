@@ -10,7 +10,7 @@ Image dragging spans conversation images, sidebar previews, and composer drop ta
 
 ## Decision
 
-The [file-drag plugin](../../../../packages/client/ui-file-drag/README.md) owns generic file preparation, browser transfer tokens, retained original files, desktop bridge selection, and transient failure feedback. Consumers receive preparation and error callbacks through their slot or Factory injection. The plugin registers its feedback through `shell.overlay`; layout declares the generic slot and has no image dependency. The shared image primitive owns gestures and cancellation. Images are the first consumer, while MIME naming and transport accept other files.
+The file-drag plugin owns generic file preparation, browser transfer tokens, retained original files, desktop bridge selection, and transient failure feedback. Consumers receive preparation and error callbacks through their slot or Factory injection. The plugin registers its feedback through `shell.overlay`; layout declares the generic slot and has no image dependency. The shared image primitive owns gestures and cancellation. Images are the first consumer, while MIME naming and transport accept other files.
 
 ## Alternatives considered
 

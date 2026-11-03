@@ -8,7 +8,7 @@ Status: proposed
 
 [紧凑 Assistant 流实现](../../../../packages/llm/llm/src/assistant-stream.ts)导出五个可见性查询：`isVisibleChunk`、`chunkHasVisibleText`、`runFirstVisibleTime`、`assistantStreamHasVisibleContent` 和 `assistantStreamHasVisibleText`。仓库搜索未找到这组函数之外的生产调用方。其余消费方是[单元测试](../../../../packages/llm/llm/tests/assistant-stream.spec.ts)、包文档和[记录读取器参考](../../../../packages/llm/llm/README.zh.md)。包根入口和发布的 `./assistant-stream` 入口向外部调用方暴露这些函数；本次搜索无法确定外部使用情况。
 
-保留的首 token 读取器已有 [Session Stats](../../../../packages/session/session-stats/src/projection.ts) 和 [Trajectory](../../../../packages/client/ui-trajectory/src/client/trajectory-assistant-definition.ts) 消费方。它们的计时要求不依赖单独区分空白文本的可见性分类。
+保留的首 token 读取器已有 [Session Stats](../../../../packages/session/session-stats/src/projection.ts) 和 Trajectory 消费方。它们的计时要求不依赖单独区分空白文本的可见性分类。
 
 ## 提案
 

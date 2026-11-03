@@ -8,7 +8,7 @@ English | [中文](2026-09-19-prune-stream-visibility-helpers.zh.md)
 
 The [compact Assistant stream implementation](../../../../packages/llm/llm/src/assistant-stream.ts) exports five visibility queries: `isVisibleChunk`, `chunkHasVisibleText`, `runFirstVisibleTime`, `assistantStreamHasVisibleContent`, and `assistantStreamHasVisibleText`. Repository searches find no production caller outside that family. Its other consumers are the [unit tests](../../../../packages/llm/llm/tests/assistant-stream.spec.ts), package documentation, and the [record-reader reference](../../../../packages/llm/llm/README.md). The package root and published `./assistant-stream` entry expose the functions to external callers, whose usage this search cannot establish.
 
-The retained first-token reader has current consumers in [Session Stats](../../../../packages/session/session-stats/src/projection.ts) and [Trajectory](../../../../packages/client/ui-trajectory/src/client/trajectory-assistant-definition.ts). Their timing requirements do not require the separate whitespace-sensitive visibility classification.
+The retained first-token reader has current consumers in [Session Stats](../../../../packages/session/session-stats/src/projection.ts) and Trajectory. Their timing requirements do not require the separate whitespace-sensitive visibility classification.
 
 ## Proposal
 

@@ -2,7 +2,7 @@
 
 [English](conversation.md) | 中文
 
-Conversation 是 Client `SessionEventLikeEntry` window 与浏览器 view 之间的 target-neutral assembly 层。[`ui-conversation`](../../packages/client/ui-conversation/README.zh.md)拥有 event 与 view registry、每个 `SessionBinding` 对应的 identity-stable binding、Turn/Step Location、增量 Context assembly、target source、共享 shell 与输入编排。[`ui-chat`](../../packages/client/ui-chat/README.zh.md)和 [`ui-trajectory`](../../packages/client/ui-trajectory/README.zh.md)等 target 包拥有各自的 Definition、最终 snapshot 与渲染。
+Conversation 是 Client `SessionEventLikeEntry` window 与浏览器 view 之间的 target-neutral assembly 层。`ui-conversation`拥有 event 与 view registry、每个 `SessionBinding` 对应的 identity-stable binding、Turn/Step Location、增量 Context assembly、target source、共享 shell 与输入编排。`ui-chat`和 [`ui-trajectory`](../../packages/client/ui-trajectory/README.zh.md)等 target 包拥有各自的 Definition、最终 snapshot 与渲染。
 
 本文定义数据模型与业务自有 Conversation node 的扩展路径。[Web Client 架构](web-client.zh.md)说明该子系统在 Client model 与 Slots 之间的位置；[Conversation Node 组装决策](../../.agents/notes/implemented/architecture/2026-08-09-client-conversation-node-assembly.zh.md)记录其设计理由。
 
@@ -32,7 +32,7 @@ shell 拥有 View 选择，并在 binding 创建、被选为 current 或 View ro
 
 可选的 `ctx.uiConversation.groups.register(definition)` 贡献沿用事件及视图注册的 effect 生命周期。它要求已有 View 目标，拒绝重复目标注册，不构造 Builder。每个 Session 仅在目标激活时创建自己的 Group 上下文。注册替换通过既有注册重建流程丢弃旧上下文，并清空其被观察的组。
 
-[分组类型](../../packages/client/ui-conversation/src/client/contract/groups.ts)定义完整协议：
+分组类型定义完整协议：
 
 | 类型 | 含义 |
 |---|---|
@@ -255,7 +255,7 @@ match 结果带 `exclusive: true` 时，即在该 Definition 的 target 上认�
 
 `target` 与 `buildViewNode(context)` 必须同时声明一项由 target 拥有的渲染贡献。把 `context.key` 保留为 React 侧身份，根据持久排序证据选择 `anchorSeq`，并且只返回 renderer 可以直接使用的数据。某个 target Node 一旦发布，就要继续返回同一个 key；需要暂时离开可见流时使用 `visibility: 'hidden'`，不要改为返回 `null` 撤回它。
 
-Chat Node 还通过 `groupTree` 选择所在行的位置。位置由外到内排列，站在某个位置的 Node 同时具有所有内层位置的效果。Chat 的过程分组、整轮折叠和轮次输入判断只读取这个位置；完整契约见 [group-tree.ts](../../packages/client/ui-chat/src/client/contract/group-tree.ts)。
+Chat Node 还通过 `groupTree` 选择所在行的位置。位置由外到内排列，站在某个位置的 Node 同时具有所有内层位置的效果。Chat 的过程分组、整轮折叠和轮次输入判断只读取这个位置；完整契约见 group-tree.ts。
 
 | Node 是 | 声明 |
 |---|---|
@@ -265,7 +265,7 @@ Chat Node 还通过 `groupTree` 选择所在行的位置。位置由外到内排
 | 整轮折叠仍会隐藏的独立行，如模型重试 | `process` |
 | 并入相邻步骤组的普通过程内容 | 不声明 `groupTree` |
 
-各内置 Node 声明的位置见 [Chat 业务规则](../../packages/client/ui-chat/src/client/conversation-nodes/README.zh.md#process-grouping)。如果同一 target 的通用 Definition 也会匹配你的 Node 所呈现的事件，按上文用 `exclusive: true` 认领该事件。
+各内置 Node 声明的位置见 Chat 业务规则。如果同一 target 的通用 Definition 也会匹配你的 Node 所呈现的事件，按上文用 `exclusive: true` 认领该事件。
 
 ## Predecessor read
 
@@ -299,5 +299,3 @@ Assembler 会记录这项依赖。如果后续 older prepend 带来了更近的�
 6. keyed renderer 只消费 `node.data` 与受限 Location hook，不扫描 Session 事件窗口、Context 或 Chat Node。
 7. scalar 与 packed Assistant 历史产生相同的最终 State、timing boundary 和 target snapshot；一个 packed run 在 replace、prepend、Location replay 与 registry rebuild 中始终只保留一个 Match。
 8. 创建 target source 不执行 builder 工作；显式选择或首次订阅执行一次完整 replace，后续更新送达所有 active target，重复激活不会再次 replace。
-
-流式与中断处理可参考 [`packages/client/ui-chat/src/client/conversation-nodes/assistant.ts`](../../packages/client/ui-chat/src/client/conversation-nodes/assistant.ts)，前序查询可参考 [`inbox.ts`](../../packages/client/ui-chat/src/client/conversation-nodes/inbox.ts) 与 [`message.ts`](../../packages/client/ui-chat/src/client/conversation-nodes/message.ts)，只发布 Turn data 而不创建自有 Node 的例子见 [`packages/client/ui-deliverables`](../../packages/client/ui-deliverables)。

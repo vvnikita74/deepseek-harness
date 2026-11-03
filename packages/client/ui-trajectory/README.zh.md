@@ -86,7 +86,6 @@ Trajectory 要求会话壳把 composer 作为浮层置于全高记录表上方�
 
 以下页面覆盖对话宿主与本视图所投影的会话数据。
 
-- [ui-conversation](../ui-conversation/README.zh.md)——承载 `conversation.view` 环的聊天界面。
 - [session-projection](../../session/session-projection/README.zh.md)——为面向客户端的会话状态读取模型提供服务的投影注册表。
 - [session](../../core/session/README.zh.md)——其窗口持有原始事件的会话 seam。
 - [compaction](../../compaction/compaction/README.zh.md)——其请求出现在记录表中的压缩 seam。

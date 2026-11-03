@@ -70,7 +70,6 @@ Npm sections describe installation and development relationships; each build fac
 6. **Browser and Node build faces declare externality independently.** A dynamic browser half uses the baseline plus `dsh.client.external`; a statically linked face externalizes every bare specifier; a Node face externalizes its production dependencies ([`tsdown.client.ts`](tsdown.client.ts)). Moving a name between npm sections must not silently change bundle contents.
 7. **Keep the published payload closed.** Every relative runtime import and emitted asset must be covered by `files`; the repository publint pass checks the exact publication view.
 8. **Only the root manifest declares React type packages.** `@types/react` and `@types/react-dom` belong only in the root `package.json` `devDependencies`, and `verify-package-dependencies` rejects them in every manifest under `apps/*`, `packages/*/*`, and `vendor/*`; packages still declare the `react` and `react-dom` they import. Each package-local pnpm link is one more location TypeScript scans when it computes module specifiers for every JSX file ([rationale](../../.agents/notes/implemented/process/2026-10-11-lossless-build-speedups.md#1-only-the-root-manifest-declares-react-type-packages)).
-9. **Package images live under `src/client/assets/`.** Client code references one by relative `import` and the package's own CSS by relative `url()`; supported extensions are `.svg`, `.png`, `.webp`, `.jpg`, and `.jpeg`. The package declares `"./assets/*": "./lib/assets/*"` in `exports` and `lib/assets` in `files`; the build preset emits each referenced file under `lib/assets/`, and the browser loads it through the [client-modules asset route](modules/README.md).
 
 ## Build-time browser environment
 
@@ -78,7 +77,7 @@ Client business code may statically read `process.env.DSH_CLIENT_*`; every refer
 
 ## Shared modules and the module graph
 
-A dynamic browser half either carries a module privately or requests the shared module-table identity. The client baseline is centralized in [`web/src/platform.ts`](web/src/platform.ts): `PLATFORM_MODULES` names shell-seeded React, Cordis, selected third-party libraries, and static Client libraries; `PRELOADED_CLIENT_EXTERNALS` is reserved for dynamic rows whose factories must arrive before shell boot and is empty when no such row exists.
+A dynamic browser half either carries a module privately or requests the shared module-table identity. The client baseline is centralized in `web/src/platform.ts`: `PLATFORM_MODULES` names shell-seeded React, Cordis, selected third-party libraries, and static Client libraries; `PRELOADED_CLIENT_EXTERNALS` is reserved for dynamic rows whose factories must arrive before shell boot and is empty when no such row exists.
 
 1. **Baseline externals are implicit for every dynamic bundle.** Do not repeat entries from `PLATFORM_MODULES` in `dsh.client.external`; npm dependency declarations still follow the dependency rules above.
 2. **`dsh.client.external` is not a feature-plugin dependency mechanism.** Only infrastructure, transport, or generated assembly may add a package-specific non-baseline value request whose dynamic row must be materialized through the module table. Declare the exact import specifier; only a trailing `/client` aliases the package row.
@@ -101,7 +100,6 @@ Three declarations read like dependency edges and none is interchangeable: Cordi
 
 The seam is `loader.internal = modules`: cordis reaches plugin code through `EntryTree.import`, so every module request must be satisfiable before cordis can order activation above it. The modules node half emits rows in topological order, and `ClientModuleSystem.import`/`prefetch` recursively registers dynamic provider factories before their consumers materialize. This module order is independent from Cordis activation: a provider that injects services can register first and activate last.
 
-`packages/client/web` is not a Loader entry. Its static imports seed `PLATFORM_MODULES`; parser-preloaded dynamic rows remain ordinary Loader entries and ordinary `lib/client.js` artifacts.
 
 ## Conversation Node discipline
 
@@ -153,7 +151,6 @@ Bringing up a new `packages/client/<name>` plugin package (ui-workspace is a com
 
 ## New component checklist
 
-1. **Check the [ui-primitives catalog](ui-primitives/README.md#component-catalog) before writing a control.** A plugin cannot import another plugin's component, so `ui-primitives` is the only place a control can be shared; the catalog states when to reuse, when to promote, and when your own package is the right home.
 
 2. Compose through `register`: add the slot to `SlotMap`, declare it in its parent entry's `children`, and register your component. A component or assembly designed for reuse may instead use a Component Factory; one-off components need not become Factories. See the [Slots reference](../../docs/subsystems/slots.md).
 3. Type ordinary props from the five shares (`PropsRuntime` & `PropsRenderSlots` & `PropsRenderFactories` & `PropsStore` & inject face), and use the derived `Factory*PropsOf` aliases for Factory Components. Shared or remount-surviving state goes in a declared store; component-private state stays local.

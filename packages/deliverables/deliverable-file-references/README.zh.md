@@ -53,7 +53,6 @@ Web 和 `sdk` bundle 独立于 `present` 工具挂载本插件。自定义组合
 
 - [系统提示词](../../core/system-prompt/README.zh.md)——段落组装与顺序。
 - [Present 工具](../tool-present/README.zh.md)——可执行的文件交付声明。
-- [Web 交付](../../client/ui-deliverables/README.zh.md)——文件卡片与文件打开。
 
 <a id="model-experience"></a>
 ## 模型体验

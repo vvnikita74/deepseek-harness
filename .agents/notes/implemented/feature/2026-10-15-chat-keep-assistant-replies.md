@@ -6,7 +6,7 @@ English | [中文](2026-10-15-chat-keep-assistant-replies.zh.md)
 
 ## Problem
 
-In Compact, Standard, and Detailed, a normally completed Turn folds as a whole. Under the previous rule the reader saw only the input, the whole-Turn control, the **final answer**, and the footer. The final answer is chosen by position: the last Assistant message in the latest Step that has visible reply content and no tool-call block (`latestAnswer` in [turn-process.ts](../../../../packages/client/ui-chat/src/client/conversation-nodes/turn-process.ts)). Every intermediate reply before it was hidden with the process.
+In Compact, Standard, and Detailed, a normally completed Turn folds as a whole. Under the previous rule the reader saw only the input, the whole-Turn control, the **final answer**, and the footer. The final answer is chosen by position: the last Assistant message in the latest Step that has visible reply content and no tool-call block (`latestAnswer` in turn-process.ts). Every intermediate reply before it was hidden with the process.
 
 Position is not content. A Turn often continues after the answer: a settled-subagent notice wakes another Step, the Agent updates its records, or it calls a tool after answering. The last message then becomes a short addendum, or there is no text-only ending at all, and the real answer folds into the process (#6132, #5429). For example, after a long research summary, a subagent completion notice woke one more Step whose message added a single remark; that remark was all the reader saw.
 
@@ -64,15 +64,8 @@ Only the rule that decides process membership changes, and it follows the settin
 
 | Location | Content |
 |---|---|
-| [chat-settings.ts](../../../../packages/client/ui-chat/src/chat-settings.ts), [index.ts](../../../../packages/client/ui-chat/src/index.ts) | `FOLDED_REPLIES_FIELD`, `FOLDED_REPLIES = ['all', 'final']`, and `DEFAULT_FOLDED_REPLIES = 'all'`, registered in `ChatSettingsFields` and the Host `Config` |
-| [transcript-view.ts](../../../../packages/client/ui-chat/src/client/transcript-view.ts) | The `foldedReplies` snapshot and `setFoldedReplies` of `TranscriptViewPolicy`, read and written like `collapseTiming` |
-| [presentation-policy.ts](../../../../packages/client/ui-chat/src/client/presentation-policy.ts) | `ChatPresentationPolicy.foldedReplies`; `presentationPolicyFor(mode, timing, replies)` returns one fixed object for each of the 16 combinations; `derivePresentationPolicy` subscribes to all three preferences |
-| [apply.ts](../../../../packages/client/ui-chat/src/client/apply.ts), [settings/TranscriptViewRow.tsx](../../../../packages/client/ui-chat/src/client/settings/TranscriptViewRow.tsx), [locale.ts](../../../../packages/client/ui-chat/src/client/locale.ts) | The selector below collapse timing, not rendered in Verbose; Chinese and English copy |
-| [chat/ChatNodeSeat.tsx](../../../../packages/client/ui-chat/src/client/chat/ChatNodeSeat.tsx) | With `foldedReplies === 'all'`, a `replyRow` (the non-reasoning part of an `assistant-step` with reply content) is not a `processMember` and owns the disclosure (`ownsDisclosure`) to read `foldable`/`open`; collapsible content uses `hasNonReplyProcess` or `hasExternalProcess` according to the setting |
-| [chat/AssistantNodeView.tsx](../../../../packages/client/ui-chat/src/client/chat/AssistantNodeView.tsx) | With `all`, a folded Turn hides the inline reasoning of every reply row; with `final`, only the final answer's inline reasoning |
-| [conversation-nodes/turn-process-presentation.ts](../../../../packages/client/ui-chat/src/client/conversation-nodes/turn-process-presentation.ts) | `hasNonReplyProcess` beside `hasExternalProcess`: an `assistant-step` from a Step other than the answer's counts as process content only through its reasoning |
 
-The [Chat Node business rules](../../../../packages/client/ui-chat/src/client/conversation-nodes/README.md) describe the reader-visible rule and setting; [Chat group-tree positions and exchanges](../architecture/2026-10-11-chat-group-tree-exchanges.md) records that `assistant-step` reply rows stay outside whole-Turn folding.
+The Chat Node business rules describe the reader-visible rule and setting; [Chat group-tree positions and exchanges](../architecture/2026-10-11-chat-group-tree-exchanges.md) records that `assistant-step` reply rows stay outside whole-Turn folding.
 
 ## Alternatives considered
 

@@ -53,7 +53,6 @@ The [plugin entry](src/index.ts) registers `ui:deliverable-file-references` at t
 
 - [System prompts](../../core/system-prompt/README.md) — section assembly and ordering.
 - [Present tool](../tool-present/README.md) — executable file-delivery declarations.
-- [Web deliverables](../../client/ui-deliverables/README.md) — file cards and file opening.
 
 <a id="model-experience"></a>
 ## Model Experience

@@ -29,7 +29,7 @@ web GUI 让操作者通过 OS 选择器或应用内浏览器选择工作区目�
 
 ### 选择后端
 
-当操作者坐在宿主屏幕前时，[原生后端](../directory-picker-native/README.zh.md)是正确选择：`directoryPicker/pick` 打开一个 OS 选择器，返回所选绝对路径，取消时返回 `null`。[浏览后端](../directory-picker-browse/README.zh.md)处处可用——它在浏览器中列举一个目录层级并创建子目录，因此无法触达 OS 对话框的远程客户端依然能选择工作区。当宿主处境在两次启动之间变化时，组合[自适应选择器](../directory-picker-auto/README.zh.md)，它在启动时判定一次处境并挂载匹配的后端。
+当操作者坐在宿主屏幕前时，[原生后端](../directory-picker-native/README.zh.md)是正确选择：`directoryPicker/pick` 打开一个 OS 选择器，返回所选绝对路径，取消时返回 `null`。[浏览后端](../directory-picker-browse/README.zh.md)处处可用——它在浏览器中列举一个目录层级并创建子目录，因此无法触达 OS 对话框的远程客户端依然能选择工作区。当宿主处境在两次启动之间变化时，组合自适应选择器，它在启动时判定一次处境并挂载匹配的后端。
 
 ### 能力约定
 
@@ -77,7 +77,6 @@ web GUI 让操作者通过 OS 选择器或应用内浏览器选择工作区目�
 - [目录选择能力 seam 决策](../../../.agents/notes/archived/architecture/2026-07-28-directory-picker-capability-seam.md)——设计依据、`ctx.fs` 切分与策略裁决。
 - [原生后端](../directory-picker-native/README.zh.md)——OS 选择器交互及其平台工具。
 - [浏览后端](../directory-picker-browse/README.zh.md)——面向远程客户端的应用内列举与创建交互。
-- [自适应选择器](../directory-picker-auto/README.zh.md)——两个后端之间的启动时判定。
 - [工作区子系统](../../../docs/subsystems/workspace.zh.md)——接收所选目录的工作区记录。
 
 -----

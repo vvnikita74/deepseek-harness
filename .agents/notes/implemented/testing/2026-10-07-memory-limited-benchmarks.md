@@ -14,7 +14,7 @@ Benchmarks run on hosted runners with 16 GB of memory and on developer machines 
 
 ### Cases
 
-The list holds the files with the largest measured resident memory or the long-history UI path: [session-corpus](../../../../benchmarks/session-corpus/README.md) (list of 3,000 Sessions, content search over 1,000, fork), its projection-list file, [session-open](2026-09-04-session-open-performance-gate.md) (127,400-event Session), and [long-session-browser](../../../../benchmarks/long-session-browser/README.md) (Chromium and its Host). Terminal, fold, reconnect, and continuation files measure small in-process workloads and stay out.
+The list holds the files with the largest measured resident memory or the long-history UI path: [session-corpus](../../../../benchmarks/session-corpus/README.md) (list of 3,000 Sessions, content search over 1,000, fork), its projection-list file, [session-open](2026-09-04-session-open-performance-gate.md) (127,400-event Session), and long-session-browser (Chromium and its Host). Terminal, fold, reconnect, and continuation files measure small in-process workloads and stay out.
 
 ### Limit and endpoint
 

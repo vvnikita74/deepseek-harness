@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决策
 
-[快捷键服务](../../../../packages/client/shortcuts/README.zh.md) 只保存按运行端／平台区分的版本化覆盖。Web 使用同 origin 的浏览器存储；Electron main 管理 `userData/keybindings.json`，与 Harness home 独立。两端适配器共享校验和事务逻辑。持久化成功后发布一个已接受配置，命令匹配、键帽和原生拦截都由此派生。
+快捷键服务 只保存按运行端／平台区分的版本化覆盖。Web 使用同 origin 的浏览器存储；Electron main 管理 `userData/keybindings.json`，与 Harness home 独立。两端适配器共享校验和事务逻辑。持久化成功后发布一个已接受配置，命令匹配、键帽和原生拦截都由此派生。
 
 未加载命令保留休眠覆盖。显式覆盖优先于新增默认值，相互冲突的显式覆盖全部禁用。不可读配置阻止普通编辑，并保留上次接受的值。全部恢复只清除已接受的当前平台覆盖，不会覆盖不可读或未来版本的数据。
 

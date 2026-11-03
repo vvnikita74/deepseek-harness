@@ -143,7 +143,6 @@ service 运行若在 `idleTimeoutMs` 内没有任何捕获输出即被终止，�
 - [App boot](../app-boot/README.zh.md)——profile 配置层与启动策略。
 - [Plugin inventory](../../host/plugin-inventory/README.zh.md)——当前 Loader 和预设状态。
 - [插件管理页](../../client/ui-plugin-manager/README.zh.md)——基于本服务的 Web 侧边栏页面。
-- [Plugin settings](../../client/ui-settings-plugin-inventory/README.zh.md)——只读的 Web 清单。
 
 <a id="model-experience"></a>
 ## 模型体验

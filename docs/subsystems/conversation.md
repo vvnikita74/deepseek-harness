@@ -2,7 +2,7 @@
 
 English | [中文](conversation.zh.md)
 
-Conversation is the target-neutral assembly layer between a Client `SessionEventLikeEntry` window and browser views. [`ui-conversation`](../../packages/client/ui-conversation/README.md) owns the event and view registries, one identity-stable binding per `SessionBinding`, Turn/Step locations, incremental Context assembly, target sources, the shared shell, and input orchestration. Target packages such as [`ui-chat`](../../packages/client/ui-chat/README.md) and [`ui-trajectory`](../../packages/client/ui-trajectory/README.md) own their Definitions, final snapshots, and rendering.
+Conversation is the target-neutral assembly layer between a Client `SessionEventLikeEntry` window and browser views. `ui-conversation` owns the event and view registries, one identity-stable binding per `SessionBinding`, Turn/Step locations, incremental Context assembly, target sources, the shared shell, and input orchestration. Target packages such as `ui-chat` and [`ui-trajectory`](../../packages/client/ui-trajectory/README.md) own their Definitions, final snapshots, and rendering.
 
 This page defines the data model and the extension path for a business-owned Conversation node. The [Web Client architecture](web-client.md) places the subsystem between Client models and Slots; the [Conversation Node assembly decision](../../.agents/notes/implemented/architecture/2026-08-09-client-conversation-node-assembly.md) owns its rationale.
 
@@ -32,7 +32,7 @@ The shell owns View selection and resolves the registered preferred View or Chat
 
 The optional `ctx.uiConversation.groups.register(definition)` contribution uses the same effect-owned registry lifecycle as event and view registrations. It requires an existing View target and rejects duplicate target registrations without constructing a Builder. Each Session creates its own Group context only when that target activates. Registration replacement discards the old context and clears its observed groups during the existing registry rebuild.
 
-The [group types](../../packages/client/ui-conversation/src/client/contract/groups.ts) define the complete protocol:
+The group types define the complete protocol:
 
 | Type | Meaning |
 |---|---|
@@ -253,7 +253,7 @@ A match result with `exclusive: true` claims that event on the Definition's targ
 
 `target` and `buildViewNode(context)` declare one target-owned rendering contribution and must appear together. Preserve `context.key` as the React-facing identity, choose `anchorSeq` from the matched event ordering, and return only renderer-ready data. Once a target Node has been published, keep returning the same key; use `visibility: 'hidden'` when it must temporarily leave the visible flow rather than withdrawing it with `null`.
 
-A Chat Node also chooses where its row stands through `groupTree`. Positions are ordered from the outermost inward, and a Node at a position also has the effect of every inner one. Chat process grouping, whole-Turn folding, and Turn-input detection read only this position; [group-tree.ts](../../packages/client/ui-chat/src/client/contract/group-tree.ts) holds the complete contract.
+A Chat Node also chooses where its row stands through `groupTree`. Positions are ordered from the outermost inward, and a Node at a position also has the effect of every inner one. Chat process grouping, whole-Turn folding, and Turn-input detection read only this position; group-tree.ts holds the complete contract.
 
 | The Node is | Declare |
 |---|---|
@@ -263,7 +263,7 @@ A Chat Node also chooses where its row stands through `groupTree`. Positions are
 | An independent row that whole-Turn folding still hides, such as a model retry | `process` |
 | Ordinary process content that joins the surrounding step run | omit `groupTree` |
 
-The [Chat business rules](../../packages/client/ui-chat/src/client/conversation-nodes/README.md#process-grouping) list the positions the built-in Nodes declare. When a generic Definition of the same target also matches the event your Node presents, claim the event with `exclusive: true` as described above.
+The Chat business rules list the positions the built-in Nodes declare. When a generic Definition of the same target also matches the event your Node presents, claim the event with `exclusive: true` as described above.
 
 ## Predecessor reads
 
@@ -297,5 +297,3 @@ Add focused tests that establish these outcomes:
 6. The keyed renderer consumes `node.data` and constrained Location hooks only; it does not scan the Session event window, Contexts, or Chat Nodes.
 7. Scalar and packed Assistant history produce the same final State, timing boundaries, and target snapshot, while one packed run remains one Match through replace, prepend, Location replay, and registry rebuild.
 8. Creating a target source performs no builder work; explicit selection or the first subscription performs one complete replacement, later updates reach every active target, and repeated activation performs no replacement.
-
-Use [`packages/client/ui-chat/src/client/conversation-nodes/assistant.ts`](../../packages/client/ui-chat/src/client/conversation-nodes/assistant.ts) for streaming and interruption, [`inbox.ts`](../../packages/client/ui-chat/src/client/conversation-nodes/inbox.ts) plus [`message.ts`](../../packages/client/ui-chat/src/client/conversation-nodes/message.ts) for predecessor queries, and [`packages/client/ui-deliverables`](../../packages/client/ui-deliverables) for a Definition that publishes Turn data without creating its own Node.

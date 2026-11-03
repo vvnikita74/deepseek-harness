@@ -2,9 +2,9 @@
 
 [English](web-client.md) | 中文
 
-Web Client 是由独立加载插件组装而成的浏览器侧 Cordis 应用。它有四个可复用底座：[Client Modules](client-modules.zh.md) 加载插件图，[API Gateway](../api-gateway.zh.md) 提供类型化 Host 通信，[Slots](slots.zh.md) 组合 React UI，[Conversation](conversation.zh.md) 把 Session 历史窗口变成各 target 自有的视图。本文串联这些系统，并规定 Client model 与功能包各自所在的位置。
+Web Client 是由独立加载插件组装而成的浏览器侧 Cordis 应用。它有三个可复用底座：[API Gateway](../api-gateway.zh.md) 提供类型化 Host 通信，[Slots](slots.zh.md) 组合 React UI，[Conversation](conversation.zh.md) 把 Session 历史窗口变成各 target 自有的视图。本文串联这些系统，并规定 Client model 与功能包各自所在的位置。
 
-[快捷键](../../packages/client/shortcuts/README.zh.md)负责窗口内命令注册和物理键分发；[快捷键速查](../../packages/client/ui-shortcuts/README.zh.md)展示可用命令及局部输入操作。命令 owner 声明各运行端／平台的默认键位，并与鼠标控件共用既有操作。共用模态组件裁决顶层 Esc 并恢复焦点。
+快捷键负责窗口内命令注册和物理键分发；快捷键速查展示可用命令及局部输入操作。命令 owner 声明各运行端／平台的默认键位，并与鼠标控件共用既有操作。共用模态组件裁决顶层 Esc 并恢复焦点。
 
 ## 分层与所有权
 
@@ -23,7 +23,7 @@ Web Client 是由独立加载插件组装而成的浏览器侧 Cordis 应用。�
 
 Host 把组合后的 `WebBootGraph` 写入 `window.__DSH_BOOT__`，并在 parser-preloaded script 执行前安装浏览器 module-loader facade。模块系统是一张 lazy CommonJS 表：加载 bundle 只注册 factory；materialize entry 时才以同步 `require` 运行 factory，并解析 platform module 和已声明的动态依赖。
 
-Web boot kernel 创建模块系统、预取 `immediately` entry、挂载 vendored Cordis Loader，再创建图中的每个 entry。Cordis service injection 决定激活顺序；module graph 顺序只决定同步 import 能否被 materialize。完整 roster 到达 settled 状态且启动审计通过后（浏览器必需名单中的 entry 未激活会拒绝启动；其他未激活 entry 输出一条控制台警告），`ui-renderer` hydrate 不依赖框架的 boot DOM，并调用唯一一次 context 级 `renderSlot('root')`。[Client Modules](client-modules.zh.md)负责 graph、bundle route、cache revision 与 loader 细节。
+Web boot kernel 创建模块系统、预取 `immediately` entry、挂载 vendored Cordis Loader，再创建图中的每个 entry。Cordis service injection 决定激活顺序；module graph 顺序只决定同步 import 能否被 materialize。完整 roster 到达 settled 状态且启动审计通过后（浏览器必需名单中的 entry 未激活会拒绝启动；其他未激活 entry 输出一条控制台警告），`ui-renderer` hydrate 不依赖框架的 boot DOM，并调用唯一一次 context 级 `renderSlot('root')`。Client Modules负责 graph、bundle route、cache revision 与 loader 细节。
 
 ## Remote 通信
 
@@ -55,7 +55,7 @@ Connection 拥有请求 URL 解析、request correlation、`/api` carrier、trus
 
 ## Conversation 与 presentation
 
-Web 和桌面端共享[代码工作工具偏好](../../packages/client/ui-settings/README.zh.md#use-this-package)。它控制诊断 View、[可用的预设选项](../../packages/client/ui-agent-preset/README.zh.md)、改动文件卡片和内置 HTML 预览策略，不改变 Session 记录。
+Web 和桌面端共享代码工作工具偏好。它控制诊断 View、可用的预设选项、改动文件卡片和内置 HTML 预览策略，不改变 Session 记录。
 
 `ui-session` 安装 Session scope adapter，并在 [remote-access](../../packages/api/remote-access/README.zh.md) Client 服务之上提供 `useSessions`、`useSessionStatus`、`useSessionRetainInfo`、`useSessionAccess`、`useSession`、`sessionId`、`useProjection` 和会话作用域的 `useAccess`。`SessionProvider` 可以继承外围 binding，也可以绑定显式 `SessionReference`，因此并存子树可以指向不同 Session。领域 adapter 可以继续添加标准 source，但不会把 React hook 放进 model object。
 
@@ -94,7 +94,6 @@ Web 和桌面端共享[代码工作工具偏好](../../packages/client/ui-settin
 
 根据所添加的扩展查阅四篇详细参考：
 
-- [Client Modules](client-modules.zh.md)：package discovery、loading、共享 module identity 与 boot order。
 - [API Gateway](../api-gateway.zh.md)：Host method、生成的 Remote contribution、stream 与 forwarded event。
 - [Web Client Slots](slots.zh.md)：component、hook、store、injection 与 placement。
 - [Conversation](conversation.zh.md)：持久 event correlation、target snapshot，以及 Chat 或 Trajectory view contribution。

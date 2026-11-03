@@ -59,7 +59,6 @@ Concurrent actions on one card share one operation, and disposal stops local fol
 
 - [Plugin manager](../../boot/plugin-manager/README.md) — profile changes.
 - [Action cards](../action-cards/README.md) — the card tool, card state and user actions.
-- [Recommendation cards](../client-ui-plugin-recommendations/README.md) — the card body.
 - [Personalized pages](../creation-recommendations/README.md) — the other card kind.
 
 <a id="model-experience"></a>

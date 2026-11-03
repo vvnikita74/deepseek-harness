@@ -43,5 +43,4 @@ Status: implemented
 ## Testing
 
 - `packages/boot/plugin-manager/tests/operations.spec.ts` 钉住无输出诊断的流式发送；`github-connection.spec.ts` 钉住去掉 URL 用户信息的记录命令行与超时状态（含结果里的强制状态）；`manager.spec.ts` 钉住以 request id 发送的唯一检查运行、超时下缺失的退出码、返回的 `packageResult` 不含命令行，以及 pnpm 可能自行解决的检查失败不发送任何运行。
-- `packages/client/ui-plugin-manager/tests/manager-store.client.spec.ts` 钉住已结束的日志路径、stage 与启用事实、首个 chunk 晚于应答到达时保留的运行，以及重试时的重置；`components.client.spec.tsx` 钉住启用阶段的提示句（只对要求启用的安装）、完整日志行，以及已结束界面的无输出提示句。
 - `apps/web/tests/plugin-install-github.e2e.ts` 展开一次真实 GitHub 连接失败的详情，找到 Git 命令、它的输出和日志路径；`apps/web/tests/plugin-install-silent-failure.e2e.ts` 让一次真实安装通过不打印任何内容的包管理器失败，并在详情中找到该运行的命令行、诊断和完整日志。

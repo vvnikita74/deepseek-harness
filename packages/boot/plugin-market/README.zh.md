@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`pluginMarket` 读取用户配置的插件索引，用 [`dsh-plugin-market-index`](../../util/plugin-market-index/README.zh.md) 校验，并为每个条目标注 profile 中的安装状态、DSH 兼容性以及安装它所需的精确参数。它还为发现区的条目页面读取每个索引条目的详细介绍，即一份带图片的 Markdown 文档。Web 的[发现标签页](../../client/ui-plugin-market/README.zh.md)和 `plugin_market` agent 工具通过它读取；安装本身经由 [`pluginManager.installBundle`](../plugin-manager/README.zh.md) 进行。格式及其理由见[索引格式 Agent Note](../../../.agents/notes/implemented/feature/2026-10-02-plugin-market-index-format.zh.md)；Host 与 Web 的设计见[发现 Agent Note](../../../.agents/notes/implemented/feature/2026-10-02-plugin-market-discover.zh.md)。
+`pluginMarket` 读取用户配置的插件索引，用 [`dsh-plugin-market-index`](../../util/plugin-market-index/README.zh.md) 校验，并为每个条目标注 profile 中的安装状态、DSH 兼容性以及安装它所需的精确参数。它还为发现区的条目页面读取每个索引条目的详细介绍，即一份带图片的 Markdown 文档。Web 的发现标签页和 `plugin_market` agent 工具通过它读取；安装本身经由 [`pluginManager.installBundle`](../plugin-manager/README.zh.md) 进行。格式及其理由见[索引格式 Agent Note](../../../.agents/notes/implemented/feature/2026-10-02-plugin-market-index-format.zh.md)；Host 与 Web 的设计见[发现 Agent Note](../../../.agents/notes/implemented/feature/2026-10-02-plugin-market-discover.zh.md)。
 
 ## 目录
 

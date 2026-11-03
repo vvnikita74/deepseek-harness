@@ -8,9 +8,9 @@ English | [中文](2026-09-14-composer-model-and-draft-editor.zh.md)
 
 One Client needs to edit the same Session's draft and pending attachments in multiple views. A Lexical editor binds only one DOM root; multiple presentation locations need multiple editor instances, but must not own unrelated drafts or upload tasks, or make the Session Controller understand carets, composition, or DOM state.
 
-The current [SessionInputShell](../../../../packages/client/ui-conversation/src/client/input/facade.ts) combines Lexical operations, draft projection, the submission state machine, and failure recovery. [InputBar](../../../../packages/client/ui-conversation/src/client/skeleton/InputBar.tsx) combines editor presentation, DOM bindings, attachment intake, and submission controls. Implementing multiple instances directly in these files would mix code extraction with behavior changes.
+The current SessionInputShell combines Lexical operations, draft projection, the submission state machine, and failure recovery. InputBar combines editor presentation, DOM bindings, attachment intake, and submission controls. Implementing multiple instances directly in these files would mix code extraction with behavior changes.
 
-[ConversationController](../../../../packages/client/ui-conversation/src/client/service.ts) already owns attachment entities and upload tasks centrally; the shell retains only ordered attachment IDs. Selecting a skill inserts ordinary `/name` text whose highlighting derives from a lexicon; atomic file and Session references use chips carrying source identity. A shared draft must not lose these references by synchronizing text alone, and does not require copying attachment entities.
+ConversationController already owns attachment entities and upload tasks centrally; the shell retains only ordered attachment IDs. Selecting a skill inserts ordinary `/name` text whose highlighting derives from a lexicon; atomic file and Session references use chips carrying source identity. A shared draft must not lose these references by synchronizing text alone, and does not require copying attachment entities.
 
 This proposal details editor isolation for [#3951](https://github.com/deepseek-ai/deepseek-harness/pull/3951), following [Client Session and UI ownership](../../implemented/architecture/2026-08-20-client-session-conversation-ownership.md). The Session activity view, residency states, and eviction policy are designed independently; [#4138](https://github.com/deepseek-ai/deepseek-harness/pull/4138) is only a Host lifecycle reference. This proposal implements none of those features and does not repeat the Conversation component decomposition in #3984.
 
@@ -20,7 +20,7 @@ Use two independent PRs. Stage one concentrates existing editor implementation i
 
 ### Stage one: five mechanical responsibility extractions
 
-The ui-conversation paths below are relative to `packages/client/ui-conversation/src/client/`. Every new file must contain logic already executed today, not placeholder interfaces or future features.
+Every new file must contain logic already executed today, not placeholder interfaces or future features.
 
 | Original location | Extraction destination | Location for later behavior changes |
 |---|---|---|

@@ -156,7 +156,7 @@ Conversation 的引用属于其视图所有者，不属于 Chat、Trajectory 或
 | Chat/Trajectory 恢复 | 为显式选中的主目标恢复视图；独立绑定的视图保留自己的状态 |
 | Cordis inventory 面板 | 使用不区分 current/other 的单一列表；runner 不提供主区域选择的公开 getter |
 
-DOM 焦点移动或全局面板隐藏仍被持有的视图时，来源元数据不变。[全局主面板设计](../../../../packages/client/ui-layout/README.zh.md)拥有面板选择与布局；Session 引用所有权不替代它。
+DOM 焦点移动或全局面板隐藏仍被持有的视图时，来源元数据不变。全局主面板设计拥有面板选择与布局；Session 引用所有权不替代它。
 
 Conversation 保留 `hero`、`settling`、`active` 组合与既有历史加载和 `openError` 处理。获取引用不增加外层 loading/error 阶段展示、额外隐藏 composer 的条件、Retry 按钮或替换 Sidebar 内容的恢复面板。已有错误处理方继续处理自己的错误；没有错误展示的调用点不增加展示。Promise 拒绝与正确释放引用不意味着额外增加 UI 处理方。
 

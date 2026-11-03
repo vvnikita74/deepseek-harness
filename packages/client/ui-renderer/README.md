@@ -67,8 +67,6 @@ React, React DOM, Cordis, ui-slots, and ui-primitives retain one browser identit
 These pages cover the surrounding machinery and the composition model.
 
 - [ui-slots](../ui-slots/README.md) — the slot registry pure core this renderer binds to React.
-- [web](../web/README.md) — the shell that loads the roster and calls `mount`.
-- [ui-session](../ui-session/README.md) — the adapter that supplies the standard Session sources and hooks this renderer binds.
 - [Web client architecture](../../../docs/subsystems/web-client.md) — the loading chain, object layer, and layering red lines.
 - [Slot system standard](../../../.agents/notes/implemented/architecture/2026-07-22-slot-type-chain-implementation.md) — the definitive composition model.
 - [Component Factories](../../../.agents/notes/implemented/architecture/2026-09-10-component-factories-and-local-slots.md) — reusable definitions, local Component selection, and occurrence lifetimes.

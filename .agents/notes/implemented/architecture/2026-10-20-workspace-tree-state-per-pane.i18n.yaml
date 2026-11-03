@@ -12,17 +12,17 @@
   en: a15c7c13f167e5ac
   zh: ff261e3705c47ff0
 /agent-note-the-workspace-tree-is-per-pane-state-drawn-inside-each-file-tab-and-the-plugin-mounting-it-decides-where-files-open/decision/the-tree-is-drawn-inside-each-file-tab-and-its-state-is-kept-per-pane:
-  en: 432aff475f1dfd21
-  zh: bbc058c1f967c067
+  en: 187483e9ce5c1920
+  zh: 67499f7a7ac95b74
 /agent-note-the-workspace-tree-is-per-pane-state-drawn-inside-each-file-tab-and-the-plugin-mounting-it-decides-where-files-open/decision/the-rows-are-a-controlled-component-factory-over-flat-entries:
   en: a06955933f9f7f0e
   zh: ccda2bd27175d36b
 /agent-note-the-workspace-tree-is-per-pane-state-drawn-inside-each-file-tab-and-the-plugin-mounting-it-decides-where-files-open/decision/the-plugin-that-mounts-the-tree-decides-where-a-file-lands:
-  en: 7cf8e3671900fe71
-  zh: 952f69cba9c44c10
+  en: fd9dfb7e613c5068
+  zh: db4df535aee74fb9
 /agent-note-the-workspace-tree-is-per-pane-state-drawn-inside-each-file-tab-and-the-plugin-mounting-it-decides-where-files-open/decision/navigation-is-consumed-by-the-destination-tab:
-  en: e7b254df55d9768d
-  zh: d3303f20bb9ebdd6
+  en: 196929c56025477f
+  zh: 2fa41c1f20feff30
 /agent-note-the-workspace-tree-is-per-pane-state-drawn-inside-each-file-tab-and-the-plugin-mounting-it-decides-where-files-open/decision/each-package-works-without-the-others:
   en: dd160808a3ac77bc
   zh: f63741f159717072

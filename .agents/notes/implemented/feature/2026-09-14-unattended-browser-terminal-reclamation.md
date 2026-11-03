@@ -23,7 +23,7 @@ A browser terminal is reclaimed only after no window holds it and the Host conti
 
 For example, a window disconnecting at 14:00 while a command runs until 20:00 cannot cause reclamation before 22:00. The deadline starts at the first subsequent confirmed idle observation.
 
-The [sidebar](../../../../packages/client/ui-sidebar-right/README.md#state) persists layout per Session and publishes `openTabs` metadata for saved and adopted Sessions. Startup discovery does not mount dormant content, pin files or activate Agents. Adopted stores are authoritative within their window; another window's storage writes cannot revoke those live holds. Permanent scope removal drops its metadata.
+The sidebar persists layout per Session and publishes `openTabs` metadata for saved and adopted Sessions. Startup discovery does not mount dormant content, pin files or activate Agents. Adopted stores are authoritative within their window; another window's storage writes cannot revoke those live holds. Permanent scope removal drops its metadata.
 
 The terminal provider intersects that inventory with its own saved terminal associations and unfinished close requests. Each window uses one `retain(sessionId, id, signal)` Remote stream per distinct terminal. Its acknowledgement grants a hold without screen output, Agent activation, input control or creation. Restored output waits for an acknowledged current hold. Transport generations cancel independently, and the existing Gateway reconnect and heartbeat mechanisms own transport liveness.
 
@@ -33,7 +33,7 @@ The Host [terminal controller](../../../../packages/api/terminal-controller/READ
 
 Cleanup awaits provider quiescence and final screen output. Failure retains ownership, rejects new holders and schedules one retry without a new idle grace. Failed allocation cleanup follows the same retry policy. Owner disposal stops timers and streams and joins cleanup and observations before reporting failures, including when cleanup rejects before an observation settles. No Agent terminal tool, model input or Session event changes.
 
-Peer research on Codex thread unloading, OpenCode Location scopes and [VS Code PTY grace periods](https://github.com/microsoft/vscode/blob/main/src/vs/platform/terminal/node/ptyService.ts) informed separate references and delayed cleanup. The two-hour value is DSH product policy, not an industry default. The [browser-terminal decision](2026-09-09-web-sidebar-terminal.md) and [layout/provider recovery reference](../../../../packages/client/ui-sidebar-right/README.md) define the resource ownership and persistence separation used here.
+Peer research on Codex thread unloading, OpenCode Location scopes and [VS Code PTY grace periods](https://github.com/microsoft/vscode/blob/main/src/vs/platform/terminal/node/ptyService.ts) informed separate references and delayed cleanup. The two-hour value is DSH product policy, not an industry default. The [browser-terminal decision](2026-09-09-web-sidebar-terminal.md) and layout/provider recovery reference define the resource ownership and persistence separation used here.
 
 ## Alternatives considered
 

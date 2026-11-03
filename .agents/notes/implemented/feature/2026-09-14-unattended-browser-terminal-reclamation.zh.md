@@ -23,7 +23,7 @@ Status: implemented
 
 例如，窗口在 14:00 断开，而命令持续到 20:00，则最早也不能在 22:00 前回收。期限从之后第一次确认空闲的观察开始计算。
 
-[侧栏](../../../../packages/client/ui-sidebar-right/README.zh.md#state) 按 Session 持久化布局，并通过 `openTabs` 发布已保存和已采用 Session 的标签元数据。启动发现不会挂载非当前内容、pin 文件或激活 Agent。窗口内以已采用的 store 为准；其他窗口对 storage 的写入不能撤销当前窗口的活动持有关系。永久删除 scope 时移除相应元数据。
+侧栏 按 Session 持久化布局，并通过 `openTabs` 发布已保存和已采用 Session 的标签元数据。启动发现不会挂载非当前内容、pin 文件或激活 Agent。窗口内以已采用的 store 为准；其他窗口对 storage 的写入不能撤销当前窗口的活动持有关系。永久删除 scope 时移除相应元数据。
 
 终端 provider 将该清单与自己保存的终端关联及未完成的关闭请求取交集。每个窗口为每个不同终端使用一条 `retain(sessionId, id, signal)` Remote 流。确认帧授予持有关系，不发送屏幕输出、不激活 Agent、不接管输入，也不创建进程。恢复输出前等待当前持有关系确认。传输代次独立取消，传输存活由现有 Gateway 重连和心跳机制负责。
 
@@ -33,7 +33,7 @@ Host [终端控制器](../../../../packages/api/terminal-controller/README.zh.md
 
 清理等待 provider 范围完全停稳和最终屏幕输出排空。失败时保留所有权、拒绝新持有关系，并安排一次重试，不重新给予空闲宽限期。分配失败后的清理采用相同重试策略。owner 卸载会停止计时器和流，在清理与观察都结束后才报告失败，包括清理早于观察结束而拒绝的情况。Agent 终端工具、模型输入和 Session 事件均不改变。
 
-Codex 线程卸载、OpenCode Location scope 和 [VS Code PTY 宽限期](https://github.com/microsoft/vscode/blob/main/src/vs/platform/terminal/node/ptyService.ts) 的调研支持了独立引用和延迟清理的设计。两小时是 DSH 的产品策略，不是行业默认值。[浏览器终端决策](2026-09-09-web-sidebar-terminal.zh.md) 与[布局／provider 恢复参考](../../../../packages/client/ui-sidebar-right/README.zh.md) 定义此处沿用的资源所有权和持久化职责划分。
+Codex 线程卸载、OpenCode Location scope 和 [VS Code PTY 宽限期](https://github.com/microsoft/vscode/blob/main/src/vs/platform/terminal/node/ptyService.ts) 的调研支持了独立引用和延迟清理的设计。两小时是 DSH 的产品策略，不是行业默认值。[浏览器终端决策](2026-09-09-web-sidebar-terminal.zh.md) 与布局／provider 恢复参考 定义此处沿用的资源所有权和持久化职责划分。
 
 ## 考虑过的替代方案
 

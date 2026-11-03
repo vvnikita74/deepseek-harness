@@ -2,9 +2,9 @@
 
 English | [中文](web-client.zh.md)
 
-The Web Client is a browser-side Cordis application assembled from independently loaded plugins. Its architecture has four reusable foundations: [Client Modules](client-modules.md) loads the plugin graph, the [API Gateway](../api-gateway.md) provides typed Host communication, [Slots](slots.md) composes React UI, and [Conversation](conversation.md) turns a Session history window into target-owned views. This page connects those systems and defines where Client models and feature packages belong.
+The Web Client is a browser-side Cordis application assembled from independently loaded plugins. Its architecture has three reusable foundations: the [API Gateway](../api-gateway.md) provides typed Host communication, [Slots](slots.md) composes React UI, and [Conversation](conversation.md) turns a Session history window into target-owned views. This page connects those systems and defines where Client models and feature packages belong.
 
-[Keyboard shortcuts](../../packages/client/shortcuts/README.md) owns window-local command registration and physical-key dispatch; [the shortcut reference](../../packages/client/ui-shortcuts/README.md) presents available commands and local input actions. Command owners declare each runtime/platform default and share their existing actions with mouse controls. The shared modal primitive arbitrates top-layer Escape and restores focus.
+Keyboard shortcuts owns window-local command registration and physical-key dispatch; the shortcut reference presents available commands and local input actions. Command owners declare each runtime/platform default and share their existing actions with mouse controls. The shared modal primitive arbitrates top-layer Escape and restores focus.
 
 ## Layers and ownership
 
@@ -23,7 +23,7 @@ The dependency direction is Host state → Remote transport → Client model →
 
 The Host writes the composed `WebBootGraph` to `window.__DSH_BOOT__` and installs the browser module-loader facade before parser-preloaded scripts execute. The module system is a lazy CommonJS table: loading a bundle registers its factory, while materializing an entry runs the factory with synchronous `require` over platform modules and declared dynamic dependencies.
 
-The Web boot kernel creates the module system, prefetches `immediately` entries, mounts the vendored Cordis Loader, and creates every graph entry. Cordis service injection determines activation; module graph order determines only whether synchronous imports can be materialized. After the complete roster reaches a settled state and the boot audit accepts it (an inactive entry on the browser required list rejects startup; other inactive entries produce one console warning), `ui-renderer` hydrates the framework-free boot DOM and calls the sole context-level `renderSlot('root')` operation. [Client Modules](client-modules.md) owns the graph, bundle route, cache revision, and loader details.
+The Web boot kernel creates the module system, prefetches `immediately` entries, mounts the vendored Cordis Loader, and creates every graph entry. Cordis service injection determines activation; module graph order determines only whether synchronous imports can be materialized. After the complete roster reaches a settled state and the boot audit accepts it (an inactive entry on the browser required list rejects startup; other inactive entries produce one console warning), `ui-renderer` hydrates the framework-free boot DOM and calls the sole context-level `renderSlot('root')` operation. Client Modules owns the graph, bundle route, cache revision, and loader details.
 
 ## Remote communication
 
@@ -55,7 +55,7 @@ This pairing is not a second source of business truth. Host controllers decide d
 
 ## Conversation and presentation
 
-Web and desktop share the [Coding Tools preference](../../packages/client/ui-settings/README.md#use-this-package). It controls diagnostic Views, [available preset choices](../../packages/client/ui-agent-preset/README.md), changed-file cards, and the builtin HTML preview policy without changing Session records.
+Web and desktop share the Coding Tools preference. It controls diagnostic Views, available preset choices, changed-file cards, and the builtin HTML preview policy without changing Session records.
 
 `ui-session` installs the Session scope adapter and publishes `useSessions`, `useSessionStatus`, `useSessionRetainInfo`, `useSessionAccess`, `useSession`, `sessionId`, `useProjection`, and the Session-scope `useAccess` over the [remote-access](../../packages/api/remote-access/README.md) Client service. `SessionProvider` inherits an outer binding or binds an explicit `SessionReference`, so concurrent subtrees can target different Sessions. Domain adapters add further standard sources without putting React hooks on the model objects.
 
@@ -94,7 +94,6 @@ Shared runtime values need a narrow static owner with no feature lifecycle, such
 
 Use the four detailed references according to the extension being added:
 
-- [Client Modules](client-modules.md) for package discovery, loading, shared module identities, and boot order.
 - [API Gateway](../api-gateway.md) for Host methods, generated Remote contributions, streams, and forwarded events.
 - [Web Client Slots](slots.md) for components, hooks, stores, injection, and placement.
 - [Conversation](conversation.md) for durable event correlation, target snapshots, and Chat or Trajectory view contributions.

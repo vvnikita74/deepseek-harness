@@ -6,9 +6,9 @@ English | [中文](2026-10-19-client-plugin-package-assets.zh.md)
 
 ## Problem
 
-The browser half of a dynamic Client plugin is a lazy-CJS factory built by the [client build preset](../../../../packages/client/tsdown.client.ts) and loaded through the `/plugins` route of the [Client module system](../../../../packages/client/modules/README.md). That route served only `client.js` and package-local chunks, so an image that plugin code referenced had to be embedded in the bundle as a base64 data URL, and an image used by a stylesheet needed a package-level build plugin that rewrote it into the inlined style.
+The browser half of a dynamic Client plugin is a lazy-CJS factory built by the [client build preset](../../../../packages/client/tsdown.client.ts) and loaded through the `/plugins` route of the Client module system. That route served only `client.js` and package-local chunks, so an image that plugin code referenced had to be embedded in the bundle as a base64 data URL, and an image used by a stylesheet needed a package-level build plugin that rewrote it into the inlined style.
 
-The embedded bytes were downloaded and parsed with the JavaScript whether or not the image was shown, and base64 adds a third to their size: the onboarding illustrations made the ui-settings-account `client.js` about 3.4 MB. ui-chat carried its own [tsdown plugin](../../../../packages/client/ui-chat/tsdown.config.ts) for one mask image.
+The embedded bytes were downloaded and parsed with the JavaScript whether or not the image was shown, and base64 adds a third to their size: the onboarding illustrations made the ui-settings-account `client.js` about 3.4 MB. ui-chat carried its own tsdown plugin for one mask image.
 
 ## Decision
 
@@ -26,7 +26,7 @@ plugins/@deepseek-ai/dsh-client-ui-chat/assets/running-whale%402x-06738fa29b2f.p
 
 Each path segment is percent-encoded with `encodeURIComponent` and then `!`, `'`, `(`, `)`, and `*`, so the reference is also a valid unquoted CSS `url()`, and the package name is emitted verbatim. The URL is relative to the shell document, like every app-owned route, so it resolves under any mount and from injected `<style>` text. Components need no hook, injected value, or service: the URL is a module constant computed when the module first runs.
 
-The supported extensions are `.svg`, `.png`, `.webp`, `.jpg`, and `.jpeg`. [`src/assets.ts`](../../../../packages/client/modules/src/assets.ts) in client-modules owns the media-type table, the export key and target, the revision, the emitted name, and the URL, and the preset, the route, and the gates read them from there. The shared Client type root [`scripts/types/client-assets`](../../../../scripts/types/client-assets/index.d.ts), registered in [`tsconfig.base.client.json`](../../../../tsconfig.base.client.json), declares each extension as a module with a string default export; a test keeps it equal to the table.
+The supported extensions are `.svg`, `.png`, `.webp`, `.jpg`, and `.jpeg`. `src/assets.ts` in client-modules owns the media-type table, the export key and target, the revision, the emitted name, and the URL, and the preset, the route, and the gates read them from there. The shared Client type root [`scripts/types/client-assets`](../../../../scripts/types/client-assets/index.d.ts), registered in [`tsconfig.base.client.json`](../../../../tsconfig.base.client.json), declares each extension as a module with a string default export; a test keeps it equal to the table.
 
 ### Build
 
@@ -84,9 +84,3 @@ Images that third-party libraries load themselves (PDF.js fonts, cmaps, wasm, an
 - An entry restart reads its manifest and stats its bundle; only a changed result reads the bundle and broadcasts a graph frame (about 30 KB for 69 rows). Editing only `package.json`, without an entry restart, still takes effect at the next entry or Host restart.
 
 ## Testing
-
-- [package-assets.client.spec.ts](../../../../packages/client/modules/tests/package-assets.client.spec.ts) composes the real Web server and compares every answer with `fetchBundle()`: headers including the SVG policy, 304 without opening the file, `HEAD`, 405, multi-chunk streaming, stream closing on cancel, a browser cancellation that logs nothing, and 404 for excluded subpaths, missing exports and files, `..`, `%2e%2e`, encoded `..`, an empty path, malformed escapes, decoded `%` and `#`, unsupported types, directories, and inactive packages.
-- [assets.client.spec.ts](../../../../packages/client/modules/tests/assets.client.spec.ts) covers media types, the revision, emitted names, and references; [client-asset-types.spec.ts](../../../../scripts/client-asset-types.spec.ts) keeps the type root equal to the table.
-- [client-bundle-css.spec.ts](../../../../scripts/client-bundle-css.spec.ts) covers emitted names, resolver calls in scripts and stylesheet text, their CommonJS rendering in a complete build, preserved `url()` forms, each build rejection, the Node face guard, one-shot pruning, and watch rebuilds that keep earlier files; [loader.client.spec.ts](../../../../packages/client/modules/tests/loader.client.spec.ts) covers the default and carrier resolvers.
-- The gate specs reject each invalid manifest or reference form, and [node-half.client.spec.ts](../../../../packages/client/modules/tests/node-half.client.spec.ts) covers declarations, moved exports, and added or removed client declarations after an entry restart, an unchanged restart that publishes nothing and reads no bundle, and a chunk of a package named `@scope/assets`.
-- [desktop-onboarding.e2e.ts](../../../../apps/web/tests/desktop-onboarding.e2e.ts) and [reasoning-preview.e2e.ts](../../../../apps/web/tests/reasoning-preview.e2e.ts) assert the package-asset URLs and decode the images in a browser; [preview-boot.e2e.ts](../../../../apps/web/tests/preview-boot.e2e.ts) decodes the ui-chat mask the WebWorker preview resolves to a Blob URL, and the runtime's [package-assets.spec.ts](../../../../packages/experimental/webworker-runtime/tests/package-assets.spec.ts) covers the archive and resolver.

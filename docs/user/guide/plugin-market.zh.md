@@ -139,7 +139,6 @@ DSH 将 npm 版本安装为 `name@version`，存在 `registry` 时先询问它�
 <a id="further-exploration"></a>
 ## 延伸阅读
 
-- [「发现」标签页参考](../../../packages/client/ui-plugin-market/README.zh.md)说明该标签页的控件和状态。
 - [插件索引服务](../../../packages/boot/plugin-market/README.zh.md)说明获取限制、缓存和 `plugin_market` 工具。
 - [索引校验器](../../../packages/util/plugin-market-index/README.zh.md)是生成器可以用来在发布前检查索引的库。
 

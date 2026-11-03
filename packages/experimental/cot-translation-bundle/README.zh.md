@@ -48,7 +48,7 @@ Bundle 补丁插入 `translator` 和 `cot-translation`，选择 Bing 与界面�
 <a id="further-exploration"></a>
 ## 延伸阅读
 
-[文本翻译子系统](../../../docs/subsystems/translation.zh.md) · [Translator 服务](../translator/README.zh.md) · [GUI 消费者](../client-ui-cot-translation/README.zh.md)
+[文本翻译子系统](../../../docs/subsystems/translation.zh.md) · [Translator 服务](../translator/README.zh.md) · GUI 消费者
 
 -----
 
@@ -59,7 +59,7 @@ Bundle 补丁插入 `translator` 和 `cot-translation`，选择 Bing 与界面�
 
 #### KV Cache 效果
 
-翻译记录保留原始思考内容；正常 Session 激活及可选付费查询的缓存影响见 [GUI 消费者](../client-ui-cot-translation/README.zh.md#model-experience)。
+翻译记录保留原始思考内容；正常 Session 激活及可选付费查询的缓存影响见 GUI 消费者。
 
 ## 已知限制与后续工作
 

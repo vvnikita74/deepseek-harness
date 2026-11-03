@@ -24,7 +24,7 @@ kind: "package-library"
 
 `FILE_DRAG_TOKEN_TYPE` 命名浏览器传输中的 `application/x-dsh-file` 数据项。发送端和投放目标直接从本包导入，文件字节由所属插件保留。包根入口的导出不共享运行时身份或应用状态，因此可安全内联到客户端 bundle。
 
-`DesktopFileDrag.prepare(source, requestId)` 接受完整字节或 Session 资源地址，返回不透明句柄。`cancel(requestId)` 可在句柄返回前停止未完成的准备。资源借用必须经过 Host 授权与主进程的内容、名称检查；无法借用时，调用方回退到字节准备。[插件](../../client/ui-file-drag/README.zh.md) 负责浏览器准备，[Desktop](../../../apps/desktop/README.zh.md) 负责原生交付。
+`DesktopFileDrag.prepare(source, requestId)` 接受完整字节或 Session 资源地址，返回不透明句柄。`cancel(requestId)` 可在句柄返回前停止未完成的准备。资源借用必须经过 Host 授权与主进程的内容、名称检查；无法借用时，调用方回退到字节准备。插件 负责浏览器准备，Desktop 负责原生交付。
 
 ## 已知限制与后续工作
 

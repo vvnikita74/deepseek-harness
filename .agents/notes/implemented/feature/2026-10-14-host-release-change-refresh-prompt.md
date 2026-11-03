@@ -10,10 +10,8 @@ After `dsh web` is upgraded, or after a developer restarts `pnpm run dev:web` at
 
 Technical causes:
 
-- After a reconnect, [client-hmr](../../../../packages/client/hmr/src/client/index.ts) receives the new Host's complete graph, and [ClientEntries](../../../../packages/client/modules/src/client/entries.ts) hot-replaces plugins by each row's `rev` (the bundle's mtime, ctime, and size). The Vite shell, static libraries, and the bootstrap are never replaced during the page's lifetime.
 - The API connection validates its ready frame against an exact key set ([remote-events.ts](../../../../packages/api/gateway/src/client/remote-events.ts)), so an old page cannot recover from a protocol change by itself.
 - The page has no way to learn that the Host now runs another release.
-- Desktop is unaffected: after its Host is replaced, the main process navigates the window again ([main.ts](../../../../apps/desktop/src/main.ts)).
 
 The [client plugin loading model](../architecture/2026-07-23-client-plugin-loading-model.md) owns the loading chain and hot replacement. It states that static libraries and the shell require a reloaded page; this note owns how the page learns that the Host's release changed and what it does about it.
 
@@ -59,13 +57,12 @@ WebBootGraph {
 BootManifest { ...; release?: WebBootRelease }
 ```
 
-- [ClientModuleRegistry](../../../../packages/client/modules/src/index.ts) computes the release once at construction and `compose()` writes it into every graph; `release` stays outside `graph.rev`. There is no new config field and the composition is unchanged.
 - `__DSH_BOOT__` and every SSE `graph` frame carry the field, so one graph frame carries both the Host release and its complete module graph; the client-hmr Host half is unchanged. A rebuilt frame comes from the same Host process as the graph frame before it on that SSE connection, so it inherits that frame's release.
 - `parseBootManifest` accepts an absent `release`, rejects a non-string `version` or `commit`, and drops members outside the identity, so equality compares only those two fields. `readRelease` reads only the `release` member of a received graph, so a page compares releases before it validates anything else; a release it cannot read counts as absent. Older pages that do not know the field ignore it.
 
 ### Page side
 
-The release comparison lives in [release-change.ts](../../../../packages/client/modules/src/client/release-change.ts); `ClientEntries` consults it from `sync` and `reload`.
+The release comparison lives in release-change.ts; `ClientEntries` consults it from `sync` and `reload`.
 
 ```
 interface ClientReleaseChange {
@@ -106,7 +103,6 @@ Order of operations:
 
 ### UI
 
-- Owner: [ui-settings-general](../../../../packages/client/ui-settings-general/src/client/index.ts), which already owns the connection pill (`ConnectionIndicator`) and the Desktop update prompt; its `inject` adds `modules`.
 - It registers the `shell.overlay` entry `host-release-change` through `ctx.slots.inject('shell.overlay', ...)` and renders it with `Modal`. The inject face provides `hooks: { releaseChange: ctx.modules.entries.releaseChange }`, `dismissRelease`, and `reloadPage`.
 - Copy lives in the zh/en locale dictionaries: a title, one sentence stating that live updates are paused until a reload, and two gray-labelled lines:
   - **Service**: `previous` (gray) → `host` (solid), joined by a 1px solid green arrow because the Host already switched.

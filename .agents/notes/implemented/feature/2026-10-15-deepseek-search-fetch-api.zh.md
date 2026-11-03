@@ -70,7 +70,7 @@ Search 和 Fetch 各有账号级 5 QPS 限制，独立于模型并发，同一�
 
 ## 验证与尚未接入的 API 能力
 
-提供方测试覆盖请求映射、空结果、格式错误的响应、独立地址与推导地址、账号 token 鉴权及其在 HTTP 401 后被作废、取消与空白配置。设置测试及[插件配置浏览器场景](../../../../apps/web/tests/plugin-config.e2e.ts)覆盖暂存后保存、结果数，以及分别选择 Search 与 Fetch。[网页搜索回放](../../../../apps/web/tests/web-search-round.e2e.ts)与 [Fetch Session 回放](../../../../snapshots/session/deepseek-fetch/snapshot.yml)固定模型可见结果。2026-10-16，[真实提供方测试](../../../../packages/web/web-deepseek-api/tests/web-deepseek-api.e2e.ts)在公网地址通过了 Search 与 Fetch 验证；在内置配置上运行的一轮 headless 对话返回了八个来源并抓取到 Markdown，且没有辅助请求事件。上文的账号 token、网关和状态码观察来自同日的手动探测。
+提供方测试覆盖请求映射、空结果、格式错误的响应、独立地址与推导地址、账号 token 鉴权及其在 HTTP 401 后被作废、取消与空白配置。设置测试及插件配置浏览器场景覆盖暂存后保存、结果数，以及分别选择 Search 与 Fetch。网页搜索回放与 [Fetch Session 回放](../../../../snapshots/session/deepseek-fetch/snapshot.yml)固定模型可见结果。2026-10-16，[真实提供方测试](../../../../packages/web/web-deepseek-api/tests/web-deepseek-api.e2e.ts)在公网地址通过了 Search 与 Fetch 验证；在内置配置上运行的一轮 headless 对话返回了八个来源并抓取到 Markdown，且没有辅助请求事件。上文的账号 token、网关和状态码观察来自同日的手动探测。
 
 以下能力尚未包含在已实现的接入中：
 

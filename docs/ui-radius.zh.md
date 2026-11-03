@@ -20,7 +20,7 @@
 
 本参考文档规定 DSH Web 和 Desktop 的圆角尺度及组件应用规则。局部视觉调整限定在指定组件或组件族内，不自动改变全局尺度。
 
-通用样式职责见 [Web UI 样式参考](web-styling.zh.md)。共享数值位于 [`base.css`](../packages/client/ui-theme/src/styles/base.css)，曲线行为位于 [`corner-shape.css`](../packages/client/ui-theme/src/styles/corner-shape.css)。修改规则时同步更新主题实现及本规范的中英文版本。
+通用样式职责见 [Web UI 样式参考](web-styling.zh.md)。共享数值位于 `base.css`，曲线行为位于 `corner-shape.css`。修改规则时同步更新主题实现及本规范的中英文版本。
 
 <a id="radius-scale"></a>
 ## 选择圆角
@@ -47,13 +47,13 @@ H 表示以 CSS 像素计、包含边框的设计外部高度。R 表示浏览�
 
 添加功能自有的几何规则前，优先复用 `ui-primitives` 控件。固定外部尺寸使用 `box-sizing: border-box`。填充、描边、ghost、加载中和禁用变体保持相同尺寸与圆角；hover、按下、选中和焦点状态不改变圆角。
 
-普通控件和卡片使用具名 token，不新增 10px、14px、18px、24px 等局部数值。计划任务控件、Desktop 引导、账号通知和快捷键控件保留所属包的几何规则；[圆角例外记录](../packages/client/ui-theme/tests/expected/radius-exceptions.expected.json)逐项固定允许的文件、选择器及声明，不豁免整个包。组件族专用属性可引用共享 token，例如 `--dsl-guide-entry-radius`。由真实内缩距离派生的几何可使用 `calc()`；它不构成新的尺度档位。
+普通控件和卡片使用具名 token，不新增 10px、14px、18px、24px 等局部数值。计划任务控件、Desktop 引导、账号通知和快捷键控件保留所属包的几何规则；圆角例外记录逐项固定允许的文件、选择器及声明，不豁免整个包。组件族专用属性可引用共享 token，例如 `--dsl-guide-entry-radius`。由真实内缩距离派生的几何可使用 `calc()`；它不构成新的尺度档位。
 
 普通圆角表面在支持时使用主题的 `superellipse(1.5)` 曲线。`corner-shape` 不会继承：主题将它应用于元素及其 `::before`/`::after`。不支持的引擎保留普通圆弧。不要添加组件专用的平滑规则，导致底色与外框使用不同曲线。
 
 保留有意设计的圆形与胶囊：头像和状态点使用 `50%`；明确的胶囊与全圆轨道可使用 `999px`。每个此类全圆声明都在同一规则中配对 `corner-shape: round`。不要因为高度较小就把所有按钮变成胶囊。图形标记或微型轨道等细小绘制细节可保留既有局部几何，但不能据此给外围控件使用任意圆角。
 
-头像的容器和内部 `img` 都要保持正圆；图片不能只继承 `border-radius`，还必须显式使用 `corner-shape: round`，或从正圆容器继承曲线。图片和容器均保持宽高相等。账号头像的具体尺寸见[账号设置](../packages/client/ui-settings-account/README.zh.md#use-this-package)。
+头像的容器和内部 `img` 都要保持正圆；图片不能只继承 `border-radius`，还必须显式使用 `corner-shape: round`，或从正圆容器继承曲线。图片和容器均保持宽高相等。账号头像的具体尺寸见账号设置。
 
 贴边停靠表面与相邻 cell 的共用边缘可以使用 R0。紧贴卡片的标题栏、底栏或图片仅对外露的外围拐角设置圆角；保留内部拼接处的直角，不要给每个子元素的四角都加圆角。
 

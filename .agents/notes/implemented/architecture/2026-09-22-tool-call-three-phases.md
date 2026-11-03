@@ -14,7 +14,7 @@ Creating tool nodes only at `tool/call` presents that interval as no tool activi
 
 ### One Tool owns three stages
 
-The [Tool Definition](../../../../packages/client/ui-chat/src/client/conversation-nodes/tool.ts) groups calls by callId and supplies explicit stage data to tool components.
+The Tool Definition groups calls by callId and supplies explicit stage data to tool components.
 
 | Stage | Creation or update evidence | Available data and presentation |
 |---|---|---|
@@ -26,7 +26,7 @@ An argument block ending does not trigger dispatch presentation. Showing prepara
 
 ### Start marks an initialization candidate
 
-The [Conversation Definition](../../../../packages/client/ui-conversation/src/client/contract/conversation.ts) retains its match/start/update interface and existing roles. Durable events and transient deltas may both match as start. The earliest start in the current event sequence initializes State; every later Match, including another start for the same ID, goes through update.
+The Conversation Definition retains its match/start/update interface and existing roles. Durable events and transient deltas may both match as start. The earliest start in the current event sequence initializes State; every later Match, including another start for the same ID, goes through update.
 
 Every tool delta and `tool/call` are initialization candidates. A named live delta creates the preparing row; a historical `tool/call` creates the dispatched stage directly. Matching still reads only the current event, without Context lookup, additional roles, registries, or separate caches.
 
@@ -40,7 +40,7 @@ Groups include Tool nodes from preparation onward and classify and count them by
 
 ### Shared rows reuse their existing presentation
 
-[ToolRow](../../../../packages/client/ui-tool/src/client/tool/components/ToolRow.tsx) reuses the existing icon, title, and row component across all stages. The shared row model selects the tool title and combines any generic tool-name prefix with the available argument summary. All stages expose the [lazy argument view](2026-09-24-preparing-tool-arguments.md); cards requiring dispatched arguments still return no call during preparation. ToolRow prevents preparation rows from expanding.
+ToolRow reuses the existing icon, title, and row component across all stages. The shared row model selects the tool title and combines any generic tool-name prefix with the available argument summary. All stages expose the [lazy argument view](2026-09-24-preparing-tool-arguments.md); cards requiring dispatched arguments still return no call during preparation. ToolRow prevents preparation rows from expanding.
 
 Read, read_image, write/edit, search, web, todo, question, details, and the generic fallback use this path. Bash shares its component across stages; Skill, Present, and Cordis retain their own preparation branches. No automatic/custom registration declaration or second tool-classification list in ToolTree is introduced.
 

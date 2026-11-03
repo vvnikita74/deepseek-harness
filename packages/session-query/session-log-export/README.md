@@ -98,7 +98,7 @@ This section explains how the package wires the export control and points at the
 
 ### Design split
 
-The package has two halves. The Host half ([`src/index.ts`](src/index.ts)) registers the `/export` command and contributes the exact `GET`/`HEAD /api/session.export` and `/api/session.markdown` Fetch routes to Connection; [`src/archive.ts`](src/archive.ts) builds the bounded ZIP stream, and [`src/markdown.ts`](src/markdown.ts) renders the Markdown transcript. The browser half ([`src/client/index.ts`](src/client/index.ts)) provides the shared download and Markdown copy controllers and UI, and observes `command/executed` so only the submitting browser starts a download.
+The package has two halves. The Host half ([`src/index.ts`](src/index.ts)) registers the `/export` command and contributes the exact `GET`/`HEAD /api/session.export` and `/api/session.markdown` Fetch routes to Connection; [`src/archive.ts`](src/archive.ts) builds the bounded ZIP stream, and [`src/markdown.ts`](src/markdown.ts) renders the Markdown transcript. The browser half (`src/client/index.ts`) provides the shared download and Markdown copy controllers and UI, and observes `command/executed` so only the submitting browser starts a download.
 
 The Header’s More action uses the shared compact Button, with a 28px square target and the same radius and hover fill as the right-sidebar expand control.
 
@@ -125,7 +125,6 @@ Read these pages when the package-level contract is not enough. They move from t
 
 - [dsh-client-connection](../../client/connection/README.md) — the authenticated Fetch-route carrier used by the Host endpoint.
 - [Commands subsystem reference](../../../docs/subsystems/commands.md) — the human-command registry the `/export` command registers on.
-- [dsh-client-ui-commands](../../client/ui-commands/README.md) — the browser command surface that renders and acknowledges `/export`.
 - [Session Query package map](../README.md) — the retrieval family this package belongs to.
 
 -----

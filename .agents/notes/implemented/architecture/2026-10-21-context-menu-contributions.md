@@ -10,9 +10,9 @@ Session and tab menus already accept React Slot entries. Reusing only those entr
 
 ## Decision
 
-[Context menus](../../../../packages/client/ui-context-menu/README.md) own typed target families, contribution resolution, and callback lifetime. Feature plugins register actions through the same service available to external Client plugins. Plain presentation fields let a renderer consume resolved actions without loading contributed React components. Existing Session and tab Slots remain in feature-owned adapters, preserving those extension positions.
+Context menus own typed target families, contribution resolution, and callback lifetime. Feature plugins register actions through the same service available to external Client plugins. Plain presentation fields let a renderer consume resolved actions without loading contributed React components. Existing Session and tab Slots remain in feature-owned adapters, preserving those extension positions.
 
-[File actions](../../../../packages/client/ui-file-actions/README.md) own original-content transfer separately from menus and image components. Saving retains original encoding; clipboard interoperability may require PNG conversion. A browser download supplies no local path, so reveal requires a verified Host file or the destination returned by a native save.
+File actions own original-content transfer separately from menus and image components. Saving retains original encoding; clipboard interoperability may require PNG conversion. A browser download supplies no local path, so reveal requires a verified Host file or the destination returned by a native save.
 
 The menu plugin contributes `useContextMenu` through the existing Slot root binding. Its ordinary `getTriggerProps` factory centralizes DOM gestures while business owners still provide captured targets. Plain children receive props or existing delegates; a separate React Context or utility package would duplicate the established lifetime and injection mechanism.
 

@@ -139,7 +139,6 @@ DSH installs an npm version as `name@version`, asking `registry` first when pres
 <a id="further-exploration"></a>
 ## Further Exploration
 
-- [Discover tab reference](../../../packages/client/ui-plugin-market/README.md) describes the tab's controls and states.
 - [Plugin index service](../../../packages/boot/plugin-market/README.md) covers fetch limits, caching, and the `plugin_market` tool.
 - [Index validator](../../../packages/util/plugin-market-index/README.md) is the library generators can use to check an index before publishing it.
 

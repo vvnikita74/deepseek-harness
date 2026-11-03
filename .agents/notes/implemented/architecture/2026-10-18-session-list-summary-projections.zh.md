@@ -49,4 +49,3 @@ Session 摘要就是每个已注册客户端视图，减去 `SessionProjectionMa
 - [`packages/session/session-projection/tests/summary.spec.ts`](../../../../packages/session/session-projection/tests/summary.spec.ts)：派生集合、其稳定实例、注册与注销后的重建、经带键读取面的摘要式读取、空摘要集合，以及可空标记。
 - [`packages/session/session-projection-cache/tests/cache.spec.ts`](../../../../packages/session/session-projection-cache/tests/cache.spec.ts)：从持久行读取摘要时省略被标记键，且水位只取自被服务的行。
 - [`packages/api/session-controller/tests/summary-types.client.spec.ts`](../../../../packages/api/session-controller/tests/summary-types.client.spec.ts)：在 `SessionSummary.projectionValues` 上读取 `turnOutline`、`sessionStats`、`todos` 触发 `@ts-expect-error`，而完整快照仍暴露它们且 `todos` 仍可空。
-- [`packages/api/session-controller/tests/manager.client.spec.ts`](../../../../packages/api/session-controller/tests/manager.client.spec.ts)：断线重连刷新会替换行块，残留的被排除键不会存活。

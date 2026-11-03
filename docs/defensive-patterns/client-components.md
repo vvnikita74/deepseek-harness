@@ -469,7 +469,6 @@ The feature owns its row rendering and its ordering rule, and the base component
 
 ```tsx
 // The feature owns its rows; the base is consumed, not edited.
-// packages/client/ui-workspace/src/client/rows/WorkspaceBrowser.tsx
 export function WorkspaceBrowser({ rows, onArchive }: Props) {
   const ordered = [...rows].sort((a, b) => Number(b.archived) - Number(a.archived))
   return (

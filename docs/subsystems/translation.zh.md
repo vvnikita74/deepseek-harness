@@ -26,7 +26,7 @@ Google 在 form POST 请求体中接收原文，Bing 在 JSON POST 请求体中�
 
 ## 思考内容展示
 
-[可选 Bundle](../../packages/experimental/cot-translation-bundle/README.zh.md) 将 translator 与 [GUI 消费者](../../packages/experimental/client-ui-cot-translation/README.zh.md) 组合。其 `cotTranslation` Remote 为经过身份验证的浏览器调用提供服务。Session 未激活且没有已保存结果时，Host 等待 Session controller 的正常激活，再重试一次。激活保留正常的 preset 钩子、恢复标记和中断轮次修复；取消会结束调用者的等待并阻止随后调用翻译，不取消共享激活。Bundle 设置选择翻译服务及目标语言；`auto` 跟随当前界面语言。
+[可选 Bundle](../../packages/experimental/cot-translation-bundle/README.zh.md) 将 translator 与 GUI 消费者 组合。其 `cotTranslation` Remote 为经过身份验证的浏览器调用提供服务。Session 未激活且没有已保存结果时，Host 等待 Session controller 的正常激活，再重试一次。激活保留正常的 preset 钩子、恢复标记和中断轮次修复；取消会结束调用者的等待并阻止随后调用翻译，不取消共享激活。Bundle 设置选择翻译服务及目标语言；`auto` 跟随当前界面语言。
 
 `CotTranslationPreferences` 包含已接受的翻译服务和目标语言。`CotTranslationSnapshot` 将这些偏好与 translator 当前的 `maxTextChars` 及可用服务 ID 一起返回。浏览器在注册翻译控件前读取此 Host 快照，本地设置存储不可用时也如此。接受的设置更新及重新连接会刷新这两项值；请求长度限制变化时，展开内容的请求被取消并重新分片。
 

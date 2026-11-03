@@ -12,7 +12,7 @@ The page is composed at runtime from independently loaded plugins, so the UI nee
 
 ## Decision
 
-Global main-panel selection and its root lifetime are defined by the [global main-panels reference](../../../../packages/client/ui-layout/README.md).
+Global main-panel selection and its root lifetime are defined by the global main-panels reference.
 
 One sentence: **the ui-renderer renders only `'root'`; a plugin composes UI through a single `register` call that simultaneously occupies a slot, declares+authorizes its child slots, declares its store, and injects its business face; components are pure functions whose props arrive in four shares, each auto-derived from its single source of truth.**
 

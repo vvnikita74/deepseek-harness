@@ -14,7 +14,7 @@ Status: implemented
 
 ### 同一个 Tool 拥有三个阶段
 
-[Tool Definition](../../../../packages/client/ui-chat/src/client/conversation-nodes/tool.ts) 按 callId 聚合调用，向工具组件提供明确的阶段数据。
+Tool Definition 按 callId 聚合调用，向工具组件提供明确的阶段数据。
 
 | 阶段 | 创建或更新依据 | 可用数据与展示 |
 |---|---|---|
@@ -26,7 +26,7 @@ Status: implemented
 
 ### start 表示可创建入口
 
-沿用 [Conversation Definition](../../../../packages/client/ui-conversation/src/client/contract/conversation.ts) 的 `match/start/update` 接口和既有角色。持久事件与瞬态 delta 都可以匹配为 start；当前事件序列中最早的 start 初始化 State，后续 Match，包括同 ID 的其他 start，都交给 update。
+沿用 Conversation Definition 的 `match/start/update` 接口和既有角色。持久事件与瞬态 delta 都可以匹配为 start；当前事件序列中最早的 start 初始化 State，后续 Match，包括同 ID 的其他 start，都交给 update。
 
 Tool 的每个 delta 和 `tool/call` 都是创建入口。具名实时 delta 创建准备行；历史 `tool/call` 直接创建派发阶段。匹配函数仍然只读取当前事件，不查询 Context，不增加角色、注册表或旁路缓存。
 
@@ -40,7 +40,7 @@ Group 从准备阶段起就聚合 Tool 节点，按工具名分类和计数。As
 
 ### 通用行复用现有外壳
 
-[ToolRow](../../../../packages/client/ui-tool/src/client/tool/components/ToolRow.tsx) 在三个阶段复用既有图标、标题和行组件。公共行模型选择工具标题，并组合通用工具名前缀与已有参数摘要。所有阶段都提供[懒计算参数视图](2026-09-24-preparing-tool-arguments.zh.md)；需要完整派发参数的卡片在准备阶段仍返回无调用。ToolRow 禁止准备行展开。
+ToolRow 在三个阶段复用既有图标、标题和行组件。公共行模型选择工具标题，并组合通用工具名前缀与已有参数摘要。所有阶段都提供[懒计算参数视图](2026-09-24-preparing-tool-arguments.zh.md)；需要完整派发参数的卡片在准备阶段仍返回无调用。ToolRow 禁止准备行展开。
 
 read、read_image、write/edit、search、web、todo、question、details 和通用回退使用这条路径。Bash 在各阶段共用组件；Skill、Present、Cordis 保留自己的准备态分支。不增加自动／自管注册声明，不在 ToolTree 维护另一份工具分类名单。
 

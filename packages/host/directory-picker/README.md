@@ -29,7 +29,7 @@ Mount exactly one directory-picker backend and let the workspace flow drive it: 
 
 ### Choosing a backend
 
-The [native backend](../directory-picker-native/README.md) is the right choice when the operator sits at the host's display: `directoryPicker/pick` opens one OS chooser and returns the chosen absolute path, or `null` on cancel. The [browse backend](../directory-picker-browse/README.md) works everywhere — it lists one directory level and creates child directories from the browser, so remote clients that cannot reach an OS dialog still pick a workspace. When the host situation varies between boots, compose the [adaptive chooser](../directory-picker-auto/README.md), which resolves the situation once at boot and mounts the matching backend.
+The [native backend](../directory-picker-native/README.md) is the right choice when the operator sits at the host's display: `directoryPicker/pick` opens one OS chooser and returns the chosen absolute path, or `null` on cancel. The [browse backend](../directory-picker-browse/README.md) works everywhere — it lists one directory level and creates child directories from the browser, so remote clients that cannot reach an OS dialog still pick a workspace. When the host situation varies between boots, compose the adaptive chooser, which resolves the situation once at boot and mounts the matching backend.
 
 ### The capability contract
 
@@ -77,7 +77,6 @@ Read these when the seam contract is not enough: the decision record first, then
 - [Directory-picker capability seam decision](../../../.agents/notes/archived/architecture/2026-07-28-directory-picker-capability-seam.md) — design rationale, the `ctx.fs` separation, and the policy decisions.
 - [Native backend](../directory-picker-native/README.md) — the OS-chooser interaction and its platform tooling.
 - [Browse backend](../directory-picker-browse/README.md) — the in-app listing and creation interaction for remote clients.
-- [Adaptive chooser](../directory-picker-auto/README.md) — boot-time resolution between the two backends.
 - [Workspace subsystem](../../../docs/subsystems/workspace.md) — the workspace records the picked directory feeds.
 
 -----

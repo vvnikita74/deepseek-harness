@@ -91,7 +91,6 @@ IANA 时区下的重复规则遵循本地钟表时间：跳过不存在的本地
 ## 延伸阅读
 
 - [Schedule 参考](../../../packages/schedule/schedule/README.zh.md) 说明任务字段、投递目标、重复规则、持久化与投递限制。
-- [自动化任务页面参考](../../../packages/client/ui-schedule/README.zh.md) 说明全局页面与对话顶部目录。
 
 ## 开发备注
 

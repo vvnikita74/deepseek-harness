@@ -39,7 +39,7 @@ Give each instance a unique profile entry id. The base bundle mounts settings an
 
 Change a field in Plugins and save. Verify the profile patch, the next consumer operation, unchanged plugin instance identity, and restoration after restart. Reject an invalid value and verify that neither the file nor the live value changed.
 
-Custom plugin pages receive `form.state` and `form.mutate(operations, expectedRevision)` from the Plugins page owner. The Host validates full Config and applies edits through ConfigEditor and volatile HMR. The [plugin settings package](../../packages/client/ui-settings-plugins/README.md) owns the existing card examples.
+Custom plugin pages receive `form.state` and `form.mutate(operations, expectedRevision)` from the Plugins page owner. The Host validates full Config and applies edits through ConfigEditor and volatile HMR. The plugin settings package owns the existing card examples.
 
 ## 4. Contribute to another plugin's page
 
@@ -55,9 +55,9 @@ ctx.slots.inject('plugins.detail.badge', () => ctx.slots.register({
 
 ## 5. Where the browser half rides
 
-The browser half is served to the page by the [client module system](../../packages/client/modules), which scans the enabled Loader entries for packages declaring `dsh.client` and serves each one's built `./client` export — but it attaches a package's half to the Loader row whose specifier is the bare package name. A row mounted from a subpath export never carries a half, so a bundle that splits one package into several rows keeps its half on the root row, and every page it registers goes away when that row is switched off. A sub-plugin whose page must outlive the other rows ships as its own package.
+The browser half is served to the page by the client module system, which scans the enabled Loader entries for packages declaring `dsh.client` and serves each one's built `./client` export — but it attaches a package's half to the Loader row whose specifier is the bare package name. A row mounted from a subpath export never carries a half, so a bundle that splits one package into several rows keeps its half on the root row, and every page it registers goes away when that row is switched off. A sub-plugin whose page must outlive the other rows ships as its own package.
 
-The built `./client` file must be in the client module system's lazy-CJS factory format: one script that registers the package name and a `factory(require)` with the page's module loader, described in the [client module system's README](../../packages/client/modules/README.md). The `clientBundle` tsdown preset that emits it lives in `packages/client/tsdown.client.ts` rather than in a published package, so a package outside this repository reproduces that build itself.
+The built `./client` file must be in the client module system's lazy-CJS factory format: one script that registers the package name and a `factory(require)` with the page's module loader, described in the client module system's README. The `clientBundle` tsdown preset that emits it lives in `packages/client/tsdown.client.ts` rather than in a published package, so a package outside this repository reproduces that build itself.
 
 ```jsonc
 {

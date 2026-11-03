@@ -29,7 +29,7 @@ kind: "package-reference"
 
 ### 何时选择
 
-为 macOS、Windows 或桌面 Linux 上的工作站本地操作者选择此后端。当客户端无法触达 OS 选择器时——远程浏览器、SSH 转发会话或无人值守宿主——请选择[浏览后端](../directory-picker-browse/README.zh.md)。具体情况不固定时，[自适应选择器](../directory-picker-auto/README.zh.md)会在启动时判定。
+为 macOS、Windows 或桌面 Linux 上的工作站本地操作者选择此后端。当客户端无法触达 OS 选择器时——远程浏览器、SSH 转发会话或无人值守宿主——请选择[浏览后端](../directory-picker-browse/README.zh.md)。具体情况不固定时，自适应选择器会在启动时判定。
 
 ### 操作者会看到什么
 
@@ -75,7 +75,6 @@ kind: "package-reference"
 - [目录选择 seam](../directory-picker/README.zh.md)——`native` 能力约定与类型化错误词汇。
 - [目录选择能力 seam 决策](../../../.agents/notes/archived/architecture/2026-07-28-directory-picker-capability-seam.md)——后端为何在交互形态上彼此不同。
 - [浏览后端](../directory-picker-browse/README.zh.md)——面向远程客户端的应用内替代方案。
-- [自适应选择器](../directory-picker-auto/README.zh.md)——native 与 browse 之间的启动时判定。
 - [免 shell 子进程运行器](../../util/native-command/README.zh.md)——选择器运行所依赖的共享子进程原语。
 
 -----

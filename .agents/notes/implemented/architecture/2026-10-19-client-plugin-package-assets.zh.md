@@ -6,9 +6,9 @@ Status: implemented
 
 ## Problem
 
-动态 Client 插件的浏览器半侧由 [client 打包预设](../../../../packages/client/tsdown.client.ts) 打成 lazy-CJS factory，经 [Client 模块系统](../../../../packages/client/modules/README.zh.md) 的 `/plugins` 路由加载。这条路由过去只提供 `client.js` 和包内分片，所以插件代码引用的图片只能以 base64 data URL 打进 bundle，样式里用到的图片则要靠包级构建插件替换成内联样式。
+动态 Client 插件的浏览器半侧由 [client 打包预设](../../../../packages/client/tsdown.client.ts) 打成 lazy-CJS factory，经 Client 模块系统 的 `/plugins` 路由加载。这条路由过去只提供 `client.js` 和包内分片，所以插件代码引用的图片只能以 base64 data URL 打进 bundle，样式里用到的图片则要靠包级构建插件替换成内联样式。
 
-不管图片显不显示，这些字节都随 JavaScript 一起下载和解析，base64 还会让体积大三分之一：引导插图使 ui-settings-account 的 `client.js` 达到约 3.4 MB。ui-chat 还为一张遮罩图维护了自己的 [tsdown 插件](../../../../packages/client/ui-chat/tsdown.config.ts)。
+不管图片显不显示，这些字节都随 JavaScript 一起下载和解析，base64 还会让体积大三分之一：引导插图使 ui-settings-account 的 `client.js` 达到约 3.4 MB。ui-chat 还为一张遮罩图维护了自己的 tsdown 插件。
 
 ## Decision
 
@@ -26,7 +26,7 @@ plugins/@deepseek-ai/dsh-client-ui-chat/assets/running-whale%402x-06738fa29b2f.p
 
 路径逐段先用 `encodeURIComponent` 编码，再编码 `!`、`'`、`(`、`)` 和 `*`，因此引用本身也是合法的无引号 CSS `url()`；包名原样输出。URL 和其他应用自有路由一样相对外壳文档，在任意挂载下、以及在注入的 `<style>` 文本中都能正确解析。组件不需要 hook、注入值或 service：URL 就是模块首次运行时算出的常量。
 
-支持的扩展名是 `.svg`、`.png`、`.webp`、`.jpg` 和 `.jpeg`。client-modules 的 [`src/assets.ts`](../../../../packages/client/modules/src/assets.ts) 统一定义类型表、导出键与目标、revision、产出文件名和 URL，预设、路由和门禁都从这里读取。共享的 Client 类型根 [`scripts/types/client-assets`](../../../../scripts/types/client-assets/index.d.ts) 在 [`tsconfig.base.client.json`](../../../../tsconfig.base.client.json) 中登记，把每个扩展名声明为默认导出字符串的模块；有测试保证它与类型表一致。
+支持的扩展名是 `.svg`、`.png`、`.webp`、`.jpg` 和 `.jpeg`。client-modules 的 `src/assets.ts` 统一定义类型表、导出键与目标、revision、产出文件名和 URL，预设、路由和门禁都从这里读取。共享的 Client 类型根 [`scripts/types/client-assets`](../../../../scripts/types/client-assets/index.d.ts) 在 [`tsconfig.base.client.json`](../../../../tsconfig.base.client.json) 中登记，把每个扩展名声明为默认导出字符串的模块；有测试保证它与类型表一致。
 
 ### 构建
 
@@ -84,9 +84,3 @@ plugins/@deepseek-ai/dsh-client-ui-chat/assets/running-whale%402x-06738fa29b2f.p
 - 条目重启时会读取它的 manifest 并 stat 它的 bundle；只有结果变化时才读取 bundle 并广播启动图帧（69 行时约 30 KB）。只改 `package.json` 而条目没有重启时，仍要到下次条目重启或 Host 重启才生效。
 
 ## Testing
-
-- [package-assets.client.spec.ts](../../../../packages/client/modules/tests/package-assets.client.spec.ts) 组合真实 Web server，并将每个响应与 `fetchBundle()` 比对：包括 SVG 策略在内的响应头、不打开文件的 304、`HEAD`、405、多分片流式发送、取消时关闭流、浏览器取消请求时不记日志，以及以下情况的 404：被排除的子路径、缺少导出或文件、`..`、`%2e%2e`、编码后的 `..`、空路径、错误的转义、解码后的 `%` 和 `#`、不支持的类型、目录和未启用的包。
-- [assets.client.spec.ts](../../../../packages/client/modules/tests/assets.client.spec.ts) 覆盖媒体类型、revision、产出文件名和引用；[client-asset-types.spec.ts](../../../../scripts/client-asset-types.spec.ts) 保证类型根与类型表一致。
-- [client-bundle-css.spec.ts](../../../../scripts/client-bundle-css.spec.ts) 覆盖产出文件名、脚本和样式表文本中的解析调用、完整构建中它们的 CommonJS 渲染、保留的 `url()` 形式、每种构建拒绝、Node face 守卫、一次性构建的清理，以及 watch 重建保留旧文件；[loader.client.spec.ts](../../../../packages/client/modules/tests/loader.client.spec.ts) 覆盖默认解析和载体解析。
-- 各门禁的 spec 拒绝每种无效的 manifest 或引用形式；[node-half.client.spec.ts](../../../../packages/client/modules/tests/node-half.client.spec.ts) 覆盖条目重启后的声明更新、导出移动、client 声明的增减、未变化的重启既不发布也不读取 bundle，以及名为 `@scope/assets` 的包的分片。
-- [desktop-onboarding.e2e.ts](../../../../apps/web/tests/desktop-onboarding.e2e.ts) 和 [reasoning-preview.e2e.ts](../../../../apps/web/tests/reasoning-preview.e2e.ts) 断言包资源 URL，并在浏览器中解码这些图片；[preview-boot.e2e.ts](../../../../apps/web/tests/preview-boot.e2e.ts) 解码 WebWorker 预览解析为 Blob URL 的 ui-chat 遮罩图，运行时的 [package-assets.spec.ts](../../../../packages/experimental/webworker-runtime/tests/package-assets.spec.ts) 覆盖归档和解析。

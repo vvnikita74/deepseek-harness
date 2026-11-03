@@ -8,7 +8,7 @@ Status: proposed
 
 [转换队列](../../../../packages/document/office-to-pdf/src/queue.ts) 实现了前台优先级提升、读取方取消后的降级、排队后台任务的驱逐、预留前台读取名额，以及独立的后台并发计数。这些机制保护前台转换不受推测性预热影响；普通转换仍需要队列的通用资源限制。
 
-[Office 预览](../../../../packages/client/ui-sidebar-documentpreview/src/client/office/index.ts) 调用缓存时未传优先级，因此[Client 缓存](../../../../packages/client/ui-sidebar-documentpreview/src/client/office/cache.ts) 向 Host 转发默认前台优先级。在仓库中搜索 `officeToPdf`、`OfficeToPdfRequest`、`OfficeToPdfPriority` 和 `maxBackgroundConversions`，未发现生产后台请求。[转换冒烟测试](../../../../packages/bundle/web-app/tests/document-conversion.e2e.ts) 也提交前台请求。后台请求出现在队列、Remote 和 Client 缓存测试中。仅凭暴露 API 和 Client 优先级传递逻辑，无法确定预热需要哪种调度策略。开放的交付文件预热 PR #4064已经提供具体预热消费者，但其实现仍调用不含优先级的旧 `documentRender` API。删除调度前必须先与该消费者协调；尚未进入 master 不足以支持直接实施。
+Office 预览 调用缓存时未传优先级，因此Client 缓存 向 Host 转发默认前台优先级。在仓库中搜索 `officeToPdf`、`OfficeToPdfRequest`、`OfficeToPdfPriority` 和 `maxBackgroundConversions`，未发现生产后台请求。[转换冒烟测试](../../../../packages/bundle/web-app/tests/document-conversion.e2e.ts) 也提交前台请求。后台请求出现在队列、Remote 和 Client 缓存测试中。仅凭暴露 API 和 Client 优先级传递逻辑，无法确定预热需要哪种调度策略。开放的交付文件预热 PR #4064已经提供具体预热消费者，但其实现仍调用不含优先级的旧 `documentRender` API。删除调度前必须先与该消费者协调；尚未进入 master 不足以支持直接实施。
 
 [有界转换决策](../../implemented/architecture/2026-09-15-bounded-office-conversion.zh.md) 有意为前台消费者预留容量。存在推测性任务时，这条规则仍然正确，但当前调用方清单不足以支持维护推测性请求类别及其生命周期交互。
 

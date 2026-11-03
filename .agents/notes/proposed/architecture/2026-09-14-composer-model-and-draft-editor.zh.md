@@ -8,9 +8,9 @@ Status: proposed
 
 同一个 Client 需要在不同视图中编辑同一个 Session 的草稿和待发送附件。Lexical 的一个 editor 只能绑定一个 DOM root；多个呈现位置需要多个编辑实例，但不能各自拥有互不相干的草稿和上传任务，也不能让 Session Controller 理解光标、输入法或 DOM。
 
-当前 [SessionInputShell](../../../../packages/client/ui-conversation/src/client/input/facade.ts) 同时包含 Lexical 操作、草稿投影、提交状态机和失败恢复。[InputBar](../../../../packages/client/ui-conversation/src/client/skeleton/InputBar.tsx) 同时包含编辑区呈现、DOM 绑定、附件入口和发送控件。直接在这两个文件中实现多实例会让代码提取与行为差异混在一起。
+当前 SessionInputShell 同时包含 Lexical 操作、草稿投影、提交状态机和失败恢复。InputBar 同时包含编辑区呈现、DOM 绑定、附件入口和发送控件。直接在这两个文件中实现多实例会让代码提取与行为差异混在一起。
 
-附件实体和上传任务已经由 [ConversationController](../../../../packages/client/ui-conversation/src/client/service.ts) 集中管理，shell 只保留有序附件 IDs。skill（技能）选择插入普通 `/name` 文本，高亮由词表派生；文件和 Session 的原子引用则使用带来源身份的 chip。共享草稿不能只同步文字而丢失这些引用，也不需要复制附件实体。
+附件实体和上传任务已经由 ConversationController 集中管理，shell 只保留有序附件 IDs。skill（技能）选择插入普通 `/name` 文本，高亮由词表派生；文件和 Session 的原子引用则使用带来源身份的 chip。共享草稿不能只同步文字而丢失这些引用，也不需要复制附件实体。
 
 本提案细化 [#3951](https://github.com/deepseek-ai/deepseek-harness/pull/3951) 的编辑器隔离，遵循 [Client Session 与 UI 所有权](../../implemented/architecture/2026-08-20-client-session-conversation-ownership.zh.md)。Session 活跃视图、驻留状态与回收策略独立设计；[#4138](https://github.com/deepseek-ai/deepseek-harness/pull/4138) 仅作为 Host 生命周期参考。本提案不实现这些功能，也不重复 #3984 的 Conversation 组件拆分。
 
@@ -20,7 +20,7 @@ Status: proposed
 
 ### 第一阶段：五处机械职责提取
 
-以下 ui-conversation 路径相对 `packages/client/ui-conversation/src/client/`。每个新文件必须承载当前已经执行的逻辑，不建立占位接口或未来功能。
+每个新文件必须承载当前已经执行的逻辑，不建立占位接口或未来功能。
 
 | 原位置 | 提取位置 | 后续行为修改的落点 |
 |---|---|---|

@@ -20,7 +20,7 @@ Choose consistent corner radii by component role and size, and align nested regi
 
 This reference defines the DSH Web and Desktop radius scale and its component rules. A local visual adjustment stays scoped to the named component or family and does not automatically change the global scale.
 
-The [Web UI style reference](web-styling.md) defines general styling ownership. Shared values live in [`base.css`](../packages/client/ui-theme/src/styles/base.css), and curve behavior lives in [`corner-shape.css`](../packages/client/ui-theme/src/styles/corner-shape.css). Update the theme implementation and both language versions of this standard together when changing a rule.
+The [Web UI style reference](web-styling.md) defines general styling ownership. Shared values live in `base.css`, and curve behavior lives in `corner-shape.css`. Update the theme implementation and both language versions of this standard together when changing a rule.
 
 <a id="radius-scale"></a>
 ## Select the radius
@@ -47,13 +47,13 @@ Code blocks, diffs, and preview cards share R16: changed-file entry cards, deliv
 
 Reuse `ui-primitives` controls before adding feature-owned geometry. Use `box-sizing: border-box` for fixed outer dimensions. Filled, outline, ghost, loading, and disabled variants keep the same size and radius; hover, pressed, selected, and focus states do not change the radius.
 
-Consume the named tokens instead of introducing local values such as 10px, 14px, 18px, or 24px for ordinary controls and cards. Schedule controls, Desktop onboarding, account notices, and shortcut controls retain their package-owned geometry; the [radius exception record](../packages/client/ui-theme/tests/expected/radius-exceptions.expected.json) pins each permitted file, selector, and declaration rather than exempting whole packages. A family-specific property may refer to a shared token, as `--dsl-guide-entry-radius` does. Geometry derived from a real inset may use `calc()`; it is not an additional scale tier.
+Consume the named tokens instead of introducing local values such as 10px, 14px, 18px, or 24px for ordinary controls and cards. Schedule controls, Desktop onboarding, account notices, and shortcut controls retain their package-owned geometry; the radius exception record pins each permitted file, selector, and declaration rather than exempting whole packages. A family-specific property may refer to a shared token, as `--dsl-guide-entry-radius` does. Geometry derived from a real inset may use `calc()`; it is not an additional scale tier.
 
 Ordinary rounded surfaces use the theme's `superellipse(1.5)` curve where supported. `corner-shape` is not inherited: the theme applies it to elements and their `::before`/`::after`. Unsupported engines retain ordinary circular corners. Do not introduce component-specific smoothing that makes a fill and its outline curve differently.
 
 Preserve intentional circles and capsules: avatars and status dots use `50%`; explicit pills and full-round tracks may use `999px`. Pair every such full-round declaration with `corner-shape: round` in the same rule. Do not turn every button into a capsule just because its height is small. Tiny drawing details, such as glyph marks or miniature tracks, may retain their established local geometry; they do not justify arbitrary radii on surrounding controls.
 
-Both the avatar container and its `img` must remain circular; an image that inherits only `border-radius` still needs an explicit `corner-shape: round` or must inherit the curve from its circular container. Keep equal width and height on both. See [Account settings](../packages/client/ui-settings-account/README.md#use-this-package) for account avatar sizes.
+Both the avatar container and its `img` must remain circular; an image that inherits only `border-radius` still needs an explicit `corner-shape: round` or must inherit the curve from its circular container. Keep equal width and height on both. See Account settings for account avatar sizes.
 
 Edge-to-edge docked surfaces and adjoining cells may use R0 on shared edges. A header, footer, or image flush with a card rounds only its exposed outer corners; preserve square internal joins rather than rounding every child on all four sides.
 
