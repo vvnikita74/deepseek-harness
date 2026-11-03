@@ -152,6 +152,8 @@
     "verify-third-party-notices": "tsx scripts/gen-third-party-notices.ts --check",
     "gen-module-graph": "tsx scripts/gen-module-graph.ts",
     "verify-module-graph": "tsx scripts/gen-module-graph.ts --check",
+    "build:shad-api": "tsx scripts/emit-shad-api.ts",
+    "verify-shad-api": "tsx scripts/emit-shad-api.ts --check",
     "constraints": "tsx scripts/check-workspace-constraints.ts",
     "doc-sync": "tsx scripts/run-gates.ts doc-sync",
     "hygiene": "tsx scripts/run-gates.ts hygiene",

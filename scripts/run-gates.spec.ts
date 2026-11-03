@@ -414,6 +414,15 @@ describe('gate graph validation', () => {
     ])
   })
 
+  it('verifies the committed shad-api types only after the build in check-all', () => {
+    const gates = withPnpmEntrypoint(() => gatesForMode('check-all'))
+    expect(gates).toContainEqual(expect.objectContaining({
+      id: 'shad-api',
+      displayCommand: 'pnpm run verify-shad-api',
+      needs: ['build'],
+    }))
+  })
+
   it('launches a native pnpm entrypoint directly', () => {
     const entrypoint = String.raw`C:\Program Files\pnpm\pnpm.exe`
     const subject = withPnpmEntrypoint(() => gatesForMode('ci-windows-blocking')[0], entrypoint)
