@@ -35,6 +35,7 @@ const NAMESPACES = [
   ['settings', 'settings-controller', './types'],
   ['account', 'account-controller', './types'],
   ['remoteAccess', 'remote-access', './types'],
+  ['jevRouter', 'jev-router', './types'],
   ['gateway', 'gateway', './stream-protocol'],
 ] as const
 
