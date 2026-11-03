@@ -491,6 +491,14 @@ export interface ConnectionConfig {
    * an entry here. A non-canonical or non-bare authority fails plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Exact browser origins (`scheme://host[:port]`, scheme `http`, `https`, or
+   * `tauri`) of cross-origin clients such as a separately hosted SPA or a Tauri
+   * webview. An allowed Origin gets CORS on `/api` and `/connect`, may pass the
+   * cross-site refusal, and authenticates with the bearer credential; the Host
+   * fence still applies. A malformed entry fails plugin load.
+   */
+  allowedOrigins?: string[]
   /** Absolute browser and API cookie lifetime in days. Default: 30. */
   cookieMaxAgeDays?: number
   /** Maximum buffered JSON body for every `/api` request. Default: 300 MiB. */
@@ -4362,13 +4370,11 @@ export interface WebRuntimeConfig {
 ## `@deepseek-ai/dsh-web-app`
 
 - `inject`: `webServer`
-- `source`: [`packages/bundle/web-app/src/index.ts:50`](../packages/bundle/web-app/src/index.ts)
+- `source`: [`packages/bundle/web-app/src/index.ts:47`](../packages/bundle/web-app/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: composed deployment settings plus per-invocation command-line values. */
 export interface Config {
-  /** Permit default-browser handoff after the Loader tree settles; an SSH launch suppresses it. */
-  openBrowser: boolean
   /** Print the URL line on activation; a non-interactive layer can turn it off. */
   printUrl: boolean
   /**

@@ -4,7 +4,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypt
 import type { PeerId } from '@deepseek-ai/dsh-typert-protocol'
 import { CONNECT_PATH, type ConnectionInteractions } from './connect-protocol.ts'
 import { credentialKey } from '@deepseek-ai/dsh-credentials'
-import type { CredentialProvider, CredentialRecord } from '@deepseek-ai/dsh-credentials'
+import type { CredentialKey, CredentialProvider, CredentialRecord } from '@deepseek-ai/dsh-credentials'
 import type {
   ConnectionIndexRequest,
   ConnectionIndexResponse,
@@ -12,6 +12,7 @@ import type {
 } from './rpc.ts'
 
 const AUTH_RECORD_KEY = credentialKey('client-connection', 'browser-session')
+const ACCESS_KEY_RECORD_KEY = credentialKey('client-connection', 'access-key')
 const DAY_MILLISECONDS = 24 * 60 * 60 * 1000
 const SECRET_BYTES = 32
 const TOKEN_QUERY = 'token'
@@ -19,7 +20,8 @@ const COOKIE_PREFIX = 'dsh-auth-'
 const COOKIE_PAYLOAD_VERSION = 1
 const STORED_SECRET_VERSION = 1
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]*$/
-const PROCESS_LAUNCH_TOKENS = new WeakMap<object, string>()
+const SUBPROTOCOL_CREDENTIAL_PREFIX = 'dsh.auth.'
+const BEARER_PATTERN = /^bearer\s+(\S+)$/iu
 
 interface StoredSecretPayload {
   readonly version: typeof STORED_SECRET_VERSION
@@ -58,14 +60,6 @@ function decodeBase64Url(value: string): Buffer | undefined {
   return encodeBase64Url(decoded) === value ? decoded : undefined
 }
 
-function processLaunchToken(owner: object): string {
-  const existing = PROCESS_LAUNCH_TOKENS.get(owner)
-  if (existing !== undefined) return existing
-  const created = encodeBase64Url(randomBytes(SECRET_BYTES))
-  PROCESS_LAUNCH_TOKENS.set(owner, created)
-  return created
-}
-
 function header(
   headers: ConnectionTrustRequest['headers'],
   name: string,
@@ -94,17 +88,30 @@ function canonicalSecret(value: unknown): Buffer | undefined {
   return decoded
 }
 
-function storedSecret(record: CredentialRecord | undefined): Buffer | undefined {
+function storedSecret(record: CredentialRecord | undefined, label: string): Buffer | undefined {
   if (record === undefined) return undefined
   if (record.kind !== 'grant' || !isRecord(record.payload)
     || record.payload.version !== STORED_SECRET_VERSION) {
-    throw new Error('client-connection: browser-session credential record has an unsupported format')
+    throw new Error(`client-connection: ${label} credential record has an unsupported format`)
   }
   const secret = canonicalSecret(record.payload.secret)
   if (secret === undefined) {
-    throw new Error('client-connection: browser-session credential record has an invalid secret')
+    throw new Error(`client-connection: ${label} credential record has an invalid secret`)
   }
   return secret
+}
+
+/** Bearer credential of an `Authorization: Bearer <value>` header, if present. */
+function bearerCredential(headers: ConnectionTrustRequest['headers']): string | undefined {
+  return BEARER_PATTERN.exec(header(headers, 'authorization') ?? '')?.[1]
+}
+
+/** Credential named by a single `dsh.auth.<value>` WebSocket subprotocol offer; ambiguous offers name none. */
+function subprotocolCredential(headers: ConnectionTrustRequest['headers']): string | undefined {
+  const offers = (header(headers, 'sec-websocket-protocol') ?? '').split(',').map(offer => offer.trim())
+    .filter(offer => offer.startsWith(SUBPROTOCOL_CREDENTIAL_PREFIX))
+  const [offer] = offers
+  return offers.length === 1 && offer !== undefined ? offer.slice(SUBPROTOCOL_CREDENTIAL_PREFIX.length) : undefined
 }
 
 function tokenMatches(actual: string, expected: string): boolean {
@@ -179,40 +186,41 @@ function decodeCookie(value: string, secret: Buffer): CookiePayload | undefined 
   return { version: 2, ...payload, id: decoded.id as PeerId }
 }
 
-async function initializeSecret(credentials: CredentialProvider): Promise<Buffer> {
+/** Create a random 32-byte grant under `key` on first use; later activations reuse it. */
+async function initializeSecret(credentials: CredentialProvider, key: CredentialKey, label: string): Promise<Buffer> {
   const generated: StoredSecretPayload = {
     version: STORED_SECRET_VERSION,
     secret: encodeBase64Url(randomBytes(SECRET_BYTES)),
   }
-  const record = await credentials.modifyRecord(AUTH_RECORD_KEY, (current) => {
+  const record = await credentials.modifyRecord(key, (current) => {
     if (current !== undefined) {
-      storedSecret(current)
+      storedSecret(current, label)
       return Promise.resolve(undefined)
     }
     return Promise.resolve({ kind: 'grant', payload: generated })
   })
-  const secret = storedSecret(record)
+  const secret = storedSecret(record, label)
   if (secret === undefined) {
-    throw new Error('client-connection: browser-session credential record was not created')
+    throw new Error(`client-connection: ${label} credential record was not created`)
   }
   return secret
 }
 
 /**
- * Process launch-token exchange and persistent signed-cookie verification.
- * Connection loads the credential provider's signing secret during activation
- * and retains it for synchronous request authentication.
+ * Access-key exchange and persistent signed-credential verification. Connection
+ * loads the credential provider's signing secret and access key during
+ * activation and retains them for synchronous request authentication.
  */
 export class BrowserAuth {
-  private readonly launchToken: string
+  private readonly accessKey: string
   private readonly maxAgeMilliseconds: number
 
   private constructor(
-    processOwner: object,
     private readonly secret: Buffer,
+    accessKey: Buffer,
     maxAgeDays: number,
   ) {
-    this.launchToken = processLaunchToken(processOwner)
+    this.accessKey = encodeBase64Url(accessKey)
     this.maxAgeMilliseconds = maxAgeDays * DAY_MILLISECONDS
     if (!Number.isSafeInteger(this.maxAgeMilliseconds)
       || !Number.isSafeInteger(Date.now() + this.maxAgeMilliseconds)) {
@@ -221,29 +229,30 @@ export class BrowserAuth {
   }
 
   /**
-   * Initialize browser authentication and create its durable signing secret
-   * when this Harness home has none.
-   * @param processOwner - root application context retaining one token across Connection reloads.
+   * Initialize browser authentication. Creates the signing secret and the
+   * access key on first use; deleting either credential rotates it on the next
+   * activation.
    * @param credentials - persistent credential provider for the Web profile.
    * @param maxAgeDays - positive absolute browser-cookie lifetime in days.
-   * @returns initialized authentication owner with the process owner's launch token.
+   * @returns initialized authentication owner with the persisted access key.
    */
   static async create(
-    processOwner: object,
     credentials: CredentialProvider,
     maxAgeDays: number,
   ): Promise<BrowserAuth> {
-    return new BrowserAuth(processOwner, await initializeSecret(credentials), maxAgeDays)
+    const secret = await initializeSecret(credentials, AUTH_RECORD_KEY, 'browser-session')
+    const accessKey = await initializeSecret(credentials, ACCESS_KEY_RECORD_KEY, 'access-key')
+    return new BrowserAuth(secret, accessKey, maxAgeDays)
   }
 
   /**
-   * Add this process's launch token to the caller's application URL.
+   * Add the persistent access key to the caller's application URL.
    * @param baseUrl - clean browser URL whose authority and mount are preserved.
-   * @returns the same URL carrying the process token as its sole authentication input.
+   * @returns the same URL carrying the access key as its sole authentication input.
    */
   authenticatedUrl(baseUrl: string): string {
     const url = new URL(baseUrl)
-    url.searchParams.set(TOKEN_QUERY, this.launchToken)
+    url.searchParams.set(TOKEN_QUERY, this.accessKey)
     return url.href
   }
 
@@ -267,7 +276,7 @@ export class BrowserAuth {
     if (tokens.length > 0) {
       const authority = requestAudience(req.headers, secure)
       if (req.method === 'GET' && url.pathname === '/' && tokens.length === 1
-        && authority !== undefined && tokenMatches(tokens.join(''), this.launchToken)) {
+        && authority !== undefined && tokenMatches(tokens.join(''), this.accessKey)) {
         const issuedAt = Date.now()
         const expiresAt = issuedAt + this.maxAgeMilliseconds
         const value = encodeCookie({
@@ -328,7 +337,7 @@ export class BrowserAuth {
     const tokens = url.searchParams.getAll(TOKEN_QUERY)
     const authority = requestAudience(req.headers, secure)
     if (req.method !== 'GET' || url.pathname !== CONNECT_PATH || tokens.length !== 1
-      || authority === undefined || !tokenMatches(tokens.join(''), this.launchToken)) {
+      || authority === undefined || !tokenMatches(tokens.join(''), this.accessKey)) {
       this.writeUnauthorized(req, res)
       return
     }
@@ -348,32 +357,89 @@ export class BrowserAuth {
   }
 
   /**
+   * Exchange the access key in a JSON `POST /connect` body for a signed API
+   * credential returned in the response body. No cookie is set: the caller
+   * sends the value back as a bearer token or subprotocol credential.
+   * @param request - trusted POST /connect request; its Host audience binds the credential.
+   * @param response - response owned to completion.
+   * @param secure - whether the receiving listener serves TLS.
+   * @param body - JSON-decoded body `{ token, interactions? }`, where interactions defaults to none.
+   * @param publish - synchronously create the operator before exposing its signed credential.
+   */
+  exchangeAccessKey(
+    request: ConnectionIndexRequest,
+    response: ConnectionIndexResponse,
+    secure: boolean,
+    body: unknown,
+    publish: (interactions: ConnectionInteractions) => PeerId,
+  ): void {
+    const json = { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' }
+    if (!isRecord(body) || (body.interactions !== undefined && body.interactions !== 'answer' && body.interactions !== 'none')) {
+      response.writeHead(400, json)
+      response.end(JSON.stringify({ error: 'interactions must be answer or none' }))
+      return
+    }
+    const authority = requestAudience(request.headers, secure)
+    if (typeof body.token !== 'string' || authority === undefined || !tokenMatches(body.token, this.accessKey)) {
+      response.writeHead(401, json)
+      response.end(JSON.stringify({ error: 'unauthorized' }))
+      return
+    }
+    const issuedAt = Date.now()
+    const expiresAt = issuedAt + this.maxAgeMilliseconds
+    const id = publish(body.interactions === 'answer' ? 'answer' : 'none')
+    const value = encodeCookie({ version: 2, authority, id, issuedAt, expiresAt }, this.secret)
+    response.writeHead(200, json)
+    response.end(JSON.stringify({ token: value, expiresAt }))
+  }
+
+  /**
    * Verify the authority-bound browser cookie on a Host request.
    * @param request - request headers carrying Host and Cookie.
    * @param secure - whether the receiving listener uses TLS, including its default port.
    * @returns true only for an unexpired cookie signed by this activation's loaded secret.
    */
   isAuthenticated(request: ConnectionTrustRequest, secure = false): boolean {
-    return this.authenticate(request, secure)?.version === COOKIE_PAYLOAD_VERSION
+    return this.authenticate(request, secure, undefined)?.version === COOKIE_PAYLOAD_VERSION
   }
 
   /**
-   * Verify an API credential without creating or reviving its operator.
-   * @param request - request headers carrying Host and Cookie.
+   * Verify an API credential without creating or reviving its operator. The
+   * signed cookie is checked first; otherwise a bearer value is checked: the
+   * `Authorization: Bearer` header for HTTP, or the `dsh.auth.<value>`
+   * subprotocol offer for a WebSocket upgrade.
+   * @param request - request headers carrying Host and Cookie, Authorization, or Sec-WebSocket-Protocol.
    * @param secure - whether the receiving listener uses TLS.
-   * @returns the signed operator id, or undefined for invalid, expired, or browser cookies.
+   * @param websocket - true when admitting a WebSocket upgrade, which reads the subprotocol credential only.
+   * @returns the signed operator id, or undefined for invalid, expired, or browser credentials.
    */
-  authenticateApi(request: ConnectionTrustRequest, secure = false): PeerId | undefined {
-    const payload = this.authenticate(request, secure)
+  authenticateApi(request: ConnectionTrustRequest, secure = false, websocket = false): PeerId | undefined {
+    const payload = this.authenticate(request, secure, websocket
+      ? subprotocolCredential(request.headers)
+      : bearerCredential(request.headers))
     return payload?.version === 2 ? payload.id : undefined
   }
 
-  private authenticate(request: ConnectionTrustRequest, secure: boolean): CookiePayload | undefined {
+  /**
+   * Verify a signed cookie first, then the supplied bearer candidate. Bearer
+   * candidates pass the same decode, HMAC, audience, and lifetime checks; the
+   * caller accepts only the version it expects.
+   * @param request - request headers carrying Host and Cookie.
+   * @param secure - whether the receiving listener uses TLS.
+   * @param bearer - unverified candidate value, or undefined when the carrier offers none.
+   * @returns the verified payload, or undefined.
+   */
+  private authenticate(request: ConnectionTrustRequest, secure: boolean, bearer: string | undefined): CookiePayload | undefined {
     const authority = requestAudience(request.headers, secure)
+    if (authority === undefined) return undefined
     const rawCookie = header(request.headers, 'cookie')
-    if (authority === undefined || rawCookie === undefined) return undefined
-    const value = cookieValue(rawCookie, cookieName(authority))
-    if (value === undefined) return undefined
+    const value = rawCookie === undefined ? undefined : cookieValue(rawCookie, cookieName(authority))
+    const fromCookie = value === undefined ? undefined : this.verify(value, authority)
+    if (fromCookie !== undefined || bearer === undefined) return fromCookie
+    return this.verify(bearer, authority)
+  }
+
+  private verify(value: string, authority: string): CookiePayload | undefined {
     const payload = decodeCookie(value, this.secret)
     if (payload === undefined || payload.authority !== authority) return undefined
     const now = Date.now()

@@ -89,8 +89,8 @@ describe('parseDevWebArguments', () => {
   })
 
   it('separates its own flags from the arguments forwarded to dsh web', () => {
-    expect(parseDevWebArguments(['--skip-build', '--poll', '--no-open', '--port', '8080'])).toEqual({
-      skipBuild: true, serve: true, pollInterval: 500, appArgs: ['--no-open', '--port', '8080'],
+    expect(parseDevWebArguments(['--skip-build', '--poll', '--port', '8080'])).toEqual({
+      skipBuild: true, serve: true, pollInterval: 500, appArgs: ['--port', '8080'],
     })
   })
 
@@ -99,12 +99,12 @@ describe('parseDevWebArguments', () => {
   })
 
   it('ignores the separator pnpm run forwards verbatim', () => {
-    expect(parseDevWebArguments(['--', '--no-open']).appArgs).toEqual(['--no-open'])
+    expect(parseDevWebArguments(['--', '--port', '8080']).appArgs).toEqual(['--port', '8080'])
     expect(parseDevWebArguments(['--no-serve', '--'])).toMatchObject({ serve: false, appArgs: [] })
   })
 
   it('rejects dsh web arguments when no server is started', () => {
-    expect(() => parseDevWebArguments(['--no-serve', '--no-open'])).toThrow('--no-serve leaves no dsh web process for --no-open')
+    expect(() => parseDevWebArguments(['--no-serve', '--trusted-host'])).toThrow('--no-serve leaves no dsh web process for --trusted-host')
   })
 })
 

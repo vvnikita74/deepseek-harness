@@ -81,7 +81,7 @@ async function fixture(test: TestContext) {
       expect(inventory.hmr).toBe(false)
     } else {
       const child = execa(process.execPath, [join(repo, 'apps/cli/lib/bin.js'), '--profile', 'web',
-        '--patch', patch, '--host', '127.0.0.1', '--port', '0', '--no-open'], {
+        '--patch', patch, '--host', '127.0.0.1', '--port', '0'], {
         cwd, env: { ...env, DSH_HOME: join(cwd, 'home') }, extendEnv: false,
         ipc: true, stdin: 'ignore', reject: false, cancelSignal: test.signal, forceKillAfterDelay: 10_000,
       })

@@ -37,7 +37,7 @@ The shipped apps own these command lines:
 
 | Profile | Arguments |
 |---|---|
-| `web` | `--host`, `--port`, `--tls-cert`, `--tls-key`, `--public-url`, repeatable `--trusted-host`, `--no-open` |
+| `web` | `--host`, `--port`, `--tls-cert`, `--tls-key`, `--public-url`, repeatable `--trusted-host`, repeatable `--allowed-origin` |
 | `headless` | the task text, as the positional argument |
 | `sdk` | no options; stdio carries the JSON-RPC protocol |
 | `sdk-minimal` | no options; stdio carries the same JSON-RPC protocol |
@@ -118,7 +118,7 @@ Git-hosted plugins that ship sources build during install through their `prepare
 dsh web
 dsh web --host "$(hostname -i | awk '{print $1}')" --public-url https://app.example/ --trusted-host app.example
 dsh web --tls-cert ./server-chain.pem --tls-key ./server-key.pem
-dsh web --no-open
+dsh web --port 8080
 dsh web --patch ./extra.cordis.yml
 dsh web --dump-config
 dsh web --help

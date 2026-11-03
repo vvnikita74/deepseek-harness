@@ -1,7 +1,7 @@
 /** Behavior of the /api browser-trust fence (rebinding + cross-site defense). */
 
 import { describe, expect, it } from 'vitest'
-import { assertTrustedAuthority, isTrustedApiRequest } from '../src/api-request-trust.ts'
+import { assertAllowedOrigin, assertTrustedAuthority, isTrustedApiRequest } from '../src/api-request-trust.ts'
 
 function request(headers: Record<string, string | undefined>): { headers: Record<string, string | undefined> } {
   return { headers }
@@ -157,5 +157,57 @@ describe('isTrustedApiRequest', () => {
     expect(isTrustedApiRequest(request({ ...markers, host: 'bad host' }), [])).toBe(false)
     expect(isTrustedApiRequest(request({ ...markers, host: '127.0.0.999' }), [])).toBe(false)
     expect(isTrustedApiRequest(request({ ...markers, host: '128.0.0.1' }), [])).toBe(false)
+  })
+})
+
+describe('allowedOrigins trust', () => {
+  const allowed = ['https://app.example', 'http://localhost:5180', 'tauri://localhost', 'http://tauri.localhost']
+
+  it('trusts an Origin that exactly equals a configured entry, with or without a cross-site marker', () => {
+    expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin: 'http://localhost:5180' }), [], undefined, 'http:', allowed)).toBe(true)
+    expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin: 'https://app.example', 'sec-fetch-site': 'cross-site' }), [], undefined, 'http:', allowed)).toBe(true)
+    expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin: 'tauri://localhost', 'sec-fetch-site': 'cross-site' }), [], undefined, 'http:', allowed)).toBe(true)
+    expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin: 'http://tauri.localhost' }), [], undefined, 'http:', allowed)).toBe(true)
+  })
+
+  it('refuses unlisted, spelling-variant, null, and non-http(s) origins as before', () => {
+    for (const origin of ['https://evil.example', 'https://app.example:443', 'https://APP.example', 'http://localhost:5181', 'tauri://evil', 'null', 'file://app.example']) {
+      expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin }), [], undefined, 'http:', allowed), origin).toBe(false)
+      expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin, 'sec-fetch-site': 'cross-site' }), [], undefined, 'http:', allowed), origin).toBe(false)
+    }
+    // Without the allow-list, an allowed-looking origin is an ordinary cross-site Origin.
+    expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin: 'https://app.example' }), [])).toBe(false)
+  })
+
+  it('keeps the Host fence for an allowed origin: rebinding and untrusted authorities still refuse', () => {
+    expect(isTrustedApiRequest(request({ host: 'evil.example:3080', origin: 'https://app.example' }), [], undefined, 'http:', allowed)).toBe(false)
+    expect(isTrustedApiRequest(request({ host: 'evil.example:3080', origin: 'http://localhost:5180' }), ['harness.internal'], undefined, 'http:', allowed)).toBe(false)
+    expect(isTrustedApiRequest(request({ origin: 'https://app.example' }), [], undefined, 'http:', allowed)).toBe(false)
+    expect(isTrustedApiRequest(request({ host: 'harness.internal', origin: 'https://app.example' }), ['harness.internal'], undefined, 'http:', allowed)).toBe(true)
+  })
+
+  it('accepts only exact entries, never a wildcard match on the Origin', () => {
+    expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin: 'https://app.example.evil' }), [], undefined, 'http:', ['https://app.example'])).toBe(false)
+    expect(isTrustedApiRequest(request({ host: '127.0.0.1:3080', origin: 'https://app.example' }), [], undefined, 'http:', ['https://*'])).toBe(false)
+  })
+
+  it('validates each allowed origin at load: exact http(s) origins and round-tripping tauri origins', () => {
+    for (const entry of ['https://app.example', 'http://localhost:5180', 'https://[::1]:8443', 'tauri://localhost', 'http://tauri.localhost', 'tauri://localhost:1420']) {
+      expect(() => { assertAllowedOrigin(entry) }, entry).not.toThrow()
+    }
+    // `*` in any position, paths, queries, fragments, credentials, the opaque
+    // "null" origin, and origins WHATWG would rewrite are all refused.
+    for (const entry of [
+      '*', 'https://*', 'https://*.example.com', 'http://*',
+      'https://app.example/', 'https://app.example/ui', 'https://app.example?x=1', 'https://app.example#f',
+      'https://user@app.example', 'https://user:pw@app.example',
+      'null', '', ' https://app.example', 'https://app.example ',
+      'https://app.example:443', 'http://app.example:80', 'https://APP.example', 'HTTPS://app.example',
+      'https://app.example:', 'app.example', '//app.example', 'https:app.example',
+      'ftp://app.example', 'file:///tmp/app', 'ws://app.example', 'javascript:alert(1)',
+      'tauri://', 'tauri:localhost', 'tauri:///path', 'tauri://localhost/', 'tauri://localhost?x', 'tauri://user@localhost',
+    ]) {
+      expect(() => { assertAllowedOrigin(entry) }, JSON.stringify(entry)).toThrow(/is not an exact http, https, or tauri origin/)
+    }
   })
 })

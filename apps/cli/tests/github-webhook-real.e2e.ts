@@ -376,7 +376,6 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY)('GitHub webhook through the real 
       BUILT_BIN,
       'web',
       '--patch', OVERLAY,
-      '--no-open',
       '--host', '127.0.0.1',
       '--port', '0',
     ], {

@@ -9,7 +9,7 @@ import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { API_PATH } from './api-path.ts'
 import { CONNECT_PATH } from './connect-protocol.ts'
 import { bridge, DEFAULT_MAX_REQUEST_BODY_BYTES } from './http-bridge.ts'
-import { assertTrustedAuthority } from './api-request-trust.ts'
+import { assertAllowedOrigin, assertTrustedAuthority } from './api-request-trust.ts'
 import { BrowserAuth } from './browser-auth.ts'
 import { HostConnectionService } from './rpc-host.ts'
 import { ConnectionRecoveryConfigSchema, resolveConnectionConfig, type ConnectionRecoveryConfig } from './recovery-config.ts'
@@ -103,6 +103,14 @@ export interface ConnectionConfig {
    * an entry here. A non-canonical or non-bare authority fails plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Exact browser origins (`scheme://host[:port]`, scheme `http`, `https`, or
+   * `tauri`) of cross-origin clients such as a separately hosted SPA or a Tauri
+   * webview. An allowed Origin gets CORS on `/api` and `/connect`, may pass the
+   * cross-site refusal, and authenticates with the bearer credential; the Host
+   * fence still applies. A malformed entry fails plugin load.
+   */
+  allowedOrigins?: string[]
   /** Absolute browser and API cookie lifetime in days. Default: 30. */
   cookieMaxAgeDays?: number
   /** Maximum buffered JSON body for every `/api` request. Default: 300 MiB. */
@@ -112,6 +120,7 @@ export interface ConnectionConfig {
 export const Config: z<ConnectionConfig> = z.object({
   recovery: ConnectionRecoveryConfigSchema.default({}),
   trustedHosts: z.array(String).default([]),
+  allowedOrigins: z.array(String).default([]),
   cookieMaxAgeDays: z.natural().min(1).default(30),
   maxRequestBodyBytes: z.natural().min(1).default(DEFAULT_MAX_REQUEST_BODY_BYTES),
 })
@@ -127,16 +136,19 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
   const recovery = resolveConnectionConfig(config?.recovery)
   // The Loader resolves schema defaults; hand-built test contexts may pass none.
   const trustedHosts = config?.trustedHosts ?? []
+  const allowedOrigins = config?.allowedOrigins ?? []
   const cookieMaxAgeDays = config?.cookieMaxAgeDays ?? 30
   const maxRequestBodyBytes = config?.maxRequestBodyBytes ?? DEFAULT_MAX_REQUEST_BODY_BYTES
   // Config boundary: a malformed entry fails the load loudly here rather than
   // silently authorizing its hostname prefix at request time.
   for (const entry of trustedHosts) assertTrustedAuthority(entry)
+  for (const entry of allowedOrigins) assertAllowedOrigin(entry)
   assertImageBodyCapacity(ctx, maxRequestBodyBytes)
   const connection = new HostConnectionService(
     ctx,
     trustedHosts,
-    await BrowserAuth.create(ctx.root, ctx.credentials, cookieMaxAgeDays),
+    await BrowserAuth.create(ctx.credentials, cookieMaxAgeDays),
+    allowedOrigins,
   )
   ctx.inject(['webServer'], (webCtx) => {
     assertImageBodyCapacity(webCtx, maxRequestBodyBytes)
@@ -148,6 +160,7 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
       kind: 'prefix',
       path: API_PATH,
       handler: async (req, res) => {
+        if (connection.answerCors(req, res)) return
         const admission = connection.admit(req)
         if ('rejection' in admission) {
           res.writeHead(admission.rejection)
@@ -160,7 +173,11 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
     webCtx.effect(() => webCtx.webServer.register(route), 'client-connection: /api route')
     webCtx.effect(() => webCtx.webServer.register({
       kind: 'exact', path: CONNECT_PATH,
-      handler: (req, res) => { connection.authorizeConnect(req, res) },
+      handler: async (req, res) => {
+        if (connection.answerCors(req, res)) return
+        if (req.method === 'POST') await connection.exchangeAccessKey(req, res)
+        else connection.authorizeConnect(req, res)
+      },
     }), 'client-connection: /connect route')
   })
   ctx.inject(['attachments'], (attachmentCtx) => {

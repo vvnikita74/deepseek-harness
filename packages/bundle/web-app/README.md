@@ -13,7 +13,7 @@ Desktop analytics schedules partial batches every 30 seconds, with a 15-second e
 
 ## Summary
 
-Run `dsh --profile web` for browser chat, model and settings management, and session history, with the same model access, tools, and safety defaults as other dsh surfaces. Startup prints a tokenized URL and normally opens the default browser; SSH sessions and `--no-open` require manual opening. You can change the port, allow extra authorities, bind one concrete local IP, and serve HTTPS from a certificate you supply; wildcard addresses are rejected. Remote access uses an advertised HTTP(S) URL behind a prefix-stripping proxy, listener TLS, or plain HTTP on a non-loopback bind. Use the headless profile for one-shot command-line tasks.
+Run `dsh --profile web` for browser chat, model and settings management, and session history, with the same model access, tools, and safety defaults as other dsh surfaces. Startup prints a tokenized URL that you open yourself. You can change the port, allow extra authorities and cross-origin frontends, bind one concrete local IP, and serve HTTPS from a certificate you supply; wildcard addresses are rejected. Remote access uses an advertised HTTP(S) URL behind a prefix-stripping proxy, listener TLS, or plain HTTP on a non-loopback bind. Use the headless profile for one-shot command-line tasks.
 
 ## Table of Contents
 
@@ -37,10 +37,10 @@ Agent Teams UI loads with this bundle. Enable it per Session in the model and re
 
 ```sh
 dsh --profile web
-dsh --profile web --no-open --port 8080
+dsh --profile web --port 8080
 ```
 
-After startup you see a `dsh web:` line whose root URL carries a fresh process token. Unless `--no-open` or an SSH session suppresses it, the default browser opens that URL, receives a signed cookie, and redirects to the same directory without the token. You know it worked when the page loads and you can chat with the agent. Two failures to expect: if the frontend is not built, startup stops with a build hint (`pnpm run build` in a checkout); if the browser cannot be opened, a credential-free diagnostic prints to stderr while the server keeps running — open the printed startup URL yourself.
+After startup you see a `dsh web:` line whose root URL carries the persistent access key. Open that URL: the page receives a signed cookie and redirects to the same directory without the token. You know it worked when the page loads and you can chat with the agent. If the frontend is not built, startup stops with a build hint (`pnpm run build` in a checkout).
 
 **Settings → Models** displays **DeepSeek**, using `DEEPSEEK_API_KEY`. The default is `deepseek-official` / `deepseek-flash` (DeepSeek-V4.1-Flash). The [DeepSeek plugin](../../llm/llm-deepseek/README.md#endpoint-and-wire-format) uses the Messages API.
 
@@ -50,11 +50,10 @@ Saved model selections override the composition default. The settings card accep
 
 The `minimal` agent preset uses a persistent shell, the `read_image` tool, and a fixed persona, with automatic history compaction and the idle-session `/compact` command. It shares the Host token meter and owns an isolated compaction backend. [Compaction configuration and retention](../../compaction/compaction-basic/README.md#use-this-package) follow the existing backend. Image reads reuse the Host filesystem and attachment store and require an image-capable model; text read, write, and edit tools remain excluded.
 
-`--host` and `--port` configure the listener; `--tls-cert` and `--tls-key` make it serve HTTPS; `--public-url` names the advertised public HTTP(S) root the GUI is reached at behind a prefix-stripping proxy, and `--trusted-host` adds further accepted authorities. All are described under [Listening, trust, and public deployments](#public-deployments), and the `tls` field those flags set is documented with the [carrier's config](../../../docs/subsystems/web-server.md#config):
+`--host` and `--port` configure the listener; `--tls-cert` and `--tls-key` make it serve HTTPS; `--public-url` names the advertised public HTTP(S) root the GUI is reached at behind a prefix-stripping proxy, `--trusted-host` adds further accepted authorities, and `--allowed-origin` admits exact cross-origin browser clients such as a separately hosted SPA or a Tauri webview. All are described under [Listening, trust, and public deployments](#public-deployments), and the `tls` field those flags set is documented with the [carrier's config](../../../docs/subsystems/web-server.md#config):
 
 | Field | Default | Meaning |
 |---|---|---|
-| `openBrowser` | `true` | Open the default browser after startup; SSH launches suppress it |
 | `printUrl` | `true` | Print the `dsh web:` URL line at startup |
 | `surfaceContext` | `true` | Expose `DSH_WEB_URL` to the agent's shell commands |
 | `publicUrl` | Unset | Advertised HTTP(S) application root; otherwise announce the bind-address URL |
@@ -71,14 +70,14 @@ Pass `--tls-cert` and `--tls-key` together to serve HTTPS from the listener inst
 A container can bind its Pod address and advertise the ingress that fronts it:
 
 ```sh
-dsh --profile web --no-open --host "$(hostname -i | awk '{print $1}')" --public-url https://app.example/ --trusted-host app.example
+dsh --profile web --host "$(hostname -i | awk '{print $1}')" --public-url https://app.example/ --trusted-host app.example
 ```
 
 `hostname -i` may list several addresses; `--host` takes one, so the command selects the first. A zone ID such as `fe80::1%eth0` cannot appear in a URL, so the advertised root drops a redundant loopback zone while a non-loopback zone requires an explicit `--public-url`.
 
 Without `--public-url`, mapped IPv6 loopback binds such as `::ffff:127.0.0.1` advertise their IPv4 form, `127.0.0.1`, so the browser recognizes a local, trustworthy origin. The listener keeps the configured bind address. A dotted-quad IPv6 tail names the address's own low 32 bits, exactly as `listen` reads it, so `::0.0.0.1` is IPv6 loopback and advertises `[::1]`, while `::127.0.0.1` is a non-loopback address, not IPv4 loopback.
 
-`--public-url` advertises the HTTP(S) root browsers use — the printed and opened startup URL, `DSH_WEB_URL`, and the Web GUI URL in the agent's runtime context. Advertisement grants no trust: the browser-visible authority must also be named with `--trusted-host`. The flag configures no listener, routing, or cookie scope, because the proxy owns the external leg: [Publish the Web UI behind a reverse proxy](../../../docs/user/guide/public-deployments.md) lists what such a deployment must provide.
+`--public-url` advertises the HTTP(S) root browsers use — the printed startup URL, `DSH_WEB_URL`, and the Web GUI URL in the agent's runtime context. Advertisement grants no trust: the browser-visible authority must also be named with `--trusted-host`. The flag configures no listener, routing, or cookie scope, because the proxy owns the external leg: [Publish the Web UI behind a reverse proxy](../../../docs/user/guide/public-deployments.md) lists what such a deployment must provide.
 
 Neither the advertised URL nor the browser-trust fence protects the port itself, so restrict the port to the trusted proxy or network.
 
@@ -86,7 +85,7 @@ The printed URL contains a process credential; share it only with intended users
 
 ### Running over SSH
 
-When you launch `dsh --profile web` over SSH, the URL line still prints but the browser is not opened for you: the SSH client or editor owns the local forwarding address. Without an advertised root the printed URL names the remote host's bind-address endpoint — loopback for a loopback bind — which you reach through your forwarding address. With `--public-url` the printed URL is the authenticated advertised root; the browser handoff stays suppressed, because opening a browser on the remote host cannot reach your screen.
+When you launch `dsh --profile web` over SSH, the URL line prints; the SSH client or editor owns the local forwarding address. Without an advertised root the printed URL names the remote host's bind-address endpoint — loopback for a loopback bind — which you reach through your forwarding address. With `--public-url` the printed URL is the authenticated advertised root; the printed URL is the one to open through your forwarding address.
 
 ### Per-session agent setup
 
@@ -108,19 +107,19 @@ A patch replaces the targeted row's whole `config`, so each web row restates eve
 
 ### Advertised application URL
 
-Startup display and browser handoff receive the advertised root with its launch token; the agent's runtime context and `DSH_WEB_URL` receive it clean. The root itself is defined under [Listening, trust, and public deployments](#public-deployments).
+Startup display receives the advertised root with its access key; the agent's runtime context and `DSH_WEB_URL` receive it clean. The root itself is defined under [Listening, trust, and public deployments](#public-deployments).
 
 ### Readiness
 
-The URL line and browser handoff are readiness signals: supervisors RPC as soon as they observe the line, and a browser requests the page as soon as it opens, so both run only after the Loader tree settles, the required-startup audit passes, and Connection authentication is available — or immediately in a hand-built tree without a Loader. Client combo JavaScript and source maps remain unmaterialized at this point. Optional plugin failures do not suppress readiness; a required startup failure or a tree disposed mid-boot announces nothing.
+The URL line is a readiness signal: supervisors RPC as soon as they observe it, so it runs only after the Loader tree settles, the required-startup audit passes, and Connection authentication is available — or immediately in a hand-built tree without a Loader. Client combo JavaScript and source maps remain unmaterialized at this point. Optional plugin failures do not suppress readiness; a required startup failure or a tree disposed mid-boot announces nothing.
 
 ### Source map
 
 | File | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The `web-app` glue plugin: dist resolution, advertised application URL, bash variable, URL line, browser handoff |
+| [`src/index.ts`](src/index.ts) | The `web-app` glue plugin: dist resolution, advertised application URL, bash variable, URL line |
 | [`src/public-url.ts`](src/public-url.ts) | Advertised-root validation and trailing-slash normalization; a leaf module for local imports, not package API |
-| [`src/startup.ts`](src/startup.ts) | The `web-startup` provider: `--host`, `--port`, `--tls-cert`, `--tls-key`, `--public-url`, `--trusted-host`, `--no-open`, `--help` |
+| [`src/startup.ts`](src/startup.ts) | The `web-startup` provider: `--host`, `--port`, `--tls-cert`, `--tls-key`, `--public-url`, `--trusted-host`, `--allowed-origin`, `--help` |
 | [`cordis.patch.yml`](cordis.patch.yml) | The web patch: restated base values, web host rows, browser roster, preset registry |
 | [`presets/`](presets) | One `@deepseek-ai/dsh-agent-preset` declaration per shipped preset (`standard`, `ptc`, `minimal`, `cordis`), each its own patch file |
 | [`tests/web-app.spec.ts`](tests/web-app.spec.ts) | Dist index anchoring, advertised-URL publication and warnings, bash variable, readiness publication |
@@ -170,9 +169,7 @@ These limits tell you what to expect in unusual setups — a source checkout, SS
 - **The frontend must be built** — a source checkout needs `pnpm run build` first; startup stops with a build hint when the dist is missing, and there is no source-serving fallback.
 - **TLS is opt-in and unmanaged** — the listener serves HTTPS only when `--tls-cert` and `--tls-key` name a full chain and its unencrypted key; DSH never obtains, renews, or watches certificates, and a changed file needs a listener reload or a process restart. The browser must trust that certificate, its names must cover the authority you open, and the certificate is independent of `--public-url`.
 - **Without TLS the external leg is plain HTTP** — protect it with a TLS-terminating proxy, and do not send the launch URL over a network you do not trust.
-- **Only the handoff start is observable** — the GUI reports that the browser was asked to open, not that it actually opened; a later browser exit is never reported, and the printed URL is your manual fallback.
-- **SSH sessions keep the URL but skip the browser handoff** — without an advertised root the printed URL names the remote host's bind-address endpoint (loopback for a loopback bind); the SSH client or editor must expose and open the local forwarded address.
-- **`BROWSER` overrides only come from the environment** — a discovered `.env` cannot set `BROWSER`; only an inherited value can choose the executable for the automatic handoff.
+- **SSH sessions keep the URL** — without an advertised root the printed URL names the remote host's bind-address endpoint (loopback for a loopback bind); the SSH client or editor must expose and open the local forwarded address.
 - **Binding all network interfaces is not supported** — a wildcard `--host`, including the IPv4-mapped forms Linux reads as IPv4 any, is rejected at startup for safety; bind one concrete IPv4 or IPv6 address of a local interface instead.
 
 <a id="dev-note"></a>

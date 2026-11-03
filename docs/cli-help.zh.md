@@ -180,13 +180,12 @@ Example:
 ```text
 Usage: dsh --profile web [options]
 
-Serve the DeepSeek Harness browser UI.
+Serve the DeepSeek Harness Web API.
 
 Options:
   --host <host>                  bind address: one concrete IPv4 or IPv6 literal
                                  of a local interface; wildcard addresses are
                                  rejected
-  --no-open                      do not open the Web UI in the default browser
   --port <port>                  listen port; pass 0 to let the OS pick a free
                                  one
   --public-url <url>             advertise this HTTP(S) root in the printed,
@@ -194,6 +193,9 @@ Options:
                                  grants no trust
   --trusted-host <authority...>  extra authority the /api browser-trust fence
                                  accepts (host or host:port; repeatable)
+  --allowed-origin <origin...>   exact browser origin (scheme://host[:port],
+                                 http, https, or tauri) allowed to call the Web
+                                 API cross-origin (repeatable)
   --tls-cert <file>              PEM server certificate chain; requires
                                  --tls-key
   --tls-key <file>               unencrypted PEM private key; requires
@@ -202,7 +204,8 @@ Options:
 
 Examples:
   dsh --profile web                          serve on the composed host and port
-  dsh --profile web --no-open                serve without opening a browser
+  dsh --profile web --allowed-origin https://app.example
+                                             accept API calls from a separately hosted frontend
   dsh --profile web --port 8080              serve on another port
   dsh --profile web --host 10.0.0.7          bind one local interface address
   dsh --profile web --public-url https://app.example/ui/ --trusted-host app.example

@@ -32,7 +32,7 @@ it.each([
     const launch = resolveExampleLaunch({
       srcBin: fileURLToPath(new URL('../src/bin.ts', import.meta.url)),
       tsconfigPath: fileURLToPath(new URL('../../../tsconfig.json', import.meta.url)),
-      configArgs: ['--profile', 'web', '--patch', patch, '--no-open', '--port', '0'],
+      configArgs: ['--profile', 'web', '--patch', patch, '--port', '0'],
       env: {
         DSH_HOME: join(root, '.dsh'),
         DSH_AGENTS_HOME: join(root, '.agents'),

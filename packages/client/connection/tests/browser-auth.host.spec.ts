@@ -6,7 +6,7 @@ import type { CredentialProvider } from '@deepseek-ai/dsh-credentials'
 import type { PeerId } from '@deepseek-ai/dsh-typert-protocol'
 import { BrowserAuth } from '../src/browser-auth.ts'
 import type { ConnectionIndexRequest, ConnectionIndexResponse } from '../src/rpc.ts'
-import { RecordCredentials } from './browser-credentials.ts'
+import { ACCESS_KEY_KEY, RecordCredentials, SIGNING_SECRET_KEY } from './browser-credentials.ts'
 
 function signedCookie(store: RecordCredentials, name: string, payload: unknown): string {
   const body = typeof payload === 'string'
@@ -16,7 +16,7 @@ function signedCookie(store: RecordCredentials, name: string, payload: unknown):
 }
 
 function signedBodyCookie(store: RecordCredentials, name: string, body: string): string {
-  const record = store.record
+  const record = store.records.get(SIGNING_SECRET_KEY)
   if (record?.kind !== 'grant' || typeof record.payload !== 'object' || record.payload === null) {
     throw new Error('test credential store has no signing secret')
   }
@@ -52,12 +52,8 @@ function credentials(store: RecordCredentials): CredentialProvider {
   return store as unknown as CredentialProvider
 }
 
-function createAuth(
-  store: RecordCredentials,
-  maxAgeDays = 30,
-  processOwner: object = {},
-): Promise<BrowserAuth> {
-  return BrowserAuth.create(processOwner, credentials(store), maxAgeDays)
+function createAuth(store: RecordCredentials, maxAgeDays = 30): Promise<BrowserAuth> {
+  return BrowserAuth.create(credentials(store), maxAgeDays)
 }
 
 function request(url: string, authority = '127.0.0.1:3080', init?: {
@@ -160,10 +156,9 @@ describe('API credentials', () => {
 })
 
 describe('BrowserAuth', () => {
-  it('mints one process token and a persistent authority-bound cookie', async () => {
+  it('mints one persistent access key and an authority-bound cookie', async () => {
     const store = new RecordCredentials()
-    const processOwner = {}
-    const first = await createAuth(store, 30, processOwner)
+    const first = await createAuth(store, 30)
     const login = exchange(first)
 
     expect(login.state).toMatchObject({
@@ -184,13 +179,12 @@ describe('BrowserAuth', () => {
     expect(first.isAuthenticated(request('/', 'localhost:3080', { cookie: login.cookie }))).toBe(false)
     expect(first.isAuthenticated(request('/', '127.0.0.1:3081', { cookie: login.cookie }))).toBe(false)
 
-    const reloaded = await createAuth(store, 30, processOwner)
+    const reloaded = await createAuth(store, 30)
     expect(reloaded.authenticatedUrl('http://127.0.0.1:3080')).toBe(login.launchUrl)
     expect(reloaded.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: login.cookie }))).toBe(true)
 
     const restarted = await createAuth(store)
-    expect(new URL(restarted.authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token'))
-      .not.toBe(new URL(login.launchUrl).searchParams.get('token'))
+    expect(restarted.authenticatedUrl('http://127.0.0.1:3080')).toBe(login.launchUrl)
     expect(restarted.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: login.cookie }))).toBe(true)
     const staleUrl = new URL(login.launchUrl)
     const redirected = response()
@@ -199,7 +193,8 @@ describe('BrowserAuth', () => {
       '127.0.0.1:3080',
       { cookie: login.cookie },
     ), redirected.value)).toBe(false)
-    expect(redirected.state).toEqual({
+    // The persisted access key still matches, so the same URL mints a fresh cookie.
+    expect(redirected.state).toMatchObject({
       status: 303,
       headers: {
         'cache-control': 'no-store',
@@ -207,6 +202,7 @@ describe('BrowserAuth', () => {
         'referrer-policy': 'no-referrer',
       },
     })
+    expect(redirected.state.headers?.['set-cookie']).toContain('dsh-auth-')
   })
 
   it('keeps HTTPS port 443 distinct from HTTP port 80 with one signing secret', async () => {
@@ -327,44 +323,195 @@ describe('BrowserAuth', () => {
     expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie }))).toBe(false)
   })
 
-  it('loads one secret per activation and replaces it after deletion on the next activation', async () => {
+  it('loads one signing secret and access key per activation and replaces each after its deletion', async () => {
     const store = new RecordCredentials()
     const auth = await createAuth(store)
     const first = exchange(auth)
-    expect(store).toMatchObject({ reads: 0, modifies: 1 })
+    expect(store).toMatchObject({ reads: 0, modifies: 2 })
 
-    await store.deleteRecord()
+    await store.deleteRecord(SIGNING_SECRET_KEY)
     expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: first.cookie }))).toBe(true)
     const sameActivation = exchange(auth)
     expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: sameActivation.cookie }))).toBe(true)
-    expect(store).toMatchObject({ reads: 0, modifies: 1 })
+    expect(store).toMatchObject({ reads: 0, modifies: 2 })
 
     const reactivated = await createAuth(store)
     const second = exchange(reactivated)
     expect(second.cookie).not.toBe(first.cookie)
     expect(reactivated.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: first.cookie }))).toBe(false)
     expect(reactivated.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: second.cookie }))).toBe(true)
-    expect(store).toMatchObject({ reads: 0, modifies: 2 })
+    expect(store).toMatchObject({ reads: 0, modifies: 4 })
+  })
+
+  it('rotates the access key only when its own record is deleted', async () => {
+    const store = new RecordCredentials()
+    const key = new URL((await createAuth(store)).authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token')
+    await store.deleteRecord(SIGNING_SECRET_KEY)
+    expect(new URL((await createAuth(store)).authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token')).toBe(key)
+    await store.deleteRecord(ACCESS_KEY_KEY)
+    expect(new URL((await createAuth(store)).authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token')).not.toBe(key)
   })
 
   it('fails loud on an invalid owner record instead of replacing it', async () => {
     const unsupported = new RecordCredentials()
-    unsupported.record = { kind: 'api-key', key: 'not-a-cookie-secret' }
+    unsupported.records.set(SIGNING_SECRET_KEY, { kind: 'api-key', key: 'not-a-cookie-secret' })
     await expect(createAuth(unsupported)).rejects.toThrow(/unsupported format/u)
 
     const malformed = new RecordCredentials()
-    malformed.record = { kind: 'grant', payload: { version: 1, secret: 'short' } }
+    malformed.records.set(SIGNING_SECRET_KEY, { kind: 'grant', payload: { version: 1, secret: 'short' } })
     await expect(createAuth(malformed)).rejects.toThrow(/invalid secret/u)
 
     const nonString = new RecordCredentials()
-    nonString.record = { kind: 'grant', payload: { version: 1, secret: 42 } }
+    nonString.records.set(SIGNING_SECRET_KEY, { kind: 'grant', payload: { version: 1, secret: 42 } })
     await expect(createAuth(nonString)).rejects.toThrow(/invalid secret/u)
 
     const discarded = new RecordCredentials()
     discarded.discardWrites = true
     await expect(createAuth(discarded)).rejects.toThrow(/was not created/u)
 
+    const badAccessKey = new RecordCredentials()
+    badAccessKey.records.set(ACCESS_KEY_KEY, { kind: 'grant', payload: { version: 1, secret: 'short' } })
+    await expect(createAuth(badAccessKey)).rejects.toThrow(/access-key credential record has an invalid secret/u)
+
     await expect(createAuth(new RecordCredentials(), Number.MAX_SAFE_INTEGER))
       .rejects.toThrow(/safe timestamp range/u)
+  })
+})
+
+function accessKeyOf(auth: BrowserAuth): string {
+  const key = new URL(auth.authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token')
+  if (key === null) throw new Error('authenticated URL carries no access key')
+  return key
+}
+
+function exchangeBody(auth: BrowserAuth, body: unknown, publish = vi.fn(() => 'api-operator' as PeerId), authority = '127.0.0.1:3080') {
+  const res = response()
+  auth.exchangeAccessKey(request('/connect', authority, { method: 'POST' }), res.value, false, body, publish)
+  return { state: res.state, publish }
+}
+
+function bearerRequest(value: string, authority = '127.0.0.1:3080'): ConnectionIndexRequest {
+  return { headers: { host: authority, authorization: `Bearer ${value}` } }
+}
+
+function websocketRequest(protocol: string, authority = '127.0.0.1:3080', authorization?: string): ConnectionIndexRequest {
+  return {
+    method: 'GET',
+    url: '/api/remote.mux',
+    headers: { host: authority, 'sec-websocket-protocol': protocol, ...authorization === undefined ? {} : { authorization } },
+  }
+}
+
+describe('JSON access-key exchange', () => {
+  it('answers a valid key with a signed API credential and no cookie', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-24T00:00:00.000Z'))
+    const auth = await createAuth(new RecordCredentials())
+    const key = accessKeyOf(auth)
+    const { state, publish } = exchangeBody(auth, { token: key, interactions: 'answer' })
+    expect(publish).toHaveBeenCalledExactlyOnceWith('answer')
+    expect(state.status).toBe(200)
+    expect(state.headers).toEqual({ 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' })
+    expect(state.headers?.['set-cookie']).toBeUndefined()
+    const body = JSON.parse(state.body ?? '') as { token: string; expiresAt: number }
+    expect(body.expiresAt).toBe(Date.now() + 30 * 86_400_000)
+    expect(auth.authenticateApi(bearerRequest(body.token))).toBe('api-operator')
+    expect(auth.isAuthenticated(bearerRequest(body.token))).toBe(false)
+  })
+
+  it('defaults interactions to none and refuses wrong, missing, or non-string keys before publishing', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    const ok = exchangeBody(auth, { token: accessKeyOf(auth) })
+    expect(ok.publish).toHaveBeenCalledExactlyOnceWith('none')
+    for (const body of [
+      { token: 'wrong' },
+      { token: accessKeyOf(auth).slice(0, -1) },
+      { token: 42 },
+      {},
+    ]) {
+      const refused = exchangeBody(auth, body)
+      expect(refused.state, JSON.stringify(body)).toMatchObject({
+        status: 401,
+        headers: { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' },
+        body: '{"error":"unauthorized"}',
+      })
+      expect(refused.publish).not.toHaveBeenCalled()
+    }
+  })
+
+  it('refuses malformed bodies and unknown interactions with 400 before publishing', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    for (const body of [
+      { token: accessKeyOf(auth), interactions: 'observe' },
+      { token: accessKeyOf(auth), interactions: 1 },
+      [],
+      null,
+      'not an object',
+    ]) {
+      const refused = exchangeBody(auth, body)
+      expect(refused.state.status, JSON.stringify(body)).toBe(400)
+      expect(refused.publish).not.toHaveBeenCalled()
+    }
+  })
+
+  it('refuses an access key presented as a bearer credential or subprotocol credential', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    const key = accessKeyOf(auth)
+    expect(auth.authenticateApi(bearerRequest(key))).toBeUndefined()
+    expect(auth.authenticateApi(websocketRequest(`dsh.v1, dsh.auth.${key}`), false, true)).toBeUndefined()
+  })
+})
+
+describe('bearer and subprotocol API credentials', () => {
+  it('accepts a signed API value in Authorization and refuses tampered, foreign, expired, browser, and stale values', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-24T00:00:00.000Z'))
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    const { state } = exchangeBody(auth, { token: accessKeyOf(auth) })
+    const token = (JSON.parse(state.body ?? '') as { token: string }).token
+    const expiresAt = (JSON.parse(state.body ?? '') as { expiresAt: number }).expiresAt
+    expect(auth.authenticateApi(bearerRequest(token))).toBe('api-operator')
+    expect(auth.authenticateApi(bearerRequest(token.toUpperCase()))).toBeUndefined()
+    expect(auth.authenticateApi(bearerRequest(`${token.slice(0, -1)}!`))).toBeUndefined()
+    expect(auth.authenticateApi(bearerRequest(token, 'localhost:3080'))).toBeUndefined()
+    expect(auth.authenticateApi({ headers: { authorization: `Bearer ${token}` } })).toBeUndefined()
+
+    const browser = exchange(auth)
+    expect(auth.authenticateApi(bearerRequest(browser.cookie.slice(browser.cookie.indexOf('=') + 1)))).toBeUndefined()
+    expect(auth.authenticateApi({ headers: { host: '127.0.0.1:3080', authorization: 'Basic abc' } })).toBeUndefined()
+
+    vi.setSystemTime(expiresAt)
+    expect(auth.authenticateApi(bearerRequest(token))).toBeUndefined()
+
+    const other = await createAuth(new RecordCredentials())
+    expect(other.authenticateApi(bearerRequest(token))).toBeUndefined()
+  })
+
+  it('reads a single dsh.auth subprotocol offer only for WebSocket admission', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    const { state } = exchangeBody(auth, { token: accessKeyOf(auth) })
+    const token = (JSON.parse(state.body ?? '') as { token: string }).token
+    expect(auth.authenticateApi(websocketRequest(`dsh.v1, dsh.auth.${token}`), false, true)).toBe('api-operator')
+    expect(auth.authenticateApi(websocketRequest(`dsh.auth.${token}`), false, true)).toBe('api-operator')
+    expect(auth.authenticateApi(websocketRequest(`dsh.v1, dsh.auth.${token}`, '127.0.0.1:3080', `Bearer ${token}`), false, true)).toBe('api-operator')
+    // Plain HTTP never reads the subprotocol; WebSocket admission never reads Authorization.
+    expect(auth.authenticateApi(websocketRequest(`dsh.v1, dsh.auth.${token}`))).toBeUndefined()
+    expect(auth.authenticateApi(websocketRequest('dsh.v1', '127.0.0.1:3080', `Bearer ${token}`), false, true)).toBeUndefined()
+    expect(auth.authenticateApi(websocketRequest(`dsh.auth.${token}, dsh.auth.${token}`), false, true)).toBeUndefined()
+    expect(auth.authenticateApi(websocketRequest('dsh.v1, dsh.auth.tampered', '127.0.0.1:3080'), false, true)).toBeUndefined()
+    expect(auth.authenticateApi(websocketRequest('dsh.v1'), false, true)).toBeUndefined()
+  })
+
+  it('prefers a valid signed cookie over a bearer value and falls back to the bearer when the cookie is invalid', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    const { state } = exchangeBody(auth, { token: accessKeyOf(auth) })
+    const token = (JSON.parse(state.body ?? '') as { token: string }).token
+    const cookieId = 'cookie-operator' as PeerId
+    const cookieRes = response()
+    auth.authorizeConnect(request(auth.authenticatedUrl('http://127.0.0.1:3080/connect')), cookieRes.value, false, () => cookieId)
+    const cookie = cookieRes.state.headers?.['set-cookie']?.split(';', 1)[0] ?? ''
+    expect(auth.authenticateApi({ headers: { host: '127.0.0.1:3080', cookie, authorization: `Bearer ${token}` } })).toBe(cookieId)
+    expect(auth.authenticateApi({ headers: { host: '127.0.0.1:3080', cookie: `${cookie.slice(0, cookie.indexOf('='))}=broken`, authorization: `Bearer ${token}` } })).toBe('api-operator')
   })
 })

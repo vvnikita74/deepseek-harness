@@ -70,7 +70,6 @@ async function startWeb(root: string, dshHome: string, port: number): Promise<Ru
     '--import', TSX_LOADER,
     DSH_SOURCE_BIN,
     'web',
-    '--no-open',
     '--port', String(port),
   ], {
     cwd: root,

@@ -66,7 +66,7 @@ describe('runProfile with an application-owned profile', () => {
     }
     try {
       const application = runProfile({
-        environment: createLaunchEnvironmentSnapshot([]), profile: 'desktop', patchFiles: [], args: ['--no-open'],
+        environment: createLaunchEnvironmentSnapshot([]), profile: 'desktop', patchFiles: [], args: [],
         resolvedProfile: { profile, installAnchor: join(home, 'runtime/package.json') },
       })
       if (stage === 'both-cleanups') {
@@ -137,7 +137,7 @@ describe('runProfile with an application-owned profile', () => {
     try {
       const { shutdown } = await runProfile({
         environment, profile: 'desktop', resolvedProfile: runtime,
-        patchFiles: [overlay], args: ['--port', '0', '--no-open'],
+        patchFiles: [overlay], args: ['--port', '0'],
       })
       expect(installProxyFromEnvironment).toHaveBeenCalledWith(environment, expect.any(Function))
       const resolution = vi.mocked(createRuntimeResolution).mock.settledResults
@@ -150,7 +150,7 @@ describe('runProfile with an application-owned profile', () => {
       expect(requireFromProfile('test-runtime')).toBe('installation')
       expect(requireFromProfile('test-local')).toBe('profile')
       expect(readFileSync(join(home, 'cordis.yml'), 'utf8')).not.toContain('stale')
-      expect(ctx.cmdlineArgs!.get()).toEqual(['--port', '0', '--no-open'])
+      expect(ctx.cmdlineArgs!.get()).toEqual(['--port', '0'])
       const ready = vi.fn()
       ctx.appReady!.onReady(ready)
       expect(ready).toHaveBeenCalledOnce()

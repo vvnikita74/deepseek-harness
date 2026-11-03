@@ -11,7 +11,8 @@ import {
 } from './rpc.ts'
 import { clientRequestSchema } from './rpc-schema.ts'
 import { bridge } from './http-bridge.ts'
-import { isRemoteAuthority, isTrustedApiRequest } from './api-request-trust.ts'
+import { allowedOriginOf, header, isRemoteAuthority, isTrustedApiRequest } from './api-request-trust.ts'
+import { answerPreflight, setCorsHeaders, type CorsResponse } from './cors.ts'
 import { API_PATH } from './api-path.ts'
 import type { BrowserAuth } from './browser-auth.ts'
 import { Peer } from './peer.ts'
@@ -36,6 +37,8 @@ import type {
 const INVALID_REQUEST_RPC_ID = RpcId('invalid-request')
 const CHANNEL_PATTERN = /^\/[A-Za-z0-9._~-]+$/
 const ENDPOINT_SEGMENT_PATTERN = /^[A-Za-z0-9_$.-]+$/
+/** Largest JSON body the access-key exchange reads; its fields are a key and one enum. */
+const CONNECT_BODY_LIMIT_BYTES = 4096
 
 interface PeerRecord {
   readonly peer: Peer
@@ -82,12 +85,14 @@ export class HostConnectionService extends Service implements HostConnectionHand
    * Provide the Host half over the active HTTP server.
    * @param ctx - owning Connection plugin context.
    * @param trustedHosts - deployment authorities accepted by the Host/Origin fence.
-   * @param browserAuth - process token and persistent browser-session owner.
+   * @param browserAuth - access-key exchange and persistent browser-session owner.
+   * @param allowedOrigins - exact cross-origin browser clients that receive CORS and bypass the cross-site refusal.
    */
   constructor(
     ctx: Context,
     private readonly trustedHosts: readonly string[],
     private readonly browserAuth: BrowserAuth,
+    private readonly allowedOrigins: readonly string[] = [],
   ) {
     super(ctx, 'connection')
     this.owner = ctx
@@ -127,11 +132,15 @@ export class HostConnectionService extends Service implements HostConnectionHand
 
   /** Browser requests share an owner Peer; API HTTP does not depend on an attached socket. */
   admit(request: ConnectionTrustRequest): PeerAdmission {
+    return this.admitCarrier(request, false)
+  }
+
+  private admitCarrier(request: ConnectionTrustRequest, websocket: boolean): PeerAdmission {
     if (!this.isTrusted(request)) return { rejection: 403 }
     if (this.disposed) return { rejection: 401 }
     const secure = this.owner.get('webServer')?.protocol === 'https:'
     if (this.browserAuth.isAuthenticated(request, secure)) return { peer: this.browserPeer }
-    const id = this.browserAuth.authenticateApi(request, secure)
+    const id = this.browserAuth.authenticateApi(request, secure, websocket)
     const record = id === undefined ? undefined : this.peers.get(id)
     return record === undefined ? { rejection: 401 } : { peer: record.peer }
   }
@@ -143,7 +152,7 @@ export class HostConnectionService extends Service implements HostConnectionHand
 
   /** Claim API socket ownership synchronously; callers release on termination or failed upgrade. */
   admitConnection(request: ConnectionTrustRequest): ConnectionAdmission {
-    const admission = this.admit(request)
+    const admission = this.admitCarrier(request, true)
     if ('rejection' in admission) return admission
     const record = this.peers.get(admission.peer.id)
     if (record === undefined) return { ...admission, release: () => Promise.resolve() }
@@ -163,7 +172,24 @@ export class HostConnectionService extends Service implements HostConnectionHand
 
   private isTrusted(request: ConnectionTrustRequest): boolean {
     const carrier = this.owner.get('webServer')
-    return isTrustedApiRequest(request, this.trustedHosts, carrier?.host, carrier?.protocol ?? 'http:')
+    return isTrustedApiRequest(request, this.trustedHosts, carrier?.host, carrier?.protocol ?? 'http:', this.allowedOrigins)
+  }
+
+  /**
+   * Apply CORS to one shared-carrier response. An allowed Origin receives its
+   * own `Access-Control-Allow-Origin` on every status the route writes; its
+   * preflight is answered without authentication once the Host fence passes.
+   * @param request - request whose Origin and method select the headers.
+   * @param response - response the route owns until it ends.
+   * @returns true when the preflight was answered and the route must stop.
+   */
+  answerCors(request: ConnectionTrustRequest & { readonly method?: string | undefined }, response: CorsResponse): boolean {
+    const origin = allowedOriginOf(request, this.allowedOrigins)
+    if (origin === undefined) return false
+    setCorsHeaders(response, origin)
+    if (request.method !== 'OPTIONS' || !this.isTrusted(request)) return false
+    answerPreflight(response)
+    return true
   }
 
   private publishPeer(interactions: ConnectionInteractions): PeerId {
@@ -185,6 +211,40 @@ export class HostConnectionService extends Service implements HostConnectionHand
     }
     this.browserAuth.authorizeConnect(request, response,
       this.owner.get('webServer')?.protocol === 'https:', interactions => this.publishPeer(interactions))
+  }
+
+  /**
+   * Exchange the access key in a JSON `POST /connect` body for a signed API
+   * credential. The Host fence and disposal run before the body is read.
+   * @param request - POST /connect request with `application/json` content.
+   * @param response - response owned to completion.
+   */
+  async exchangeAccessKey(
+    request: ConnectionIndexRequest & AsyncIterable<Uint8Array>,
+    response: ConnectionIndexResponse,
+  ): Promise<void> {
+    if (!this.isTrusted(request)) {
+      response.writeHead(403)
+      response.end('forbidden')
+      return
+    }
+    if (this.disposed) {
+      response.writeHead(401)
+      response.end('unauthorized')
+      return
+    }
+    const mediaType = header(request.headers, 'content-type')?.split(';', 1)[0]?.trim().toLowerCase()
+    if (mediaType !== 'application/json') {
+      writeJsonError(response, 415, 'content type must be application/json')
+      return
+    }
+    const body = await readConnectBody(request)
+    if (!('value' in body)) {
+      writeJsonError(response, body.status, body.status === 413 ? 'body is too large' : 'body is not JSON')
+      return
+    }
+    this.browserAuth.exchangeAccessKey(request, response,
+      this.owner.get('webServer')?.protocol === 'https:', body.value, interactions => this.publishPeer(interactions))
   }
 
   /**
@@ -261,6 +321,7 @@ export class HostConnectionService extends Service implements HostConnectionHand
       kind: 'prefix',
       path: channel,
       handler: async (req, res) => {
+        if (this.answerCors(req, res)) return
         const admission = this.admit(req)
         if ('rejection' in admission) {
           res.writeHead(admission.rejection)
@@ -346,6 +407,28 @@ function rpcFetchHandler(
       }
     },
   }
+}
+
+/** Read a bounded JSON body: its parsed value, or the status refusing it. */
+async function readConnectBody(request: AsyncIterable<Uint8Array>): Promise<{ readonly value: unknown } | { readonly status: 400 | 413 }> {
+  const chunks: Buffer[] = []
+  let received = 0
+  for await (const chunk of request) {
+    received += chunk.byteLength
+    if (received > CONNECT_BODY_LIMIT_BYTES) return { status: 413 }
+    chunks.push(Buffer.from(chunk))
+  }
+  try {
+    const value: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    return { value }
+  } catch {
+    return { status: 400 }
+  }
+}
+
+function writeJsonError(response: ConnectionIndexResponse, status: number, error: string): void {
+  response.writeHead(status, { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' })
+  response.end(JSON.stringify({ error }))
 }
 
 function invalidEnvelopeResponse(body: unknown, issues: readonly object[]): Response {

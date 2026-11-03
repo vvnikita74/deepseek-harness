@@ -1,0 +1,16 @@
+# Bilingual-pair consistency record for guide.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.2-alpha.3/web-browser-handoff-removed/guide.md
+/:
+  en: d15841923641c94f
+  zh: d0205fa821500f7d
+/web-profile-no-longer-opens-a-browser:
+  en: dc439330cb6f1afd
+  zh: 12667e8127ca7483
+/web-profile-no-longer-opens-a-browser/change:
+  en: 0f14a5376070ffdc
+  zh: cccf430788956e26
+/web-profile-no-longer-opens-a-browser/migration:
+  en: e3da57d91d5dd2c7
+  zh: 208a4577bf3d028d
