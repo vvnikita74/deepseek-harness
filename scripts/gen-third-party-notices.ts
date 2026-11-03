@@ -14,8 +14,6 @@ import * as yaml from 'js-yaml'
 import { parse as parseToml, type TomlTableWithoutBigInt, type TomlValueWithoutBigInt } from 'smol-toml'
 import parseSpdx from 'spdx-expression-parse'
 import primaryRuntimeLock from './primary-runtime/lock.json' with { type: 'json' }
-import { browserBundledExternals } from './browser-bundled-externals.ts'
-import { DEVTOOLS_NPM_VERSION, DEVTOOLS_SOURCE_REVISION } from '../packages/experimental/inspector/scripts/devtools/source.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const OUT = 'THIRD_PARTY_NOTICES.md'
@@ -756,10 +754,8 @@ ${rows.join('\n')}
  * Render the complete notices document.
  * @returns The exact bytes THIRD_PARTY_NOTICES.md must hold after resolving browser inputs.
  */
-export async function render(): Promise<string> {
-  const browser = await browserBundledExternals(root)
-  // The Inspector's Host build hook compiles this standalone frontend outside the Client bundle graph.
-  browser.add('chrome-devtools-frontend')
+export function render(): string {
+  const browser = new Set<string>()
   // The linked-manifest cache is keyed by name only, so it must not outlive
   // the manifests map it was resolved from; render() owns that single load.
   workspaceLinkedManifestCache.clear()
@@ -813,7 +809,6 @@ ${patchedLines.join('\n')}
 
 ## Chrome DevTools frontend
 
-The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend ${DEVTOOLS_NPM_VERSION}](https://www.npmjs.com/package/chrome-devtools-frontend/v/${DEVTOOLS_NPM_VERSION}), from upstream revision [${DEVTOOLS_SOURCE_REVISION}](https://chromium.googlesource.com/devtools/devtools-frontend/+/${DEVTOOLS_SOURCE_REVISION}). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
 ${renderClaudeDistribution(claudeDistribution)}
 ${kitRuntime ? `
@@ -856,8 +851,8 @@ ${bundledPython.map(dep => `| [\`${dep.name}\`](${dep.repo}) | ${dep.version} | 
 /** CLI entry: default writes the notices, `--check` fails if the committed copy
  * is stale. Guarded behind an entry-point check so importing this module for
  * tests neither regenerates the committed file nor calls process.exit. */
-async function main(): Promise<void> {
-  const content = await render()
+function main(): void {
+  const content = render()
   if (process.argv.includes('--check')) {
     let committed: string | null = null
     try {
@@ -880,5 +875,5 @@ async function main(): Promise<void> {
 }
 
 if (process.argv[1] !== undefined && import.meta.filename === resolve(process.argv[1])) {
-  await main()
+  main()
 }

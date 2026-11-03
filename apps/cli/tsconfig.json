@@ -39,9 +39,6 @@
       "path": "../../packages/host/webserver"
     },
     {
-      "path": "../../packages/host/frontend-static"
-    },
-    {
       "path": "../../packages/core/session"
     },
     {

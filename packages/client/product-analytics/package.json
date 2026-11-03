@@ -18,10 +18,6 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
-    "./client": {
-      "types": "./lib/types/client/index.d.ts",
-      "default": "./lib/client.js"
-    },
     "./src/*": "./src/*",
     "./package.json": "./package.json",
     "./typert": {
@@ -36,14 +32,6 @@
       "types": "./lib/types/events.d.ts"
     },
     "./locale/*.json": "./locale/*.json"
-  },
-  "dsh": {
-    "client": {
-      "inject": [
-        "@deepseek-ai/dsh-api-gateway"
-      ],
-      "platform": "web"
-    }
   },
   "scripts": {
     "bundle": "tsdown",

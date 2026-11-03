@@ -1,5 +1,5 @@
 import type { UserConfig } from 'tsdown'
-import { clientBundle } from '../../client/tsdown.client.ts'
+import { hostLibrary } from '../../client/tsdown.client.ts'
 
 const runtime: UserConfig[] = Object.entries({
   'remote-types': 'lib/types/remote-types.js', api: 'lib/types/api.js', bridge: 'lib/types/bridge.js',
@@ -10,4 +10,4 @@ const runtime: UserConfig[] = Object.entries({
   fixedExtension: false, dts: false, clean: false,
 }))
 
-export default clientBundle(import.meta.dirname, ['lib/types/index.js'], { hostPhase: true, companions: runtime })
+export default hostLibrary(import.meta.dirname, ['lib/types/index.js'], runtime)

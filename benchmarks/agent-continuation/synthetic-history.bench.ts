@@ -3,7 +3,7 @@ import { expect, it } from 'vitest'
 import { createSystemMessage } from '@deepseek-ai/dsh-llm'
 import { parseSessionLog } from '@deepseek-ai/dsh-llm-replay'
 import { Session, SessionId, SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
-import { syntheticHistory as browserHistory } from '../long-session-browser/synthetic-history.ts'
+import { syntheticHistory as browserHistory } from './synthetic-history.ts'
 import { syntheticHistory } from './workload.ts'
 
 const header = { type: 'session', version: SESSION_FORMAT_VERSION, id: 'benchmark-seed-check', createdAt: 1_700_000_000_000, cwd: '/bench', isSeeded: false, delegationDepth: 0 }

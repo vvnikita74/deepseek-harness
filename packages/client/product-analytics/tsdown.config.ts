@@ -1,3 +1,3 @@
-import { clientBundle } from '../tsdown.client.ts'
+import { hostLibrary } from '../tsdown.client.ts'
 
-export default clientBundle(import.meta.dirname, ['lib/types/index.js'], { hostPhase: true })
+export default hostLibrary(import.meta.dirname, ['lib/types/index.js'])

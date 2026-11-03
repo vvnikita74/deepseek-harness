@@ -30,13 +30,11 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.mocked(spawn).mockReset()
   vi.unstubAllEnvs()
-  internals.resolveDistIndex = originalResolve
   internals.openBrowser = originalOpenBrowser
   if (dist !== undefined) rmSync(dist, { recursive: true, force: true })
   dist = undefined
 })
 
-const originalResolve = internals.resolveDistIndex
 const originalOpenBrowser = internals.openBrowser
 
 type BrowserLauncher = ChildProcess & { stderr: PassThrough }
@@ -52,7 +50,6 @@ function stageDist(): string {
   mkdirSync(join(dist, 'dist'))
   const index = join(dist, 'dist', 'index.html')
   writeFileSync(index, '<head></head><body>shell</body>')
-  internals.resolveDistIndex = () => index
   return index
 }
 
@@ -445,35 +442,6 @@ describe('web-app runtime glue', () => {
       expect(log).not.toHaveBeenCalled()
       expect(openBrowser).not.toHaveBeenCalled()
     }
-  })
-
-  it('anchors the dist index on the frontend package manifest without requiring a built dist', () => {
-    // The production resolver (not the test hook): the anchor resolves on any
-    // checkout, built or not — dist existence is the fallback owner's
-    // request-time concern, so a dist-less composition (the static worker
-    // preview ships its own page) still boots.
-    expect(originalResolve()).toMatch(/dist[/\\]index\.html$/)
-  })
-
-  it.each([
-    ['Error', new Error('no desktop'), 'no desktop'],
-    ['non-Error', 'desktop unavailable', 'desktop unavailable'],
-  ] as const)('keeps the server running and reports the manual URL when a browser failure is %s', async (_kind, failure, reason) => {
-    stageDist()
-    const ctx = new Context()
-    ctx.provide('webServer', fakeHttpServer().server)
-    provideConnection(ctx)
-    internals.openBrowser = vi.fn(async () => { throw failure })
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const diagnostic = vi.spyOn(console, 'error').mockImplementation(() => {})
-    apply(ctx, new Config({ openBrowser: true, printUrl: false, surfaceContext: false }))
-    await new Promise(resolve => setTimeout(resolve, 0))
-    expect(log).toHaveBeenCalledWith('dsh web: opening the default browser; pass --no-open to disable')
-    expect(diagnostic).toHaveBeenCalledWith(
-      `web-app: could not open the default browser because ${reason}; use the dsh web URL printed at startup`,
-    )
-    expect(ctx.get('webServer')).toBeDefined()
-    await ctx.fiber.dispose()
   })
 
   it('scrubs the helper environment and reports helper spawn or exit failures', async () => {

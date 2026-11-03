@@ -31,7 +31,7 @@ describe('THIRD_PARTY_NOTICES.md', () => {
   it('matches what the generator produces from the current manifests', {
     timeout: 120_000,
   }, async () => {
-    const generated = await render()
+    const generated = render()
     expect(generated).toContain('It depends on the third-party software listed below.')
     expect(generated).toContain('| [`cross-spawn`](https://github.com/moxystudio/node-cross-spawn) | MIT |')
     expect(generated).not.toContain('https://github.com/git@')

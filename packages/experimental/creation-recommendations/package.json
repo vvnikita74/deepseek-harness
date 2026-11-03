@@ -55,9 +55,7 @@
     "yaml": "^2.9.0",
     "resolve.exports": "^2.0.3",
     "zod": "4.4.3",
-    "@deepseek-ai/dsh-client-ui-creation-recommendations": "workspace:*",
-    "@deepseek-ai/dsh-action-cards": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-action-cards": "workspace:*"
+    "@deepseek-ai/dsh-action-cards": "workspace:*"
   },
   "files": [
     "icon.svg",

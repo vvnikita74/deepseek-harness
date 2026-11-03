@@ -33,9 +33,9 @@ import {
   packageAssetReference,
   packageAssetRevision,
   packageAssetRevisionedPath,
-} from './modules/src/assets.ts'
-import { optionalStringArray } from './modules/src/client/manifest.ts'
-import { PLATFORM_MODULES, PRELOADED_CLIENT_EXTERNALS } from './web/src/platform.ts'
+} from './support/assets.ts'
+import { optionalStringArray } from './support/manifest.ts'
+import { PLATFORM_MODULES, PRELOADED_CLIENT_EXTERNALS } from './support/platform.ts'
 import { clientBuildEnvironmentDefines, clientBuildValueDefines } from '../../scripts/client-build-environment.ts'
 import { isExperimentalPackageName } from '../../scripts/experimental-package-policy.ts'
 import { BundleInputIsolation, physicalBundleInput } from '../../scripts/bundle-input-isolation.ts'
@@ -217,6 +217,17 @@ export function isStaticLinkedConfig(configs: readonly UserConfig[]): boolean {
 export function clientLibrary(packageDir: string, libEntry: readonly string[]): BuildFaceConfig {
   const lib = clientLibraryConfig(readPackageManifest(packageDir), libEntry)
   return clientOnly([lib])
+}
+
+export function hostLibrary(
+  packageDir: string,
+  libEntry: readonly string[],
+  companions: readonly UserConfig[] = [],
+): BuildFaceConfig {
+  const lib = clientLibraryConfig(readPackageManifest(packageDir), libEntry)
+  return ({ env }) => buildFace(env?.DSH_BUILD_FACE) === 'client'
+    ? [SKIP_WORKSPACE_BUILD]
+    : [lib, ...companions]
 }
 
 /**

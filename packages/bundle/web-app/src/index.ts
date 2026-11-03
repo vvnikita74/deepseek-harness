@@ -1,9 +1,7 @@
 /**
  * @deepseek-ai/dsh-web-app — the browser-surface bundle's runtime glue plugin
  * plus the bundle patch (`cordis.patch.yml`, declared by the `dsh.bundle.patch`
- * manifest field). The plugin owns the browser-surface glue: it resolves
- * the built frontend dist (workspace knowledge of this bundle, never user
- * config), mounts the `frontend-static` fallback owner over it, registers the
+ * manifest field). The plugin owns the server-side glue: it registers the
  * bash-visible web runtime variable, the process-token URL line, and the
  * default-browser handoff, and provides the `webApp` service. An advertised
  * `publicUrl` replaces the published bind-address URL. Non-loopback
@@ -13,13 +11,10 @@
  */
 
 import { spawn, type ChildProcess } from 'node:child_process'
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { auditStartupEntries } from '@deepseek-ai/dsh-app-boot'
 import type {} from '@deepseek-ai/dsh-client-connection'
-import * as FrontendStatic from '@deepseek-ai/dsh-host-frontend-static'
 import { bindUrlHost, isLoopbackHost } from '@deepseek-ai/dsh-host-webserver'
 import { launchedThroughSsh, launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
@@ -113,23 +108,6 @@ try {
 }
 `
 
-/**
- * Dist location is workspace knowledge of this bundle: anchored on the
- * frontend package manifest, not configured. Existence is a request-time
- * concern — the fallback owner reads files per request, so a composition
- * whose page never reaches the fallback seat (the static worker preview
- * ships its own page and carries no dist) boots without one.
- */
-function resolveDistIndex(): string {
-  const require = createRequire(import.meta.url)
-  try {
-    return join(dirname(require.resolve('@deepseek-ai/dsh-web-frontend/package.json')), 'dist', 'index.html')
-  } catch {
-    /* v8 ignore next 2 -- reachable only when the frontend package is absent from the checkout */
-    throw new Error('web-app: @deepseek-ai/dsh-web-frontend is not resolvable from this composition')
-  }
-}
-
 /** Start the maintained platform opener without forwarding Harness credentials. */
 function spawnBrowserLauncher(url: string): ChildProcess {
   return spawn(process.execPath, [
@@ -171,15 +149,14 @@ async function openBrowser(url: string): Promise<void> {
   })
 }
 
-/** Test hooks for the built dist and native browser handoff; production never mutates them. */
+/** Test hooks for the native browser handoff; production never mutates it. */
 export const internals: {
-  resolveDistIndex: () => string
   openBrowser: (url: string) => Promise<void>
-} = { resolveDistIndex, openBrowser }
+} = { openBrowser }
 
 /**
- * Mount the Web runtime: dist serving, the bash runtime variable, the URL
- * line, and the default-browser handoff.
+ * Mount the Web runtime: the bash runtime variable, the URL line, and the
+ * default-browser handoff.
  * @param ctx - plugin context carrying the webServer service.
  * @param config - validated {@link Config}.
  */
@@ -203,7 +180,6 @@ export function apply(ctx: Context, config: Config): void {
   /** The advertised root: the canonical `publicUrl`, or the listener's own origin. */
   const appRootUrl = (): string => publicUrl ?? ctx.webServer.getOrigin()
   ctx.provide('webApp', { getAdvertisedUrl: appRootUrl } satisfies WebApp)
-  ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex() })
   if (config.surfaceContext) {
     ctx.inject(['shellEnv'], (runtimeCtx) => {
       runtimeCtx.shellEnv.register({
