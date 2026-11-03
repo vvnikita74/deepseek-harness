@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/api/jev-router/README.md
+/:
+  en: 98b8d42879fa7c64
+  zh: b094912a35b0ba21
+/deepseek-ai-dsh-api-jev-router:
+  en: 63ab9d933b666da3
+  zh: c565cf6541c9334e
+/deepseek-ai-dsh-api-jev-router/summary:
+  en: 811fcd5aeed7c2ae
+  zh: 42811b14cc19cb5f
+/deepseek-ai-dsh-api-jev-router/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: 434cf3c1f5db33cd
+/deepseek-ai-dsh-api-jev-router/use-this-package:
+  en: a3a362bdb8c9369b
+  zh: 8ffb1d8de185217b
+/deepseek-ai-dsh-api-jev-router/understand-the-implementation:
+  en: b7ba6433e3062202
+  zh: 156adb43b8915caa
+/deepseek-ai-dsh-api-jev-router/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-api-jev-router/model-experience/request-context-and-condition:
+  en: cd8530c72534ee6b
+  zh: 16dbf6046e7e51fd
+/deepseek-ai-dsh-api-jev-router/model-experience/request-context-and-condition/what-the-model-sees:
+  en: 1230eeda978596cc
+  zh: a139279274965878
+/deepseek-ai-dsh-api-jev-router/model-experience/request-context-and-condition/what-the-model-sees/model-switch-notice-text:
+  en: d65e25c166079644
+  zh: fe2b015a11052df1
+/deepseek-ai-dsh-api-jev-router/model-experience/request-context-and-condition/token-effect:
+  en: 3e63a6ce9b4f8146
+  zh: 3847bf9af917c548
+/deepseek-ai-dsh-api-jev-router/model-experience/request-context-and-condition/kv-cache-effect:
+  en: 50329ea3145c95f3
+  zh: 39553956c5dba056
+/deepseek-ai-dsh-api-jev-router/known-limitations-and-deferred-work:
+  en: 1da3ae147788caa5
+  zh: d0ea60824921b52b
+/deepseek-ai-dsh-api-jev-router/known-limitations-and-deferred-work/dev-note:
+  en: 0225ba087c5266f3
+  zh: 4e706f1b2b984e63

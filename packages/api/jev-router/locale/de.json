@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Jev-Modellrouting-API",
+    "description": "Leitet jede Anfrage mit einer Jev-Komplexitätsbewertung auf eine Modellstufe."
+  }
+}

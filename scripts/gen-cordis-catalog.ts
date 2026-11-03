@@ -120,6 +120,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   forge: 'forge.md',
   forgeSession: 'forge.md',
   sessionController: 'session.md',
+  jevRouterController: 'session.md',
   sessionSkillCatalog: 'skills.md',
   sessions: 'session.md',
   sessionLogDeepSeek: 'session.md',
@@ -943,6 +944,8 @@ export const FOUNDATION_TYPE_NAMES: ReadonlySet<string> = new Set([
 
 /** Project types deliberately documented outside the subsystems catalog. */
 export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
+  JevRouteRequest: 'packages/api/jev-router/README.md',
+  JevRouteResult: 'packages/api/jev-router/README.md',
   ActionCardDecision: 'packages/experimental/action-cards/README.md',
   ActionCardKind: 'packages/experimental/action-cards/README.md',
   ActionCardResult: 'packages/experimental/action-cards/README.md',

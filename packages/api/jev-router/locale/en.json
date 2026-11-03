@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Jev model routing API",
+    "description": "Route each prompt to a model tier with a Jev complexity score."
+  }
+}

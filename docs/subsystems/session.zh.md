@@ -852,6 +852,24 @@ type SessionLogUploadExclusion = (request: SessionLogUploadRequest) => boolean
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxjevroutercontroller--jevroutercontroller"></a>
+
+### `ctx.jevRouterController` — `JevRouterController`
+
+Routes prompts before submission; Jev failures keep the current model.
+
+```ts cordis-catalog
+/**
+ * Choose the model tier for one prompt and switch the Session's next model step to it.
+ * @param request - Session identity and prompt text about to be submitted.
+ * @param signal - Client cancellation or Remote contribution disposal.
+ * @returns the routing outcome; Jev failures report `jev-unavailable` instead of throwing.
+ */
+@Remote('route') async route(request: JevRouteRequest, signal: AbortSignal): Promise<JevRouteResult>
+```
+
+Source: [`packages/api/jev-router/src/index.ts`](../../packages/api/jev-router/src/index.ts)
+
 <a id="ctxsessioncontroller--sessioncontroller"></a>
 
 ### `ctx.sessionController` — `SessionController`
