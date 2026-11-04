@@ -50,7 +50,7 @@ async function bootRouter(
   tiers: unknown[],
   fetchResponse: Response | Error,
   sessionModelState = { provider: 'p-easy', model: 'easy' },
-  environment: Record<string, string> = { OPENROUTER_API_KEY: 'jev-key' },
+  environment: Record<string, string> = { TIMEWEB_AI_API_KEY: 'jev-key' },
 ) {
   const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => {
     if (fetchResponse instanceof Error) throw fetchResponse
@@ -119,7 +119,7 @@ describe('jev-router over the real Loader', () => {
     expect(agent.agent.model.current()).toEqual({ provider: 'p-hard', model: 'hard', reasoningEffort: 'high' })
     expect(agent.appended).toEqual([{ type: 'model/selection', data: { provider: 'p-hard', model: 'hard', reasoningEffort: 'high' } }])
     expect(resolveCallConfig).toHaveBeenCalledWith({ provider: 'p-hard', model: 'hard', reasoningEffort: 'high' }, expect.any(AbortSignal))
-    expect(fetchMock).toHaveBeenCalledWith('https://openrouter.ai/api/alpha/decisions', expect.objectContaining({ method: 'POST' }))
+    expect(fetchMock).toHaveBeenCalledWith('https://api.timeweb.ai/v1/systemone', expect.objectContaining({ method: 'POST' }))
   })
 
   it('reports unchanged when the Session already uses the selected route', async () => {

@@ -24,11 +24,11 @@ The `jevRouter` Remote asks the Jev decision model how complex a prompt is and s
 <a id="use-this-package"></a>
 ## Use this package
 
-Configure `tiers` in `cordis.yml`, ordered easiest to hardest; index = tier. Routing needs at least two tiers and a credential named by `apiKeyEnv` (default `OPENROUTER_API_KEY`, resolved through the credentials service or the launch environment on every call). Without either, `route` returns `{ routed: false, reason: 'disabled' }` and the plugin stays inert.
+Configure `tiers` in `cordis.yml`, ordered easiest to hardest; index = tier. Routing needs at least two tiers and a credential named by `apiKeyEnv` (default `TIMEWEB_AI_API_KEY`, resolved through the credentials service or the launch environment on every call). Without either, `route` returns `{ routed: false, reason: 'disabled' }` and the plugin stays inert.
 
 `route({ sessionId, text })` asks Jev for one score over one level per tier. The highest-probability level wins; when Jev's confidence is below `minConfidence` (default `0.6`), the router steps one tier up, capped at the hardest tier. A result of `routed: true` carries the tier and the selected route. `unchanged` means the Session already uses that route. `jev-unavailable` means Jev failed, timed out, or answered in an unexpected shape; the current model stays. An unknown or inaccessible Session rejects with the Session error.
 
-`endpoint` and `model` default to OpenRouter's Decisions API and `typesafe/jev-1.14`. `timeoutMs` (default `3000`) bounds the Jev call. `maxChars` (default `8000`) keeps the last characters of a long prompt.
+`endpoint` and `model` default to the Timeweb AI Gateway System One API (`https://api.timeweb.ai/v1/systemone`) and `jev-latest`; any endpoint speaking the TypeSafe System One schema works, including TypeSafe and OpenRouter Decisions. `timeoutMs` (default `3000`) bounds the Jev call. `maxChars` (default `8000`) keeps the last characters of a long prompt.
 
 -----
 
@@ -75,7 +75,7 @@ A switch changes the model request header, so the previous route's cached prefix
 
 - **Subagent, schedule, and ACP prompts bypass routing** — only the browser calls `route`; delegated subagents, scheduled follow-ups, and automation-only ACP submissions use the Session's current model.
 - **Image prompts are not checked** — `route` receives text only. A tier whose model cannot read images may receive an image prompt once a switch selects it.
-- **Prompt text leaves the deployment** — `text` is sent to the configured Jev endpoint, a third party when the default OpenRouter endpoint is used, and is truncated to `maxChars` keeping its tail.
+- **Prompt text leaves the deployment** — `text` is sent to the configured Jev endpoint, a third party (Timeweb AI Gateway by default), and is truncated to `maxChars` keeping its tail.
 - **Tier criteria come from `description`** — Jev scores against each tier's `description`; a tier without one is sent as `Tier <index>`, which carries only its order.
 
 -----

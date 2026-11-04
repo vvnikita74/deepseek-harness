@@ -24,11 +24,11 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用此包
 
-在 `cordis.yml` 中按从易到难的顺序配置 `tiers`，索引即层级。路由至少需要两个层级，以及 `apiKeyEnv` 指定的凭据（默认 `OPENROUTER_API_KEY`，每次调用经凭据服务或启动环境解析）。缺少任一项时，`route` 返回 `{ routed: false, reason: 'disabled' }`，插件保持惰性。
+在 `cordis.yml` 中按从易到难的顺序配置 `tiers`，索引即层级。路由至少需要两个层级，以及 `apiKeyEnv` 指定的凭据（默认 `TIMEWEB_AI_API_KEY`，每次调用经凭据服务或启动环境解析）。缺少任一项时，`route` 返回 `{ routed: false, reason: 'disabled' }`，插件保持惰性。
 
 `route({ sessionId, text })` 向 Jev 请求一次针对每个层级的评分。概率最高的层级胜出；当 Jev 的置信度低于 `minConfidence`（默认 `0.6`）时，路由向上升一个层级，并以最难层级为上限。`routed: true` 的结果携带层级与所选路由。`unchanged` 表示 Session 已使用该路由。`jev-unavailable` 表示 Jev 失败、超时或返回了意外结构；当前模型保持不变。未知或无权访问的 Session 以 Session 错误拒绝。
 
-`endpoint` 与 `model` 默认指向 OpenRouter Decisions API 与 `typesafe/jev-1.14`。`timeoutMs`（默认 `3000`）限制 Jev 调用时长。`maxChars`（默认 `8000`）保留长提示的末尾字符。
+`endpoint` 与 `model` 默认指向 Timeweb AI Gateway 的 System One API（`https://api.timeweb.ai/v1/systemone`）与 `jev-latest`；任何遵循 TypeSafe System One 模式的端点均可使用，包括 TypeSafe 与 OpenRouter Decisions。`timeoutMs`（默认 `3000`）限制 Jev 调用时长。`maxChars`（默认 `8000`）保留长提示的末尾字符。
 
 -----
 
@@ -77,7 +77,7 @@ Jev 调用的每种失败——网络错误、超时、非 2xx 状态或无法�
 
 - **子代理、计划任务与 ACP 提示绕过路由** — 只有浏览器调用 `route`；被委派的子代理、计划后续任务以及仅供自动化的 ACP 提交使用 Session 当前模型。
 - **图像提示未经检查** — `route` 只接收文本。切换到不能读图的层级后，图像提示可能被送入该模型。
-- **提示文本离开部署环境** — `text` 发送至已配置的 Jev 端点（使用默认 OpenRouter 端点时为第三方），并截断至 `maxChars`，保留末尾。
+- **提示文本离开部署环境** — `text` 发送至已配置的 Jev 端点（第三方，默认为 Timeweb AI Gateway），并截断至 `maxChars`，保留末尾。
 - **层级标准来自 `description`** — Jev 按每个层级的 `description` 评分；未填写的层级以 `Tier <index>` 发送，只体现其顺序。
 
 -----

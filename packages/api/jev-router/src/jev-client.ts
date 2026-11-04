@@ -1,4 +1,4 @@
-/** Jev decisions wire client: one score question per prompt over the OpenRouter or TypeSafe System One schema. */
+/** Jev wire client: one score question per prompt over the TypeSafe System One schema (Timeweb AI Gateway, TypeSafe). */
 import { z } from 'zod'
 import type { ComplexityAnswer } from './policy.ts'
 
@@ -24,7 +24,6 @@ const answerSchema = z.object({
 
 /**
  * Ask Jev which tier the prompt needs. Any transport, status, or shape failure throws; the caller owns the fallback.
- * shortcut: unverified Jev wire format, verify with a real key (OpenRouter Decisions guide; docs.typesafe.ai/api/system-one.md).
  * @param query - endpoint, credential, model, prompt text, and levels.
  * @param signal - caller cancellation, combined with the query timeout.
  * @returns Jev's distribution over the levels.
