@@ -107,6 +107,8 @@ flowchart LR
   svc_sessionSkillCatalog["ctx.sessionSkillCatalog<br/>Session-addressed skill Remote adapter"]
   pkg_api_jev_router["api-jev-router"]
   svc_jevRouterController["ctx.jevRouterController<br/>Jev model router Remote controller"]
+  pkg_api_browser_view["api-browser-view"]
+  svc_browserViewController["ctx.browserViewController<br/>Shared browser view Remote controller"]
   pkg_api_job_controller["api-job-controller"]
   svc_jobController["ctx.jobController<br/>Host job Remote controller"]
   pkg_api_settings_controller["api-settings-controller"]
@@ -318,6 +320,7 @@ flowchart LR
   pkg_agent_loop --> svc_agentLoop
   pkg_agent_preset_registry --> svc_agentPresets
   pkg_agent_team --> svc_agentTeams
+  pkg_api_browser_view --> svc_browserViewController
   pkg_api_gateway --> svc_typertGateway
   pkg_api_jev_router --> svc_jevRouterController
   pkg_api_job_controller --> svc_jobController
@@ -673,6 +676,7 @@ flowchart LR
 | `ctx.sessionFileReferences` | `core` | [`api-session-controller`](../packages/api/session-controller) | - | - | - | 通过 Session Controller 的既有 Agent lookup 策略委托文件引用发现。 |
 | `ctx.sessionSkillCatalog` | `core` | [`api-session-controller`](../packages/api/session-controller) | - | - | - | 在不激活冷 Agent 的前提下列出 Session 组合中允许用户调用的 skill。 |
 | `ctx.jevRouterController` | `core` | [`api-jev-router`](../packages/api/jev-router) | - | - | - | 根据 Jev 复杂度评分为一条提示选择模型层级，并切换 Session 的下一个模型步骤；Jev 失败时保持当前模型。 |
+| `ctx.browserViewController` | `core` | [`api-browser-view`](../packages/api/browser-view) | - | - | - | 运行一个持久 Chromium，把其标签页、画面与页面输入串流给浏览器客户端；仅观察，不向模型提供工具。 |
 | `ctx.jobController` | `core` | [`api-job-controller`](../packages/api/job-controller) | - | - | - | 经生成的 Remote namespace 流式发送一个后台任务的观测 record；名册仍在会话控制流上。 |
 | `ctx.credentialsController` | `core` | [`api-settings-controller`](../packages/api/settings-controller) | - | - | - | 把凭据引用 seam 投影到生成的 Remote namespace：批量扇出、视图投影与拒绝映射都在这里，而不在 seam Definition 上。 |
 | `ctx.settingsController` | `core` | [`api-settings-controller`](../packages/api/settings-controller) | - | - | - | 把用户设置 seam 投影到生成的 Remote namespace：读取一律脱敏，所有拒绝在这里分类，而不在 seam Definition 上。 |

@@ -31,6 +31,11 @@ it.each([
   expect(options.args.slice(1)).toEqual(['--no-usage-statistics', flag, endpoint])
 })
 
+it('shares the attachment across live Sessions when shared is set', () => {
+  Provider.apply(new Context(), Provider.Config({ mode: 'attach', endpoint: 'http://127.0.0.1:9222', shared: true }))
+  expect(vi.mocked(mountSessionMcp).mock.calls[0]![1].exclusive).toBe(false)
+})
+
 it('rejects trailing endpoint garbage before mounting any browser resources', () => {
   expect(() => { Provider.apply(new Context(), Provider.Config({ mode: 'attach', endpoint: 'http://localhost trailing-junk' })) }).toThrow('browser endpoint')
   expect(mountSessionMcp).not.toHaveBeenCalled()

@@ -35,7 +35,7 @@ export function apply(ctx: Context, config: Config): void {
   }
   mountSessionMcp(ctx, {
     name: 'chrome-devtools-mcp',
-    exclusive: config.mode === 'attach',
+    exclusive: config.mode === 'attach' && !config.shared,
     command: process.execPath,
     args,
     ...config.toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs: config.toolCallTimeoutMs },

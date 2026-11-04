@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "API de visualização do navegador compartilhado",
+    "description": "Transmite um Chromium compartilhado e persistente: quadros, ponteiro, teclas, entradas, navegação e abas."
+  }
+}

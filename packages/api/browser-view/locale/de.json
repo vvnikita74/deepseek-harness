@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Shared-Browser-Ansicht-API",
+    "description": "Streamt einen gemeinsamen, dauerhaften Chromium-Browser: Bilder, Zeiger, Tasten, Eingaben, Navigation und Tabs."
+  }
+}

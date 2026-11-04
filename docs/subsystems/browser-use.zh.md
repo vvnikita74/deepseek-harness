@@ -64,4 +64,31 @@ register(name: BrowserUseProviderName): () => Promise<void>
 ```
 
 Source: [`packages/browser-use/browser-use/src/index.ts`](../../packages/browser-use/browser-use/src/index.ts)
+
+<a id="ctxbrowserviewcontroller--browserviewcontroller"></a>
+
+### `ctx.browserViewController` — `BrowserViewController`
+
+Shared browser Remote owner: starts one Chromium, tracks its tabs, and streams the followed tab to watches.
+
+```ts cordis-catalog
+/**
+ * Current browser status and tab roster.
+ * @param signal - client cancellation; the snapshot is synchronous, so it is not awaited.
+ * @returns the state snapshot.
+ */
+@Remote('state') state(signal: AbortSignal): Promise<BrowserViewState>
+
+/**
+ * Stream what the browser shows: the state, then frames and discrete events of the followed tab, or of the pinned
+ * tab, which ends when that tab closes. Pointer coordinates are CSS pixels of the page viewport.
+ * @param request - optional tab to pin; omitted follows the active tab.
+ * @param signal - watch cancellation owned by the Remote stream carrier.
+ * @returns the watch items in delivery order.
+ * @throws when the pinned tab is not open.
+ */
+@Remote({ mode: 'stream' }) async * watch(request: BrowserViewWatchRequest, signal: AbortSignal): AsyncIterable<BrowserViewEvent>
+```
+
+Source: [`packages/api/browser-view/src/index.ts`](../../packages/api/browser-view/src/index.ts)
 <!-- END GENERATED cordis-surface -->

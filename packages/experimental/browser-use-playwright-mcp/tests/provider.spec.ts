@@ -33,6 +33,11 @@ it('supports headed launch and attaches without launching a browser or creating 
   expect(options.args.slice(1)).toEqual(['--browser', 'chromium', '--cdp-endpoint', 'http://127.0.0.1:9222'])
 })
 
+it('shares the attachment across live Sessions when shared is set', () => {
+  Provider.apply(new Context(), Provider.Config({ mode: 'attach', endpoint: 'http://127.0.0.1:9333', shared: true }))
+  expect(vi.mocked(mountSessionMcp).mock.calls[0]![1].exclusive).toBe(false)
+})
+
 it('rejects malformed endpoints before mounting any browser resources', () => {
   expect(() => { Provider.apply(new Context(), Provider.Config({ mode: 'attach', endpoint: 'http://localhost:bad/path' })) }).toThrow('browser endpoint')
   expect(mountSessionMcp).not.toHaveBeenCalled()

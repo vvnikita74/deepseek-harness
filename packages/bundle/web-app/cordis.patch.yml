@@ -109,6 +109,27 @@
       config:
         tiers: []
 
+    # One shared persistent Chromium streamed to the browser client. Inert unless DSH_BROWSER_EXECUTABLE names a
+    # Chromium executable; the profile under DSH_HOME keeps cookies and logins across restarts.
+    - id: browser-view
+      name: '@deepseek-ai/dsh-api-browser-view'
+      config:
+        executablePath: !!js process.env.DSH_BROWSER_EXECUTABLE
+        userDataDir: !!js dshHomePath('browser-profile')
+
+    # Browser registry the agent's browser providers register into.
+    - id: browser-use
+      name: '@deepseek-ai/dsh-browser-use'
+
+    # The agent drives the same shared browser over the DevTools endpoint browser-view opens; off without an executable.
+    - id: browser-use-playwright-mcp
+      name: '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp'
+      disabled: !!js "!process.env.DSH_BROWSER_EXECUTABLE"
+      config:
+        mode: attach
+        endpoint: 'http://127.0.0.1:9333'
+        shared: true
+
     # One background job's observation record streamed over Typert Remote;
     # the roster rides the session control stream above.
     - id: job-controller

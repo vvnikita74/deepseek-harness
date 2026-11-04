@@ -27,10 +27,12 @@ export interface BrowserMcpLaunchConfig {
 
 /** Attachment to an externally owned Chromium browser. */
 export interface BrowserMcpAttachConfig {
-  /** Exclusively attach one live Session to the configured browser. */
+  /** Attach the configured browser to one live Session, or to every live Session when `shared` is true. */
   mode: 'attach'
   /** HTTP(S) debugging URL or WS(S) browser debugging endpoint. */
   endpoint: string
+  /** Let every live Session use the attached browser at once instead of reserving it for one; defaults to false. */
+  shared?: boolean
   /** Per-call timeout override in milliseconds; omission uses the MCP client default. */
   toolCallTimeoutMs?: number
 }
@@ -49,6 +51,7 @@ export const BrowserMcpConfig: Schema<BrowserMcpAttachConfig | (Omit<BrowserMcpL
   Schema.object({
     mode: Schema.const('attach').required(),
     endpoint: Schema.string().pattern(/^https?:\/\/[^\s/]+|^wss?:\/\/[^\s/]+/u).required(),
+    shared: Schema.boolean(),
     toolCallTimeoutMs: Schema.number().min(1),
   }),
 ])

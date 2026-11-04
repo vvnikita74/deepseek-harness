@@ -567,6 +567,31 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'browserViewController',
+    summary: 'Shared browser Remote owner: starts one Chromium, tracks its tabs, and streams the followed tab to watches.',
+    description: 'Shared browser Remote owner: starts one Chromium, tracks its tabs, and streams the followed tab to watches.',
+    methods: [
+      {
+        signature: 'readonly endpoint: string',
+        description: 'Loopback origin of the debugging port, for other plugins that need the browser over CDP.',
+        parameters: [],
+      },
+      {
+        signature: '@Remote(\'state\') state(signal: AbortSignal): Promise<BrowserViewState>',
+        description: 'Current browser status and tab roster.',
+        parameters: [{ name: 'signal', description: 'client cancellation; the snapshot is synchronous, so it is not awaited.' }],
+        returns: 'the state snapshot.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async * watch(request: BrowserViewWatchRequest, signal: AbortSignal): AsyncIterable<BrowserViewEvent>',
+        description: 'Stream what the browser shows: the state, then frames and discrete events of the followed tab, or of the pinned tab, which ends when that tab closes. Pointer coordinates are CSS pixels of the page viewport.',
+        parameters: [{ name: 'request', description: 'optional tab to pin; omitted follows the active tab.' }, { name: 'signal', description: 'watch cancellation owned by the Remote stream carrier.' }],
+        returns: 'the watch items in delivery order.',
+        throws: ['when the pinned tab is not open.'],
+      },
+    ],
+  },
+  {
     key: 'claudeCodeMods',
     summary: 'The bridge service: loaded mods, their hooks, and the harness listeners that raise their events.',
     description: 'The bridge service: loaded mods, their hooks, and the harness listeners that raise their events. Mods join through ClaudeCodeMods.add, which defineMod calls when a mod plugin mounts. The Remote methods let a Client draw each session\'s band above the prompt and press its buttons.',
@@ -5490,6 +5515,30 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BrowserUseProviderName',
     declaration: 'export type BrowserUseProviderName = Branded<\'BrowserUseProviderName\'>;',
+  },
+  {
+    name: 'BrowserViewElement',
+    declaration: 'export interface BrowserViewElement {\n    readonly tag: string;\n    readonly text?: string;\n    readonly rect: {\n        readonly x: number;\n        readonly y: number;\n        readonly width: number;\n        readonly height: number;\n    };\n}',
+  },
+  {
+    name: 'BrowserViewEvent',
+    declaration: 'export type BrowserViewEvent = {\n    readonly type: \'state\';\n    readonly state: BrowserViewState;\n} | {\n    readonly type: \'frame\';\n    readonly targetId: string;\n    readonly seq: number;\n    readonly ts: number;\n    readonly jpegBase64: string;\n    readonly metadata: BrowserViewFrameMetadata;\n} | {\n    readonly type: \'pointer\';\n    readonly targetId: string;\n    readonly ts: number;\n    readonly kind: \'move\' | \'down\' | \'up\' | \'click\' | \'wheel\';\n    readonly x: number;\n    readonly y: number;\n    readonly button?: number;\n    readonly target?: BrowserViewElement;\n} | {\n    readonly type: \'key\';\n    readonly targetId: string;\n    readonly ts: number;\n    readonly key: string;\n    readonly code: string;\n    readonly modifiers: number;\n    readonly target?: BrowserViewElement;\n} | {\n    readonly type: \'input\';\n    readonly targetId: string;\n    readonly ts: number;\n    readonly value?: string;\n    readonly target?: BrowserViewElement;\n} | {\n    readonly type: \'navigation\';\n    readonly targetId: string;\n    readonly ts: number;\n    readonly url: string;\n    readonly title: string;\n};',
+  },
+  {
+    name: 'BrowserViewFrameMetadata',
+    declaration: 'export interface BrowserViewFrameMetadata {\n    readonly deviceWidth: number;\n    readonly deviceHeight: number;\n    readonly pageScaleFactor: number;\n    readonly scrollOffsetX: number;\n    readonly scrollOffsetY: number;\n}',
+  },
+  {
+    name: 'BrowserViewState',
+    declaration: 'export interface BrowserViewState {\n    readonly status: \'disabled\' | \'starting\' | \'ready\' | \'restarting\' | \'failed\';\n    readonly tabs: readonly BrowserViewTab[];\n    readonly activeTargetId?: string;\n    readonly viewport: {\n        readonly width: number;\n        readonly height: number;\n    };\n}',
+  },
+  {
+    name: 'BrowserViewTab',
+    declaration: 'export interface BrowserViewTab {\n    readonly targetId: string;\n    readonly url: string;\n    readonly title: string;\n    readonly active: boolean;\n}',
+  },
+  {
+    name: 'BrowserViewWatchRequest',
+    declaration: 'export interface BrowserViewWatchRequest {\n    readonly targetId?: string;\n}',
   },
   {
     name: 'BundleDetail',

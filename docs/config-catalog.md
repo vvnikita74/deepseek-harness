@@ -216,6 +216,47 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-agent-tool-presentation -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-browser-view -->
+<a id="deepseek-aidsh-api-browser-view"></a>
+
+## `@deepseek-ai/dsh-api-browser-view`
+
+- `inject`: `subprocess` · `typert`
+- `source`: [`packages/api/browser-view/src/index.ts:41`](../packages/api/browser-view/src/index.ts)
+
+```ts config-catalog
+/** Browser view deployment policy; every field is read once at start. */
+export interface Config {
+  /** Chromium executable; empty or omitted leaves the plugin inert. */
+  executablePath?: string
+  /** Persistent profile directory; the Web profile passes `dshHomePath('browser-profile')`. */
+  userDataDir: string
+  /** Loopback debugging port. */
+  port: number
+  /** Run Chromium without a visible window. */
+  headless: boolean
+  /** Pass `--no-sandbox`. */
+  noSandbox: boolean
+  /** Window and page size in CSS pixels. */
+  viewport: {
+    /** Width in CSS pixels. */
+    width: number
+    /** Height in CSS pixels. */
+    height: number
+  }
+  /** Screencast settings for the followed and pinned tabs. */
+  screencast: {
+    /** JPEG quality, 1 to 100. */
+    quality: number
+    /** Frame rate limit of each watch. */
+    maxFps: number
+    /** Frame width in pixels; height keeps the viewport aspect ratio. */
+    maxWidth: number
+  }
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-api-browser-view -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-gateway -->
 <a id="deepseek-aidsh-api-gateway"></a>
 

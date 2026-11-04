@@ -121,6 +121,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   forgeSession: 'forge.md',
   sessionController: 'session.md',
   jevRouterController: 'session.md',
+  browserViewController: 'browser-use.md',
   sessionSkillCatalog: 'skills.md',
   sessions: 'session.md',
   sessionLogDeepSeek: 'session.md',
@@ -946,6 +947,9 @@ export const FOUNDATION_TYPE_NAMES: ReadonlySet<string> = new Set([
 export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   JevRouteRequest: 'packages/api/jev-router/README.md',
   JevRouteResult: 'packages/api/jev-router/README.md',
+  BrowserViewState: 'packages/api/browser-view/README.md',
+  BrowserViewEvent: 'packages/api/browser-view/README.md',
+  BrowserViewWatchRequest: 'packages/api/browser-view/README.md',
   ActionCardDecision: 'packages/experimental/action-cards/README.md',
   ActionCardKind: 'packages/experimental/action-cards/README.md',
   ActionCardResult: 'packages/experimental/action-cards/README.md',

@@ -267,6 +267,15 @@ describe('Session MCP Loader composition', () => {
     expect((await execute(ctx, resumed.agent)).isError).toBe(false)
   })
 
+  it('gives every live Session the browser tools of a shared attachment', async () => {
+    const { ctx } = await load(false)
+    const first = await ctx.agents.create({ sessionId: SessionId('first') })
+    const second = await ctx.agents.create({ sessionId: SessionId('second') })
+    expect((await warm(ctx, first.agent)).tools.some(tool => tool.name === TOOL)).toBe(true)
+    expect((await warm(ctx, second.agent)).tools.some(tool => tool.name === TOOL)).toBe(true)
+    expect((await execute(ctx, second.agent)).isError).toBe(false)
+  })
+
   it('allows another Session to answer while attached-browser discovery is pending', async () => {
     const { ctx, root, model, browser } = await load(true, 'hold')
     const first = observeActivation(ctx.agents.create({ sessionId: SessionId('first') }))

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Shared browser view API",
+    "description": "Stream one shared persistent Chromium browser: frames, pointer, keys, input, navigation, and tabs."
+  }
+}

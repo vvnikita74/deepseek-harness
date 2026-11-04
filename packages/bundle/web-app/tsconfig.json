@@ -40,6 +40,9 @@
     },
     {
       "path": "../../api/jev-router"
+    },
+    {
+      "path": "../../api/browser-view"
     }
   ]
 }

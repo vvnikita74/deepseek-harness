@@ -116,6 +116,8 @@
       "@deepseek-ai/dsh-api-gateway/types": ["./packages/api/gateway/src/types.ts"],
       "@deepseek-ai/dsh-api-jev-router": ["./packages/api/jev-router/src/index.ts"],
       "@deepseek-ai/dsh-api-jev-router/types": ["./packages/api/jev-router/src/types.ts"],
+      "@deepseek-ai/dsh-api-browser-view": ["./packages/api/browser-view/src/index.ts"],
+      "@deepseek-ai/dsh-api-browser-view/types": ["./packages/api/browser-view/src/types.ts"],
       "@deepseek-ai/dsh-api-job-controller": ["./packages/api/job-controller/src/index.ts"],
       "@deepseek-ai/dsh-api-job-controller/client": ["./packages/api/job-controller/src/client/index.ts"],
       "@deepseek-ai/dsh-api-job-controller/types": ["./packages/api/job-controller/src/types.ts"],

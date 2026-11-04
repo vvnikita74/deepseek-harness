@@ -362,6 +362,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Chooses the model tier for one prompt through Jev and switches the Session\'s next model step; Jev failures keep the current model.',
   },
   {
+    key: 'browserViewController',
+    pkg: 'api-browser-view',
+    title: 'Shared browser view Remote controller',
+    mode: 'core',
+    note: 'Runs one persistent Chromium and streams its tabs, frames, and page input to browser clients; observation only, with no model-facing tools.',
+  },
+  {
     key: 'jobController',
     pkg: 'api-job-controller',
     title: 'Host job Remote controller',

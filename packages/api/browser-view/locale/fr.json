@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "API de vue du navigateur partagé",
+    "description": "Diffuse un navigateur Chromium partagé et persistant : images, pointeur, touches, saisies, navigation et onglets."
+  }
+}
