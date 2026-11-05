@@ -16,7 +16,7 @@ import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { ProjectionHandle } from '@deepseek-ai/dsh-session-projection'
 import z from '@deepseek-ai/schemastery'
-import { userQuestionProjectionDefinition, type UserQuestionProjectionState } from './projection.ts'
+import { ASK_ABORTED, userQuestionProjectionDefinition, type UserQuestionProjectionState } from './projection.ts'
 import { TimedQuestionWait } from './timed-wait.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -53,7 +53,7 @@ export class UserQuestionError extends HarnessError {
 function abortedQuestion(cause?: unknown): UserQuestionError {
   return new UserQuestionError(
     'ask_user_question was aborted before the user answered',
-    'ASK_ABORTED',
+    ASK_ABORTED,
     cause === undefined ? undefined : { cause },
   )
 }

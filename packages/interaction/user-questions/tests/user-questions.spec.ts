@@ -664,6 +664,44 @@ describe('late replies', () => {
     await ctx.fiber.dispose()
   })
 
+  it('steers an answer into a call a Host shutdown cancelled and a disposed turn ended', async () => {
+    const ctx = await timedContext()
+    const agent = liveAgent('late-shutdown')
+    ctx.agents.enter(agent)
+    askInLog(agent, timedCallId)
+    agent.session.append('tool/result', {
+      turn: 1, step: 1,
+      message: createToolResultMessage({
+        callId: timedCallId, content: [{ type: 'text', text: 'Error: ask_user_question was aborted before the user answered' }], isError: true,
+      }),
+      error: { name: 'UserQuestionError', code: 'ASK_ABORTED' },
+    }, { surfaceOp: 'append' })
+    agent.session.append('turn/end', { turn: 1, reason: { kind: 'aborted', reason: { kind: 'disposed' } } })
+    const batch = { answers: [{ id: 'scope', selected: ['Tool only'] }] }
+
+    expect(ctx.userQuestions.answer(agent, timedCallId, batch)).toBe(true)
+    await ctx.fiber.dispose()
+  })
+
+  it('does not keep a call the user cancelled answerable', async () => {
+    const ctx = await timedContext()
+    const agent = liveAgent('late-user-cancel')
+    ctx.agents.enter(agent)
+    askInLog(agent, timedCallId)
+    agent.session.append('tool/result', {
+      turn: 1, step: 1,
+      message: createToolResultMessage({
+        callId: timedCallId, content: [{ type: 'text', text: 'Error: ask_user_question was aborted before the user answered' }], isError: true,
+      }),
+      error: { name: 'UserQuestionError', code: 'ASK_ABORTED' },
+    }, { surfaceOp: 'append' })
+    agent.session.append('turn/end', { turn: 1, reason: { kind: 'aborted', reason: { kind: 'user' } } })
+    const batch = { answers: [{ id: 'scope', selected: ['Tool only'] }] }
+
+    expect(ctx.userQuestions.answer(agent, timedCallId, batch)).toBe(false)
+    await ctx.fiber.dispose()
+  })
+
   it('accepts steers for different continued batches while both await the next step', async () => {
     const ctx = await timedContext()
     const agent = liveAgent('late-out-of-order')

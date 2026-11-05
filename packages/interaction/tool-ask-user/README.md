@@ -27,7 +27,7 @@ English | [中文](README.zh.md)
 
 Compose this plugin with `ctx.userQuestions` when the model needs a user decision. Without an answerer, blocking calls fail; finite timed calls return pending at their deadline.
 
-Shipped presets use blocking mode. To enable timed mode, set `mode: timed` on the `tool-ask-user` row in the active preset's `config.plugins` list:
+The Web profile presets (standard, PTC, Cordis) use timed mode, so a question survives a Host restart and stays answerable; the SDK profile and an omitted config use blocking mode. Timed mode is set by `mode: timed` on the `tool-ask-user` row in the active preset's `config.plugins` list:
 
 ```yaml
 - id: tool-ask-user
@@ -121,7 +121,7 @@ Read these pages when the package-level contract is not enough. They move from t
 
 #### What the model sees
 
-The shipped presets expose the original blocking [`ask_user_question` schema](../../../docs/tool-catalog.md#deepseek-aidsh-tool-ask-user). A custom Cordis row with `mode: timed` switches to the alternate schema, including question ids, prompts, headings, options, multi-select flags, `timeout`, and the pending result; the model sees only the selected definition.
+The Web profile presets expose the timed schema; the SDK profile keeps the original blocking [`ask_user_question` schema](../../../docs/tool-catalog.md#deepseek-aidsh-tool-ask-user). A row with `mode: timed` switches to the alternate schema, including question ids, prompts, headings, options, multi-select flags, `timeout`, and the pending result; the model sees only the selected definition.
 
 #### Token effect
 

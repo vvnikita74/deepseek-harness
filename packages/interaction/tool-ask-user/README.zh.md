@@ -27,7 +27,7 @@ kind: "package-reference"
 
 当模型需要用户决定时，将此插件与 `ctx.userQuestions` 组合。没有 answerer 时，阻塞式调用返回错误；有限时长的 timed 调用到期后返回 pending。
 
-随附 preset 使用阻塞模式。要启用 timed 模式，请在当前 preset 的 `config.plugins` 列表中，将 `tool-ask-user` 条目设为 `mode: timed`：
+Web 配置文件的 preset（standard、PTC、Cordis）使用 timed 模式，因此问题在 Host 重启后仍会保留并可回答；SDK 配置文件以及省略配置时使用阻塞模式。timed 模式通过在当前 preset 的 `config.plugins` 列表中将 `tool-ask-user` 条目设为 `mode: timed` 启用：
 
 ```yaml
 - id: tool-ask-user
@@ -121,7 +121,7 @@ Legacy 调用和 `timeout: -1` 调用会等待回答或取消；没有 answerer 
 
 #### 模型看到的内容
 
-随附 preset 会公开原有的阻塞式 [`ask_user_question` schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-ask-user)。自定义 Cordis 行设置 `mode: timed` 后，会切换到包含问题 id、提示语、标题、选项、多选标志、`timeout` 与待处理结果的异步 schema；模型只会看到被选中的定义。
+Web 配置文件的 preset 公开 timed schema；SDK 配置文件保留原有的阻塞式 [`ask_user_question` schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-ask-user)。设置 `mode: timed` 的条目会切换到包含问题 id、提示语、标题、选项、多选标志、`timeout` 与待处理结果的异步 schema；模型只会看到被选中的定义。
 
 #### Token 影响
 

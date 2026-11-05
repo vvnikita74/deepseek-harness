@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SessionLogOffset, SessionSeq, TOOL_OUTCOME_UNKNOWN, type SessionEvent } from '@deepseek-ai/dsh-session'
+import { SessionLogOffset, SessionSeq, TOOL_OUTCOME_UNKNOWN, type SessionEvent, type TurnEndReason } from '@deepseek-ai/dsh-session'
 import { createToolResultMessage, createUserMessage, ToolCallId, type ToolSchema } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-tool-executor-ptc/types'
 import {
@@ -145,6 +145,25 @@ describe('userQuestions projection fold', () => {
     ])).toEqual(continued)
   })
 
+  it('keeps a call a Host shutdown cancelled answerable once its disposed turn ends', () => {
+    const cancelled = resulted('Error: ask_user_question was aborted before the user answered', { name: 'UserQuestionError', code: 'ASK_ABORTED' })
+    const continued = { active: [{ callId, questions, state: 'continued' }], settled: [] }
+    const turnEnd = (turn: number, reason: TurnEndReason) => event(3, 'turn/end', { turn, reason })
+    expect(foldUserQuestions([timedHeader, asked, cancelled])).toEqual(empty)
+    expect(foldUserQuestions([timedHeader, asked, cancelled, turnEnd(1, { kind: 'aborted', reason: { kind: 'disposed' } })])).toEqual(continued)
+    expect(foldUserQuestions([timedHeader, asked, cancelled, turnEnd(2, { kind: 'aborted', reason: { kind: 'disposed' } })])).toEqual(empty)
+  })
+
+  it.each<TurnEndReason>([
+    { kind: 'aborted', reason: { kind: 'user' } },
+    { kind: 'aborted', reason: { kind: 'parent' } },
+    { kind: 'aborted', reason: { kind: 'hook', reason: 'stop' } },
+    { kind: 'completed' },
+  ])('settles a cancelled call closed when its turn ends with %j', (reason) => {
+    const cancelled = resulted('Error: ask_user_question was aborted before the user answered', { name: 'UserQuestionError', code: 'ASK_ABORTED' })
+    expect(foldUserQuestions([timedHeader, asked, cancelled, event(3, 'turn/end', { turn: 1, reason })])).toEqual(empty)
+  })
+
   it('closes a continued question only when its reply is admitted as a user message', () => {
     const continued = [timedHeader, asked, resulted('{"pending":true,"callId":"call_ask_1"}')]
     const settled = { active: [], settled: [{ callId, answers: [] }] }
@@ -204,7 +223,7 @@ describe('userQuestions projection fold', () => {
   })
 
   it('returns the same fold for unrelated events, unreadable calls, and an unchanged header', () => {
-    const fold = [timedHeader, asked].reduce(applyUserQuestionEvent, { timed: false, questions: empty })
+    const fold = [timedHeader, asked].reduce(applyUserQuestionEvent, { timed: false, questions: empty, held: [] })
     expect(applyUserQuestionEvent(fold, event(5, 'turn/start', { turn: 2 }))).toBe(fold)
     expect(applyUserQuestionEvent(fold, header(5, [timedSchema]))).toBe(fold)
     expect(applyUserQuestionEvent(fold, event(5, 'tool/call', {
@@ -235,7 +254,7 @@ describe('userQuestions projection fold', () => {
       turn: 1, step: 2, callId: otherId, name: 'ask_user_question',
       arguments: '{"questions":[{"id":"name","question":"Name?"}]}',
     })
-    const both = [timedHeader, asked, other].reduce(applyUserQuestionEvent, { timed: false, questions: empty })
+    const both = [timedHeader, asked, other].reduce(applyUserQuestionEvent, { timed: false, questions: empty, held: [] })
     expect(both.questions.active.map(question => question.callId)).toEqual([callId, otherId])
 
     const continued = applyUserQuestionEvent(both, resulted('{"pending":true,"callId":"call_ask_1"}'))
@@ -265,8 +284,8 @@ describe('userQuestions projection fold', () => {
       state: 'continued',
     }
     const view = { active: [full], settled: [{ callId: 'call_ask_0', answers: answerBatch }] }
-    const restored = userQuestionProjectionDefinition.stateSchema.parse({ inheritedEventCount: 3, timed: true, questions: view })
-    expect(restored).toEqual({ inheritedEventCount: SessionLogOffset(3), timed: true, questions: view })
+    const restored = userQuestionProjectionDefinition.stateSchema.parse({ inheritedEventCount: 3, timed: true, questions: view, held: [] })
+    expect(restored).toEqual({ inheritedEventCount: SessionLogOffset(3), timed: true, questions: view, held: [] })
     expect(restored.questions.active[0]?.questions[1]).not.toHaveProperty('options')
 
     const { viewSchema } = userQuestionProjectionDefinition.wire
@@ -295,6 +314,6 @@ describe('userQuestions projection fold', () => {
     expect(userQuestionProjectionDefinition.wire.view(opened))
       .toEqual({ active: [{ callId, questions, state: 'open' }], settled: [] })
     expect(userQuestionProjectionDefinition.apply(opened, event(5, 'turn/start', { turn: 2 }))).toBe(opened)
-    expect(userQuestionProjectionDefinition.stateVersion).toBe(2)
+    expect(userQuestionProjectionDefinition.stateVersion).toBe(3)
   })
 })

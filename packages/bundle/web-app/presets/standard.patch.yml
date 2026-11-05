@@ -111,6 +111,8 @@
                 name: '@deepseek-ai/dsh-tool-workflow'
           - id: tool-ask-user
             name: '@deepseek-ai/dsh-tool-ask-user'
+            config:
+              mode: timed
           - id: tool-todo
             name: '@deepseek-ai/dsh-tool-todo'
             config:

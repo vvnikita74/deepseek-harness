@@ -518,6 +518,53 @@ describe('ask_user_question tool', () => {
     await ctx.fiber.dispose()
   })
 
+  it('folds a timed call cancelled by Host disposal through the real pipeline into a continued question', async () => {
+    const ctx = await setup({ mode: 'timed', timeout: 30 })
+    const asked = Promise.withResolvers<null>()
+    registerQuestionAnswerer(ctx, {
+      ask: request => new Promise((_, reject) => {
+        asked.resolve(null)
+        request.signal?.addEventListener('abort', () => { reject(new Error('answerer stopped')) }, { once: true })
+      }),
+    })
+    const agent = { ...stubAgent('timed-disposed'), steer: vi.fn() } as Agent
+    ctx.agents.enter(agent)
+    const controller = new AbortController()
+    const running = executeToolFixture(ctx, {
+      signal: controller.signal,
+      callId: ToolCallId('ask-disposed'),
+      name: 'ask_user_question',
+      arguments: { questions: [{ id: 'continue', question: 'Continue?' }], timeout: 30 },
+      agent,
+    })
+    await asked.promise
+    controller.abort({ kind: 'disposed' })
+    const settled = await running
+
+    expect(settled.error?.info).toEqual({ name: 'UserQuestionError', code: 'ASK_ABORTED' })
+    expect(foldUserQuestions([
+      headerEvent(0, ctx.tools.schemas()),
+      askedEvent(1, 'ask-disposed', '{"questions":[{"id":"continue","question":"Continue?"}],"timeout":30}'),
+      {
+        type: 'tool/result', seq: SessionSeq(2), time: 2, surfaceOp: 'append',
+        data: {
+          turn: 1, step: 1,
+          message: createToolResultMessage({ callId: ToolCallId('ask-disposed'), content: settled.content, isError: true }),
+          error: { name: 'UserQuestionError', code: 'ASK_ABORTED' },
+        },
+      },
+      {
+        type: 'turn/end', seq: SessionSeq(3), time: 3,
+        data: { turn: 1, reason: { kind: 'aborted', reason: { kind: 'disposed' } } },
+      },
+    ]).active).toEqual([{
+      callId: 'ask-disposed',
+      questions: [{ id: 'continue', question: 'Continue?' }],
+      state: 'continued',
+    }])
+    await ctx.fiber.dispose()
+  })
+
   it('holds an unclaimed timed question until the deadline and then reports it pending', async () => {
     vi.useFakeTimers()
     try {

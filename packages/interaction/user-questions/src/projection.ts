@@ -17,6 +17,14 @@ import type { AskUserQuestionAnswerItem, AskUserQuestionItem, AskUserQuestionOpt
 export interface UserQuestionFold {
   readonly timed: boolean
   readonly questions: UserQuestionProjectionView
+  /** Calls whose tool result was the cancellation result, kept until their turn ends. */
+  readonly held: readonly HeldUserQuestion[]
+}
+
+/** An open call the Host cancelled, with the turn whose end decides whether it stays answerable. */
+export interface HeldUserQuestion {
+  readonly turn: number
+  readonly question: PendingUserQuestion
 }
 
 /** Host projection state; `questions` is the wire value, reused whenever an event changes nothing. */
@@ -26,6 +34,9 @@ export interface UserQuestionProjectionState extends UserQuestionFold {
 
 /** Tool whose calls this projection tracks. */
 export const ASK_USER_QUESTION_TOOL = 'ask_user_question'
+
+/** Error code of the tool result a cancelled ask records; the turn's end reason tells a Host shutdown from a user cancel. */
+export const ASK_ABORTED = 'ASK_ABORTED'
 
 /**
  * Model-facing parameter only the timed `ask_user_question` schema declares.
@@ -76,15 +87,22 @@ const questionSchema = z.object({
   ...(question.multiSelect === undefined ? {} : { multiSelect: question.multiSelect }),
 }))
 
-const pendingQuestionsSchema: z.ZodType<readonly PendingUserQuestion[]> = z.array(z.object({
+const pendingQuestionSchema = z.object({
   callId: z.string().min(1).transform(ToolCallId),
   questions: z.array(questionSchema).min(1),
   state: z.enum(['open', 'continued']),
-}).strict()).superRefine((active, context) => {
+}).strict()
+
+const pendingQuestionsSchema: z.ZodType<readonly PendingUserQuestion[]> = z.array(pendingQuestionSchema).superRefine((active, context) => {
   if (new Set(active.map(question => question.callId)).size !== active.length) {
     context.addIssue({ code: 'custom', message: 'callIds must be unique' })
   }
 })
+
+const heldQuestionsSchema: z.ZodType<readonly HeldUserQuestion[]> = z.array(z.object({
+  turn: z.number().int().nonnegative(),
+  question: pendingQuestionSchema,
+}).strict())
 
 const answerSchema = z.object({
   id: z.string(),
@@ -112,7 +130,7 @@ const answerBatchSchema = z.object({ answers: z.array(answerSchema) }).loose()
 /** A Session with no timed `ask_user_question` call yet, shared so the wire value stays referentially stable. */
 const emptyView: UserQuestionProjectionView = { active: [], settled: [] }
 
-const initialFold: UserQuestionFold = { timed: false, questions: emptyView }
+const initialFold: UserQuestionFold = { timed: false, questions: emptyView, held: [] }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -223,8 +241,10 @@ function settleQuestion(
  * ever used that tool folds to the empty view. A tracked question stays
  * answerable as `continued` in exactly two cases: the tool returned the
  * pending payload, or Session resume repair appended the synthetic
- * `TOOL_OUTCOME_UNKNOWN` result for a call the process never finished. An
- * answer batch settles it with that batch; any failure drops it. A PTC
+ * `TOOL_OUTCOME_UNKNOWN` result for a call the process never finished, or a
+ * Host shutdown cancelled the call (`ASK_ABORTED`) and its turn ends with the
+ * `disposed` cause; that call is held until the turn end. An answer batch
+ * settles it with that batch; any other failure drops it. A PTC
  * sub-call enters the fold when its recorded result is pending. A late reply
  * settles only when the agent admits its user message; queued inbox messages
  * can still be discarded before that point.
@@ -259,14 +279,22 @@ export function applyUserQuestionEvent(fold: UserQuestionFold, event: SessionEve
     }
     case 'tool/result': {
       const callId = event.data.message.toolCallId
-      if (!view.active.some(question => question.callId === callId)) return fold
+      const question = view.active.find(item => item.callId === callId)
+      if (question === undefined) return fold
       if (isPendingResult(event.data.message.content) || event.data.error?.code === TOOL_OUTCOME_UNKNOWN) {
         return {
           ...fold,
           questions: {
             ...view,
-            active: view.active.map(question => question.callId === callId ? { ...question, state: 'continued' } : question),
+            active: view.active.map(item => item.callId === callId ? { ...item, state: 'continued' } : item),
           },
+        }
+      }
+      if (event.data.error?.code === ASK_ABORTED) {
+        return {
+          ...fold,
+          questions: { ...view, active: view.active.filter(item => item.callId !== callId) },
+          held: [...fold.held, { turn: event.data.turn, question }],
         }
       }
       const answers = event.data.error === undefined && event.data.message.isError !== true
@@ -290,6 +318,19 @@ export function applyUserQuestionEvent(fold: UserQuestionFold, event: SessionEve
           ...view,
           active: [...view.active.filter(question => question.callId !== callId), { callId, questions, state: 'continued' }],
         },
+      }
+    }
+    case 'turn/end': {
+      const { turn, reason } = event.data
+      const held = fold.held.filter(item => item.turn === turn)
+      if (held.length === 0) return fold
+      const hostShutdown = reason.kind === 'aborted' && reason.reason.kind === 'disposed'
+      return {
+        ...fold,
+        held: fold.held.filter(item => item.turn !== turn),
+        questions: hostShutdown
+          ? { ...view, active: [...view.active, ...held.map(item => ({ ...item.question, state: 'continued' as const }))] }
+          : view,
       }
     }
     case 'user/message': {
@@ -319,6 +360,7 @@ export const userQuestionProjectionDefinition = {
     inheritedEventCount: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).transform(SessionLogOffset),
     timed: z.boolean(),
     questions: projectionViewSchema,
+    held: heldQuestionsSchema,
   }).strict(),
   init: (_header, inheritedEventCount) => ({ inheritedEventCount, ...initialFold }),
   apply: (state, event) => {
@@ -327,5 +369,5 @@ export const userQuestionProjectionDefinition = {
     return fold === state ? state : { ...state, ...fold }
   },
   wire: { viewSchema: projectionViewSchema, view: state => state.questions },
-  stateVersion: 2,
+  stateVersion: 3,
 } satisfies ProjectionDefinition<'userQuestions', UserQuestionProjectionState>
