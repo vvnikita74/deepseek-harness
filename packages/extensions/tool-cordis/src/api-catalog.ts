@@ -583,6 +583,19 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the state snapshot.',
       },
       {
+        signature: '@Remote(\'input\') async input(request: BrowserInputRequest, signal: AbortSignal): Promise<void>',
+        description: 'Forward one user input event to a tab and hold user control, which pauses the agent\'s browser tools until the idle window passes. Everything before the send runs synchronously so inputs reach Chromium in arrival order.',
+        parameters: [{ name: 'request', description: 'target tab and the event to forward.' }, { name: 'signal', description: 'client cancellation, checked before the request is validated.' }],
+        returns: 'settles when Chromium acknowledges the command.',
+        throws: ['`gateway/bad-request` when the event is invalid, `browser-view/tab-not-found` when no open tab has the target id, `browser-view/unavailable` when the tab is not attached, or the CDP error when Chromium rejects the command.'],
+      },
+      {
+        signature: '@Remote(\'release\') release(signal: AbortSignal): Promise<void>',
+        description: 'Give control back to the agent now instead of after the idle window.',
+        parameters: [{ name: 'signal', description: 'client cancellation, checked before the release.' }],
+        returns: 'settles immediately.',
+      },
+      {
         signature: '@Remote({ mode: \'stream\' }) async * watch(request: BrowserViewWatchRequest, signal: AbortSignal): AsyncIterable<BrowserViewEvent>',
         description: 'Stream what the browser shows: the state, then frames and discrete events of the followed tab, or of the pinned tab, which ends when that tab closes. Pointer coordinates are CSS pixels of the page viewport.',
         parameters: [{ name: 'request', description: 'optional tab to pin; omitted follows the active tab.' }, { name: 'signal', description: 'watch cancellation owned by the Remote stream carrier.' }],
@@ -1833,31 +1846,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'messageFeedback',
-    summary: 'Session-log service; cold operations never construct a Session or Agent.',
-    description: 'Session-log service; cold operations never construct a Session or Agent.',
-    methods: [
-      {
-        signature: '@Remote(\'list\') list(request: MessageFeedbackListRequest): Promise<MessageFeedbackListResult>',
-        description: 'Read current feedback from the canonical log.',
-        parameters: [{ name: 'request', description: 'Session to inspect.' }],
-        returns: 'immutable items or a definite persistence miss.',
-      },
-      {
-        signature: '@Remote(\'put\') put(request: MessageFeedbackPutRequest): Promise<MessageFeedbackPutResult>',
-        description: 'Create or replace feedback after checking its current version. Matching no-ops retain the version and append no event.',
-        parameters: [{ name: 'request', description: 'Target, desired value, and observed item version.' }],
-        returns: 'the durable item or an explicit business failure.',
-      },
-      {
-        signature: '@Remote(\'delete\') delete(request: MessageFeedbackDeleteRequest): Promise<MessageFeedbackDeleteResult>',
-        description: 'Delete one item after checking its version; absence succeeds without an event.',
-        parameters: [{ name: 'request', description: 'Session, message, and observed item version.' }],
-        returns: 'the stable absent postcondition or an explicit failure.',
-      },
-    ],
-  },
-  {
     key: 'officeToPdf',
     summary: 'A provider lifetime owns all converters, queued calls, and temporary files.',
     description: 'A provider lifetime owns all converters, queued calls, and temporary files.',
@@ -2200,6 +2188,25 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'providerLimitsController',
+    summary: 'Serves the last published usage windows of each provider route to browser clients over Typert Remote.',
+    description: 'Serves the last published usage windows of each provider route to browser clients over Typert Remote.',
+    methods: [
+      {
+        signature: '@Remote(\'get\') get(): ProviderLimits[]',
+        description: 'Current limits of every reported provider route.',
+        parameters: [],
+        returns: 'the reported providers; empty when no producer reported windows.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async * follow(signal: AbortSignal): AsyncIterable<ProviderLimitsFrame>',
+        description: 'Stream the current limits: a snapshot first, then the full list after each change. A reader that pulls slowly receives the latest list once, not every intermediate change. The stream ends when `signal` aborts or the plugin is disposed.',
+        parameters: [{ name: 'signal', description: 'stream cancellation.' }],
+        returns: 'the frames of one stream.',
+      },
+    ],
+  },
+  {
     key: 'ptcRuntime',
     summary: 'Registers one `ctx.ptcRuntime` implementation.',
     description: 'Registers one `ctx.ptcRuntime` implementation. Program, budget, abort, and substrate failures resolve in PtcRunResult; only Service Definition contract misuse rejects. Implementations bridge structured-cloneable bindings, materialize each declared namespace rejection class, treat programs as hostile peers, isolate distinct state owners, and terminate and await in-flight runs during disposal.',
@@ -2441,6 +2448,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the created or reused Session identity and its preset when configured.',
       },
       {
+        signature: 'deleteSessions(sessionIds: readonly SessionId[], signal?: AbortSignal): Promise<readonly SessionId[]>',
+        description: 'Irreversibly delete Sessions: stop their work, unload their Agents, remove their subagent descendants, and remove their stored logs. Callers that pass an identity owned by another Host component must not rely on this method unloading that component\'s Agent.',
+        parameters: [{ name: 'sessionIds', description: 'Session identities to delete; subagent descendants are added automatically.' }, { name: 'signal', description: 'cancellation observed before each wait and removal.' }],
+        returns: 'the identities removed, in deletion order.',
+        throws: ['RemoteError `session/not-found`, `session/active`, `session/agent-busy`, or `session/writer-held` when refused. A refusal leaves the Sessions intact, except Sessions already removed before the failure.'],
+      },
+      {
         signature: '@Remote(\'selectModel\') selectModel(request: SessionSelectModelRequest): Promise<SessionSelectModelValue>',
         description: 'Select one Session-local model after explicitly resuming the Session; save the default in the background.',
         parameters: [{ name: 'request', description: 'Session identity and requested model selection.' }],
@@ -2489,6 +2503,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Rename one Session after explicitly resuming it.',
         parameters: [{ name: 'request', description: 'Session identity and proposed title.' }],
         returns: 'the accepted title and durable event sequence.',
+      },
+      {
+        signature: '@Remote(\'delete\') async delete(request: SessionDeleteRequest, signal: AbortSignal): Promise<SessionDeleteValue>',
+        description: 'Irreversibly delete one Session. Refusal leaves everything intact; a failure after some removals keeps those removals and reports them in the error\'s `deletedSessionIds`.',
+        parameters: [{ name: 'request', description: 'Session identity to delete.' }, { name: 'signal', description: 'caller cancellation before or during the deletion.' }],
+        returns: 'the removed identities, the requested Session first and its subagent descendants after it.',
       },
       {
         signature: '@Remote(\'fork\') async fork(request: SessionForkRequest): Promise<SessionForkValue>',
@@ -2577,19 +2597,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'sessionFeedback',
-    summary: 'Host Remote through which a product surface records a Session-level remark.',
-    description: 'Host Remote through which a product surface records a Session-level remark.',
-    methods: [
-      {
-        signature: '@Remote(\'record\') record(request: SessionFeedbackRecordRequest): Promise<SessionFeedbackRecordResult>',
-        description: 'Record one remark on a live Session.',
-        parameters: [{ name: 'request', description: 'target Session plus the optional text and category.' }],
-        returns: 'the recorded postcondition, or `session-not-found` when no live Session carries the id.',
-      },
-    ],
-  },
-  {
     key: 'sessionFileReferences',
     summary: 'Host Remote adapter over the composed file-reference provider.',
     description: 'Host Remote adapter over the composed file-reference provider.',
@@ -2618,7 +2625,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
     key: 'sessionPersistence',
     summary: 'Durable append-only session storage addressed through per-session handles.',
-    description: 'Durable append-only session storage addressed through per-session handles.\n\nStorage semantics shared by every backend: events are contiguous from seq 0 and never rewritten; a torn physical tail is never returned to a reader and is truncated by the write path before its first append; reads validate current-format records only and refuse unknown vocabulary fail-closed. `append` persists best-effort; `flush` — per handle or service-wide — is the durability barrier.\n\nVisibility: a created session is observable through `stat`/`list`/`open` in this process from the moment `create` resolves, even while a backend defers physical materialization (a pure optimization); other processes see the session only once it materializes, and a session that never materialized before a crash never existed. `SessionHandle.flush` forces materialization.\n\nFreshness: once an `append` or `flush` resolves, reads started afterwards on this backend instance observe at least that prefix.',
+    description: 'Durable append-only session storage addressed through per-session handles.\n\nStorage semantics shared by every backend: events are contiguous from seq 0 and never rewritten; a torn physical tail is never returned to a reader and is truncated by the write path before its first append; reads validate current-format records only and refuse unknown vocabulary fail-closed. `append` persists best-effort; `flush` — per handle or service-wide — is the durability barrier.\n\nVisibility: a created session is observable through `stat`/`list`/`open` in this process from the moment `create` resolves, even while a backend defers physical materialization (a pure optimization); other processes see the session only once it materializes, and a session that never materialized before a crash never existed. `SessionHandle.flush` forces materialization.\n\nFreshness: once an `append` or `flush` resolves, reads started afterwards on this backend instance observe at least that prefix.\n\nDeletion: SessionPersistence.delete removes a whole session on user request. It is the one operation allowed to remove committed generations; format migrations never remove, overwrite, or move them.',
     methods: [
       {
         signature: 'readonly identity: symbol = Symbol(\'sessionPersistence\')',
@@ -2658,12 +2665,19 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'options', description: 'optional cancellation.' }],
         returns: 'one snapshot per stored session.',
       },
+      {
+        signature: 'abstract delete(id: SessionId, options?: SessionPersistenceDeleteOptions): Promise<void>',
+        description: 'Remove one stored session irreversibly: every stored generation, the ownership marker, and any backend-owned per-session files.\n\nRequires write ownership. The call rejects with SessionAlreadyOwnedError when any handle of this service instance or any other process holds write ownership, including a created session that this process has not materialized, and then removes nothing. After it resolves, `stat(id)` returns `undefined`, `open(id, ...)` rejects with SessionPersistenceNotFoundError, and `list()` omits the session. Read handles opened before the deletion are not kept readable.\n\nThe backend dispatches `session/deleted` after the removal is durable. A listener failure is logged by the backend and does not reject the call; derived state of that listener may stay stale.',
+        parameters: [{ name: 'id', description: 'the stored session to remove.' }, { name: 'options', description: 'optional cancellation, observed before the irreversible removal starts.' }],
+        returns: 'resolution once the removal is durable and the event has been dispatched.',
+        throws: ['{SessionPersistenceNotFoundError} when the session does not exist.', '{SessionAlreadyOwnedError} when write ownership is held.'],
+      },
     ],
   },
   {
     key: 'sessionProjectionCache',
     summary: 'The persisted projection cache service.',
-    description: 'The persisted projection cache service. Opens the `session_projcache` domain at init, checkpoints live sessions on a throttled write-behind (count/interval triggers from Config) plus three mandatory points — session creation, `turn/end`, and session disposal (the live-to-cold moment) — and serves the cached rows for a session header. Every durable write is fail-soft: failures log a warning and the cache self-heals on the next write.',
+    description: 'The persisted projection cache service. Opens the `session_projcache` domain at init, checkpoints live sessions on a throttled write-behind (count/interval triggers from Config) plus three mandatory points — session creation, `turn/end`, and session disposal (the live-to-cold moment) — and serves the cached rows for a session header. A `session/deleted` event removes the session\'s row and drops its write-behind state; that removal is not fail-soft, so a failure rejects the dispatch. Every other durable write is fail-soft: failures log a warning and the cache self-heals on the next write.',
     methods: [
       {
         signature: 'cachedSnapshot( meta: SessionHeader, keys?: ProjectionKeySelection, ): ProjectionSnapshot | undefined',
@@ -4255,6 +4269,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'deletion confirmation.',
       },
       {
+        signature: '@Remote(\'destroy\') destroy(request: WorkspaceDestroyRequest, signal: AbortSignal): Promise<WorkspaceDestroyValue>',
+        description: 'Irreversibly delete one Workspace with its directory and Sessions; the caller must confirm by title.',
+        parameters: [{ name: 'request', description: 'Workspace identity and the exact title the caller confirms.' }, { name: 'signal', description: 'caller lifetime; cancels Session listing and deletion.' }],
+        returns: 'the deletion receipt with the removed Session and directory counts.',
+      },
+      {
         signature: '@Remote(\'insertBefore\') insertBefore(request: WorkspaceInsertBeforeRequest): Promise<WorkspaceOrderValue>',
         description: 'Move one Workspace within the registry display order.',
         parameters: [{ name: 'request', description: 'moved Workspace and optional anchor.' }],
@@ -4339,7 +4359,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
     key: 'workspaceRegistry',
     summary: 'Durable workspace registry.',
-    description: 'Durable workspace registry. Startup waits for `sessionPersistence`, builds one canonical-cwd header index, and completes the one-time history bootstrap before the service becomes active. The persistence dependency is mandatory so an unavailable peer can never be mistaken for an empty history and commit the initialized marker.',
+    description: 'Durable workspace registry. Startup waits for `sessionPersistence`, builds one canonical-cwd header index, and completes the one-time history bootstrap before the service becomes active. The persistence dependency is mandatory so an unavailable peer can never be mistaken for an empty history and commit the initialized marker. A `session/deleted` event forgets the session everywhere the registry holds it: the header index, its account in every workspace, and its archive and pin entries.',
     methods: [
       {
         signature: 'async create(path: string, title?: string): Promise<Workspace>',
@@ -4553,6 +4573,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'summary', description: 'current list row for the Session.' }],
   },
   {
+    name: 'api-session/deleted',
+    mode: 'emit',
+    signature: '\'api-session/deleted\'(sessionId: SessionId): void',
+    summary: 'A stored Session was irreversibly deleted by the Session Controller\'s delete operation.',
+    description: 'A stored Session was irreversibly deleted by the Session Controller\'s delete operation.',
+    parameters: [{ name: 'sessionId', description: 'deleted Session identity.' }],
+  },
+  {
     name: 'api-session/error',
     mode: 'emit',
     signature: '\'api-session/error\'(sessionId: SessionId, message: string): void',
@@ -4721,14 +4749,6 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'change', description: 'domain, table (`\'\'` for global), key (`\'\'` for global), operation discriminant, and on `put` the new snapshot.' }],
   },
   {
-    name: 'feedback/committed',
-    mode: 'parallel',
-    signature: '\'feedback/committed\'(inspection: SessionInspection): void',
-    summary: 'Observe a durable cold feedback mutation without publishing a live Session.',
-    description: 'Observe a durable cold feedback mutation without publishing a live Session. Observers run before write ownership is released and must not await another message-feedback operation for this Session. The payload is borrowed read-only; deep-clone it before transferring ownership (for example, to Session.fromRestore).',
-    parameters: [{ name: 'inspection', description: 'committed canonical prefix, including the feedback as its last event.' }],
-  },
-  {
     name: 'forge/providers-changed',
     mode: 'parallel',
     signature: '\'forge/providers-changed\'(forge: string): void | Promise<void>',
@@ -4823,6 +4843,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     summary: 'A provider\'s advertised models or display metadata changed; consumers reload `listModels()`.',
     description: 'A provider\'s advertised models or display metadata changed; consumers reload `listModels()`.',
     parameters: [{ name: 'provider', description: 'route whose model catalog changed.' }],
+  },
+  {
+    name: 'llm/provider-limits',
+    mode: 'emit',
+    signature: '\'llm/provider-limits\'(limits: ProviderLimits): void',
+    summary: 'A provider response carried usage-window headers.',
+    description: 'A provider response carried usage-window headers. Adapters publish the parsed values after each such response; consumers keep the latest value per `provider`.',
+    parameters: [{ name: 'limits', description: 'usage windows parsed from one provider response.' }],
   },
   {
     name: 'llm/stream',
@@ -4927,6 +4955,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     summary: 'Read-only creation announcement after store entry.',
     description: 'Read-only creation announcement after store entry. New events reject until every synchronous listener has returned successfully. A synchronous throw vetoes creation and rolls back with a paired disposal; detach requested during dispatch is deferred. A returned-promise rejection is logged but cannot retroactively veto this synchronous boundary. Scope-filtered dispatch (`@deepseek-ai/dsh-scope`): agent-scoped listeners receive only sessions entered through that agent\'s context.',
     parameters: [{ name: 'session', description: 'the session just entered and announced.' }],
+  },
+  {
+    name: 'session/deleted',
+    mode: 'parallel',
+    signature: '\'session/deleted\'(event: SessionDeletedEvent): Promise<void> | void',
+    summary: 'Dispatched after a stored session was durably removed by SessionPersistence.delete.',
+    description: 'Dispatched after a stored session was durably removed by SessionPersistence.delete. Listeners drop derived per-session state such as caches, indexes, and accounting.',
+    parameters: [{ name: 'event', description: 'the removed session\'s id.' }],
   },
   {
     name: 'session/disposed',
@@ -5513,6 +5549,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type BrandedNumber<B extends string> = number & {\n    readonly [BRAND]: B;\n};',
   },
   {
+    name: 'BrowserInputEvent',
+    declaration: 'export type BrowserInputEvent = {\n    readonly type: \'mouse\';\n    readonly action: \'move\' | \'down\' | \'up\';\n    readonly x: number;\n    readonly y: number;\n    readonly button?: \'left\' | \'middle\' | \'right\' | \'none\';\n    readonly buttons?: number;\n    readonly clickCount?: number;\n    readonly modifiers?: number;\n} | {\n    readonly type: \'wheel\';\n    readonly x: number;\n    readonly y: number;\n    readonly deltaX: number;\n    readonly deltaY: number;\n    readonly modifiers?: number;\n} | {\n    readonly type: \'key\';\n    readonly action: \'down\' | \'up\';\n    readonly key: string;\n    readonly code: string;\n    readonly keyCode: number;\n    readonly text?: string;\n    readonly modifiers?: number;\n} | {\n    readonly type: \'text\';\n    readonly text: string;\n} | {\n    readonly type: \'navigate\';\n    readonly url: string;\n};',
+  },
+  {
+    name: 'BrowserInputRequest',
+    declaration: 'export interface BrowserInputRequest {\n    readonly targetId: string;\n    readonly event: BrowserInputEvent;\n}',
+  },
+  {
     name: 'BrowserUseProviderName',
     declaration: 'export type BrowserUseProviderName = Branded<\'BrowserUseProviderName\'>;',
   },
@@ -5530,7 +5574,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'BrowserViewState',
-    declaration: 'export interface BrowserViewState {\n    readonly status: \'disabled\' | \'starting\' | \'ready\' | \'restarting\' | \'failed\';\n    readonly tabs: readonly BrowserViewTab[];\n    readonly activeTargetId?: string;\n    readonly viewport: {\n        readonly width: number;\n        readonly height: number;\n    };\n}',
+    declaration: 'export interface BrowserViewState {\n    readonly status: \'disabled\' | \'starting\' | \'ready\' | \'restarting\' | \'failed\';\n    readonly tabs: readonly BrowserViewTab[];\n    readonly activeTargetId?: string;\n    readonly viewport: {\n        readonly width: number;\n        readonly height: number;\n    };\n    readonly userControl: boolean;\n}',
   },
   {
     name: 'BrowserViewTab',
@@ -6055,10 +6099,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'EveryScheduleRecord',
     declaration: 'export interface EveryScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'every\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly everySeconds: number;\n    readonly scheduledAt: string;\n}',
-  },
-  {
-    name: 'FeedbackCategory',
-    declaration: 'export type FeedbackCategory = \'task-result\' | \'instruction-following\' | \'product-interaction\' | \'service-stability\' | \'resource-cost\' | \'security-privacy-permission\' | \'other\';',
   },
   {
     name: 'FiberState',
@@ -6809,82 +6849,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type Message = MessageRoleMap[keyof MessageRoleMap];',
   },
   {
-    name: 'MessageFeedbackDeleteRequest',
-    declaration: 'export interface MessageFeedbackDeleteRequest {\n    readonly sessionId: SessionId;\n    readonly messageId: MessageId;\n    readonly ifVersion: MessageFeedbackVersion;\n}',
-  },
-  {
-    name: 'MessageFeedbackDeleteResult',
-    declaration: 'export type MessageFeedbackDeleteResult = MessageFeedbackSuccess<MessageFeedbackDeleteValue> | MessageFeedbackRejected<MessageFeedbackSessionNotFound | MessageFeedbackVersionConflict>;',
-  },
-  {
-    name: 'MessageFeedbackDeleteValue',
-    declaration: 'export interface MessageFeedbackDeleteValue {\n    readonly absent: true;\n}',
-  },
-  {
-    name: 'MessageFeedbackFailure',
-    declaration: 'export type MessageFeedbackFailure = MessageFeedbackSessionNotFound | MessageFeedbackTargetNotFound | MessageFeedbackVersionConflict | MessageFeedbackNoteBlank | MessageFeedbackNoteTooLarge;',
-  },
-  {
-    name: 'MessageFeedbackItem',
-    declaration: 'export interface MessageFeedbackItem {\n    readonly messageId: MessageId;\n    readonly rating: MessageFeedbackRating;\n    readonly note?: string;\n    readonly category?: FeedbackCategory;\n    readonly version: MessageFeedbackVersion;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
-  },
-  {
-    name: 'MessageFeedbackListRequest',
-    declaration: 'export interface MessageFeedbackListRequest {\n    readonly sessionId: SessionId;\n}',
-  },
-  {
-    name: 'MessageFeedbackListResult',
-    declaration: 'export type MessageFeedbackListResult = MessageFeedbackSuccess<MessageFeedbackListValue> | MessageFeedbackRejected<MessageFeedbackSessionNotFound>;',
-  },
-  {
-    name: 'MessageFeedbackListValue',
-    declaration: 'export interface MessageFeedbackListValue {\n    readonly items: readonly MessageFeedbackItem[];\n}',
-  },
-  {
-    name: 'MessageFeedbackNoteBlank',
-    declaration: 'export interface MessageFeedbackNoteBlank {\n    readonly code: \'note-blank\';\n}',
-  },
-  {
-    name: 'MessageFeedbackNoteTooLarge',
-    declaration: 'export interface MessageFeedbackNoteTooLarge {\n    readonly code: \'note-too-large\';\n    readonly maxBytes: number;\n    readonly actualBytes: number;\n}',
-  },
-  {
-    name: 'MessageFeedbackPutRequest',
-    declaration: 'export interface MessageFeedbackPutRequest {\n    readonly sessionId: SessionId;\n    readonly messageId: MessageId;\n    readonly rating: MessageFeedbackRating;\n    readonly note?: string;\n    readonly category?: FeedbackCategory;\n    readonly ifVersion: MessageFeedbackVersion | null;\n}',
-  },
-  {
-    name: 'MessageFeedbackPutResult',
-    declaration: 'export type MessageFeedbackPutResult = MessageFeedbackSuccess<MessageFeedbackItem> | MessageFeedbackRejected<MessageFeedbackSessionNotFound | MessageFeedbackTargetNotFound | MessageFeedbackVersionConflict | MessageFeedbackNoteBlank | MessageFeedbackNoteTooLarge>;',
-  },
-  {
-    name: 'MessageFeedbackRating',
-    declaration: 'export type MessageFeedbackRating = \'positive\' | \'negative\';',
-  },
-  {
-    name: 'MessageFeedbackRejected',
-    declaration: 'export interface MessageFeedbackRejected<E extends MessageFeedbackFailure> {\n    readonly ok: false;\n    readonly error: E;\n}',
-  },
-  {
-    name: 'MessageFeedbackSessionNotFound',
-    declaration: 'export interface MessageFeedbackSessionNotFound {\n    readonly code: \'session-not-found\';\n    readonly sessionId: SessionId;\n}',
-  },
-  {
-    name: 'MessageFeedbackSuccess',
-    declaration: 'export interface MessageFeedbackSuccess<T> {\n    readonly ok: true;\n    readonly value: T;\n}',
-  },
-  {
-    name: 'MessageFeedbackTargetNotFound',
-    declaration: 'export interface MessageFeedbackTargetNotFound {\n    readonly code: \'target-not-found\';\n    readonly sessionId: SessionId;\n    readonly messageId: MessageId;\n}',
-  },
-  {
-    name: 'MessageFeedbackVersion',
-    declaration: 'export type MessageFeedbackVersion = Branded<\'MessageFeedbackVersion\'>;',
-  },
-  {
-    name: 'MessageFeedbackVersionConflict',
-    declaration: 'export interface MessageFeedbackVersionConflict {\n    readonly code: \'version-conflict\';\n    readonly current: MessageFeedbackItem | null;\n}',
-  },
-  {
     name: 'MessageId',
     declaration: 'export type MessageId = Branded<\'MessageId\'>;',
   },
@@ -7331,6 +7295,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PromptSubmitResult',
     declaration: 'export type PromptSubmitResult = {\n    text: string;\n    context?: readonly string[];\n    drop?: undefined;\n} | {\n    drop: string;\n    text?: undefined;\n    context?: undefined;\n};',
+  },
+  {
+    name: 'ProviderLimits',
+    declaration: 'export interface ProviderLimits {\n    readonly provider: string;\n    readonly windows: readonly ProviderLimitWindow[];\n    readonly updatedAt: number;\n}',
+  },
+  {
+    name: 'ProviderLimitsFrame',
+    declaration: 'export interface ProviderLimitsFrame {\n    readonly type: \'snapshot\' | \'update\';\n    readonly limits: readonly ProviderLimits[];\n}',
+  },
+  {
+    name: 'ProviderLimitWindow',
+    declaration: 'export interface ProviderLimitWindow {\n    readonly id: string;\n    readonly label: string;\n    readonly usedPercent: number;\n    readonly resetsAt: number;\n    readonly status?: \'ok\' | \'warning\' | \'exhausted\';\n}',
   },
   {
     name: 'ProviderRequestId',
@@ -7893,6 +7869,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SessionCreateValue {\n    readonly sessionId: SessionId;\n    readonly agentPreset?: string;\n}',
   },
   {
+    name: 'SessionDeletedEvent',
+    declaration: 'export interface SessionDeletedEvent {\n    readonly sessionId: SessionId;\n}',
+  },
+  {
+    name: 'SessionDeleteRequest',
+    declaration: 'export interface SessionDeleteRequest {\n    readonly sessionId: SessionId;\n}',
+  },
+  {
+    name: 'SessionDeleteValue',
+    declaration: 'export interface SessionDeleteValue {\n    readonly deletedSessionIds: readonly SessionId[];\n}',
+  },
+  {
     name: 'SessionEndInput',
     declaration: 'export interface SessionEndInput {\n    reason: \'clear\' | \'logout\' | \'prompt_input_exit\' | \'resume\' | \'other\';\n    sessionId: string;\n}',
   },
@@ -7977,22 +7965,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SessionEventWindow {\n    session: SessionHeader;\n    inheritedEventCount: SessionLogOffset;\n    target: SessionEvent;\n    events: SessionEvent[];\n    startSeq: SessionSeq;\n    endSeq: SessionSeq;\n}',
   },
   {
-    name: 'SessionFeedbackRecordRequest',
-    declaration: 'export interface SessionFeedbackRecordRequest {\n    readonly sessionId: SessionId;\n    readonly text?: string;\n    readonly category?: FeedbackCategory;\n}',
-  },
-  {
-    name: 'SessionFeedbackRecordResult',
-    declaration: 'export type SessionFeedbackRecordResult = {\n    readonly ok: true;\n    readonly value: SessionFeedbackRecordValue;\n} | {\n    readonly ok: false;\n    readonly error: SessionFeedbackSessionNotFound;\n};',
-  },
-  {
-    name: 'SessionFeedbackRecordValue',
-    declaration: 'export interface SessionFeedbackRecordValue {\n    readonly recorded: true;\n}',
-  },
-  {
-    name: 'SessionFeedbackSessionNotFound',
-    declaration: 'export interface SessionFeedbackSessionNotFound {\n    readonly code: \'session-not-found\';\n    readonly sessionId: SessionId;\n}',
-  },
-  {
     name: 'SessionFollowFrame',
     declaration: 'export type SessionFollowFrame = {\n    readonly type: \'snapshot\';\n    readonly header: SessionWireHeader;\n    readonly cursor: number;\n    readonly records: readonly SessionHistoryRecord[];\n    readonly hasMore: boolean;\n    readonly projections: SessionProjectionBaseline;\n    readonly assistantStream?: SessionAssistantStreamBaseline;\n} | SessionEventEntry | {\n    readonly type: \'assistant-stream\';\n    readonly frame: SessionAssistantStreamFrame;\n};',
   },
@@ -8043,10 +8015,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SessionId',
     declaration: 'export type SessionId = Branded<\'SessionId\'>;',
-  },
-  {
-    name: 'SessionInspection',
-    declaration: 'export interface SessionInspection extends SessionStorageMetadata {\n    readonly events: readonly SessionEvent[];\n}',
   },
   {
     name: 'SessionLineageNode',
@@ -8147,6 +8115,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SessionPersistenceCreateOptions',
     declaration: 'export interface SessionPersistenceCreateOptions {\n    readonly signal?: AbortSignal;\n    readonly inheritedEventCount?: SessionLogOffset;\n}',
+  },
+  {
+    name: 'SessionPersistenceDeleteOptions',
+    declaration: 'export interface SessionPersistenceDeleteOptions {\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'SessionPersistenceListOptions',
@@ -8339,10 +8311,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SessionStateRequest',
     declaration: 'export interface SessionStateRequest {\n    readonly sessionId: SessionId;\n}',
-  },
-  {
-    name: 'SessionStorageMetadata',
-    declaration: 'export interface SessionStorageMetadata {\n    readonly meta: SessionHeader;\n    readonly inheritedEventCount: SessionLogOffset;\n}',
   },
   {
     name: 'SessionSummary',
@@ -9659,6 +9627,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WorkspaceDeleteValue',
     declaration: 'export interface WorkspaceDeleteValue {\n    readonly deleted: true;\n}',
+  },
+  {
+    name: 'WorkspaceDestroyRequest',
+    declaration: 'export interface WorkspaceDestroyRequest {\n    readonly workspaceId: WorkspaceId;\n    readonly confirmTitle: string;\n}',
+  },
+  {
+    name: 'WorkspaceDestroyValue',
+    declaration: 'export interface WorkspaceDestroyValue {\n    readonly deleted: true;\n    readonly removedSessions: number;\n    readonly deferredSessions: 0;\n    readonly removedFiles: boolean;\n}',
   },
   {
     name: 'WorkspaceDiffHunk',

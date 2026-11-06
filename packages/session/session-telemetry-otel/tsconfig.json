@@ -21,12 +21,6 @@
       "path": "../../core/session"
     },
     {
-      "path": "../../feedback/command-feedback"
-    },
-    {
-      "path": "../../feedback/message-feedback"
-    },
-    {
       "path": "../../llm/llm"
     },
     {

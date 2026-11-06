@@ -465,8 +465,7 @@ function normalizeNotifications(notifications: readonly HarnessNotification[], c
   const events = notifications
     .filter(n => n.method === 'session.event')
     .map(n => n.params.event as Record<string, unknown>)
-  const typedIdentities = events.some(event => event.type === 'feedback/message-put'
-    || event.type === 'job/registered' || event.type === 'job/settled')
+  const typedIdentities = events.some(event => event.type === 'job/registered' || event.type === 'job/settled')
   const eventLog = events.map(event => JSON.stringify(event)).join('\n') + '\n'
   const typedLog = typedIdentities
     ? redactSessionSnapshotIds([
@@ -1006,12 +1005,6 @@ async function runScenario(scenario: CorpusScenario): Promise<{
           expect(parentMessages.at(-1)).toMatchObject({
             data: { turn: 2, message: { content: [{ type: 'text', text: 'SUBAGENT_SETTLED_NOTED' }] } },
           })
-        }
-        if (scenario.manifest.environment?.DSH_SNAPSHOT_FEEDBACK === '1') {
-          const feedback = result.events.filter(event => event.type.startsWith('feedback/'))
-          expect(feedback.map(event => event.type)).toEqual([
-            'feedback/record', 'feedback/record', 'feedback/message-put', 'feedback/message-put', 'feedback/message-delete',
-          ])
         }
         await waitForRootEvent(
           subscription,

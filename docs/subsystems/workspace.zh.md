@@ -345,6 +345,14 @@ Host service backing the generated `ctx.remote.workspace` namespace.
 @Remote('delete') delete(request: WorkspaceDeleteRequest): Promise<WorkspaceDeleteValue>
 
 /**
+ * Irreversibly delete one Workspace with its directory and Sessions; the caller must confirm by title.
+ * @param request - Workspace identity and the exact title the caller confirms.
+ * @param signal - caller lifetime; cancels Session listing and deletion.
+ * @returns the deletion receipt with the removed Session and directory counts.
+ */
+@Remote('destroy') destroy(request: WorkspaceDestroyRequest, signal: AbortSignal): Promise<WorkspaceDestroyValue>
+
+/**
  * Move one Workspace within the registry display order.
  * @param request - moved Workspace and optional anchor.
  * @returns the complete resulting Workspace order.
@@ -465,7 +473,7 @@ Source: [`packages/api/workspace-files/src/index.ts`](../../packages/api/workspa
 
 ### `ctx.workspaceRegistry` — `WorkspaceRegistry`
 
-Durable workspace registry. Startup waits for `sessionPersistence`, builds one canonical-cwd header index, and completes the one-time history bootstrap before the service becomes active. The persistence dependency is mandatory so an unavailable peer can never be mistaken for an empty history and commit the initialized marker.
+Durable workspace registry. Startup waits for `sessionPersistence`, builds one canonical-cwd header index, and completes the one-time history bootstrap before the service becomes active. The persistence dependency is mandatory so an unavailable peer can never be mistaken for an empty history and commit the initialized marker. A `session/deleted` event forgets the session everywhere the registry holds it: the header index, its account in every workspace, and its archive and pin entries.
 
 ```ts cordis-catalog
 /**

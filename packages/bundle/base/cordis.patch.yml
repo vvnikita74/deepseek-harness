@@ -204,6 +204,7 @@
 
     # OTel releases a Session-log prefix only after explicit user feedback,
     # regardless of model provider. Ordinary activity never triggers capture.
+    # No feedback events exist any more, so FEEDBACK_ONLY releases nothing.
     # DSH_TELEMETRY_OTLP_URL overrides the production endpoint. A non-empty
     # DSH_TELEMETRY_DISABLED — any value, including '0'/'false' — opts the
     # process out (the launchers patch the row disabled; config cannot disable
@@ -320,9 +321,6 @@
 
     - id: commands
       name: '@deepseek-ai/dsh-commands'
-
-    - id: command-feedback
-      name: '@deepseek-ai/dsh-command-feedback'
 
     - id: goal
       name: '@deepseek-ai/dsh-goal'

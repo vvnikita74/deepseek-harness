@@ -1,3 +1,5 @@
+import type {} from '@deepseek-ai/dsh-typert-protocol'
+
 /** Wire types of the browser-view Remote namespace. Pointer coordinates are CSS pixels in the page viewport. */
 
 /** Watch options; omitting `targetId` follows the active tab. */
@@ -28,6 +30,8 @@ export interface BrowserViewState {
   readonly activeTargetId?: string
   /** Configured viewport in CSS pixels. */
   readonly viewport: { readonly width: number; readonly height: number }
+  /** True while a user holds control and the agent's browser tools wait. */
+  readonly userControl: boolean
 }
 
 /** Element under a pointer, key, or input event. */
@@ -102,3 +106,64 @@ export type BrowserViewEvent =
     /** Title known when the navigation committed; a later `state` event carries the settled title. */
     readonly title: string
   }
+
+/**
+ * Input forwarded to one tab as a user would produce it. Coordinates are CSS pixels of the page viewport;
+ * `modifiers` is a bit mask: Alt 1, Ctrl 2, Meta 4, Shift 8.
+ */
+export type BrowserInputEvent =
+  | {
+    readonly type: 'mouse'
+    /** `move` sends no button; `down` and `up` press or release `button`. */
+    readonly action: 'move' | 'down' | 'up'
+    readonly x: number
+    readonly y: number
+    /** Defaults to `none` for `move` and `left` for `down`/`up`. */
+    readonly button?: 'left' | 'middle' | 'right' | 'none'
+    /** Bit mask of pressed buttons: left 1, right 2, middle 4. Defaults to the bit of `button` on `down`, else 0. */
+    readonly buttons?: number
+    /** Click count, 0 to 3. Defaults to 1 on `down`/`up`, else 0. */
+    readonly clickCount?: number
+    readonly modifiers?: number
+  }
+  | {
+    readonly type: 'wheel'
+    readonly x: number
+    readonly y: number
+    readonly deltaX: number
+    readonly deltaY: number
+    readonly modifiers?: number
+  }
+  | {
+    readonly type: 'key'
+    readonly action: 'down' | 'up'
+    /** DOM `KeyboardEvent.key` value, 1 to 32 characters. */
+    readonly key: string
+    /** DOM `KeyboardEvent.code` value, at most 32 characters. */
+    readonly code: string
+    /** DOM `keyCode`, 0 to 255. */
+    readonly keyCode: number
+    /** Characters the key produces, at most 8; `'\r'` for Enter. Absent or empty for keys that produce none. */
+    readonly text?: string
+    readonly modifiers?: number
+  }
+  /** Committed text, sent as `Input.insertText`; at most 20000 characters. */
+  | { readonly type: 'text'; readonly text: string }
+  /** Load a page in the tab; only `http:` and `https:` URLs are accepted. */
+  | { readonly type: 'navigate'; readonly url: string }
+
+/** One input event addressed to an open tab. */
+export interface BrowserInputRequest {
+  /** DevTools target id of the tab that receives the event. */
+  readonly targetId: string
+  readonly event: BrowserInputEvent
+}
+
+declare module '@deepseek-ai/dsh-typert-protocol' {
+  interface RemoteErrorDetailsMap {
+    /** No open tab has that target id. */
+    'browser-view/tab-not-found': { readonly targetId: string }
+    /** The browser is not running or the tab is not attached yet. */
+    'browser-view/unavailable': {}
+  }
+}

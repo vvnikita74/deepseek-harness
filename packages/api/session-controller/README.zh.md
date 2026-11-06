@@ -49,6 +49,8 @@ Client 列表行和驻留 Session 使用当前 `sessionListMetadata` 投影纠�
 
 Client 列表刷新保留未变化的行对象，并在顺序和值均相同时复用条目数组。每行的 `retainedBy` 包含正数的本地引用来源计数，Host 元数据刷新不能覆盖它们。缓存成员检查使用每次刷新构建的 ID 集合，因此对账成本随当前列表和保留缓存的规模线性增长。 Host 摘要更新会替换运行状态与 Agent 可用性；本地 create/fork 响应只补充已有行缺失的元数据。普通 Session 被移除后，仅在目录仍有子项时保留其投影 store。
 
+`session/delete` 不可逆地删除指定的 Session 及其 subagent 后代。它以 `stopActivity` 归档整组 Session，等待每个 Session 的 `workspace/session-activity` 在 `deleteStopTimeoutMs` 之内返回空结果，然后释放活动 Agent（先释放请求的根，其 subagent 子代随之排空），最后通过 `SessionPersistence.delete` 删除存储的日志，子代先于父级。Remote 方法接收一个 `sessionId` 并返回 `{ deletedSessionIds }`；服务方法 `deleteSessions(sessionIds, signal?)` 接收多个标识，是 Workspace 控制器调用的入口。拒绝删除时，所有 Session 保持不变，删除操作所归档的 Session 会被取消归档，但已被删除的 Session 保持删除。拒绝原因包括：未存储的标识返回 `session/not-found`；停止工作超过超时返回 `session/active`；活动 Agent 无法由其父级卸载返回 `session/agent-busy`；另一所有者持有写者返回 `session/writer-held`，其 details 携带已发生删除的 `deletedSessionIds`。中止返回 `gateway/cancelled`。每个被删除的 Session 在持久化 `session/deleted` 分发之后，恰好发出一次 `api-session/deleted`。
+
 后台 job 的名册行与观测流属于 [`dsh-api-job-controller`](../job-controller/README.zh.md)；控制流只承载投影。
 
 投影读取独立于其值保留加载与失败状态。重连会取消上一连接的读取，并重新加载已请求的投影；实时成员更新通过 control stream 到达。父 Agent 可用性来自 Host 摘要，在收到对应摘要或成功的列表 baseline 前保持未知。地址查找直接解析投影中的子项，不会选择它们或创建 scope。
@@ -103,6 +105,7 @@ GUI 模型选择要求确切提供方／模型对出现在可用目录中；不�
 |---|---:|---|
 | `nativeOpen` | 平台探测 | 是否能把 Session 工作区路径交给原生桌面打开器 |
 | `listWorkSliceMs` | `16` | 列表工作时间片，单位为毫秒，取正整数；在完整条目之间检查 |
+| `deleteStopTimeoutMs` | `15000` | 删除操作等待已停止工作完成的时间，单位为毫秒，取正整数 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-api-session-controller)是所有受支持字段及其 JSDoc 的完整来源。
 
@@ -130,6 +133,8 @@ Blockquote 作为普通 prompt 文本传递，不携带 quote 元数据。本地
 - 文件引用补全使用共享 Agent lookup，因此可能恢复冷 Session；`skills/list` 目录是不激活 Agent 的 skill 元数据读取路径。
 - 受理/运行的展示记忆只存在于客户端内存，页面重载后即丢失。
 - 该记忆不在 tab 之间共享：同一会话可能在一个 tab 中已转正，在另一个 tab 中仍显示为 `New Session`。
+- 其他组件创建的 Agent（未经本控制器）无法被释放：在其所有者卸载之前，`session/delete` 对它们返回 `session/agent-busy`。
+- 客户端在删除期间重新激活某个 Session，可能使删除以 `session/writer-held` 失败；请重试删除。
 
 
 <a id="dev-note"></a>

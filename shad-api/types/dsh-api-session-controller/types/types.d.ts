@@ -8,7 +8,7 @@ import type { SessionId, SessionSeqCursor } from '../../dsh-session/types/types.
 import type { SessionProjectionMap, SessionProjectionSummaryValues } from '../../dsh-session-projection/types/types.js';
 import type { Principal } from '../../dsh-typert-protocol/types/index.js';
 import type { JsonValue } from '../../dsh-util-values/types/index.js';
-import type { WorkspaceId } from '../../dsh-workspace/types/types.js';
+import type { SessionActivity, WorkspaceId } from '../../dsh-workspace/types/types.js';
 declare module '../../dsh-session-projection/types/types.js' {
     interface SessionProjectionMap {
         /** Persisted facts used to summarize a Session without activating it. */
@@ -176,8 +176,15 @@ declare module '../../dsh-typert-protocol/types/index.js' {
             readonly existingCwd?: string;
         };
         'session/projections-unavailable': Record<string, never>;
+        /** Another owner holds the Session writer; `deletedSessionIds` lists the Sessions a deletion removed before it. */
         'session/writer-held': {
             readonly sessionId: SessionId;
+            readonly deletedSessionIds?: readonly SessionId[];
+        };
+        /** Stopping work did not finish before the deletion timeout; `activity` names what still runs. */
+        'session/active': {
+            readonly sessionId: SessionId;
+            readonly activity: readonly SessionActivity[];
         };
         'session/agent-busy': {
             readonly reason: string;
@@ -295,6 +302,14 @@ export interface SessionRenameRequest {
 export interface SessionRenameValue {
     readonly title: string;
     readonly seq: number;
+}
+/** Session deletion request. */
+export interface SessionDeleteRequest {
+    readonly sessionId: SessionId;
+}
+/** Identities removed by one deletion, the requested Session first and its subagent descendants after it. */
+export interface SessionDeleteValue {
+    readonly deletedSessionIds: readonly SessionId[];
 }
 /** Session fork request. */
 export interface SessionForkRequest {
@@ -648,6 +663,12 @@ declare module '../../cordis/types/index.js' {
          * @param sessionId - removed Session identity.
          */
         'api-session/removed'(sessionId: SessionId): void;
+        /**
+         * A stored Session was irreversibly deleted by the Session Controller's delete operation.
+         * @mode emit
+         * @param sessionId - deleted Session identity.
+         */
+        'api-session/deleted'(sessionId: SessionId): void;
         /**
          * One Agent changed running state.
          * @mode emit

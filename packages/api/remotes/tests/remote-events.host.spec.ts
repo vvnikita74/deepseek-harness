@@ -169,6 +169,7 @@ describe('Remote event Host source', () => {
     const cases: readonly (readonly [string, readonly unknown[], string])[] = [
       ['api-session/activity', ['s-activity', 1], 's-activity'],
       ['api-session/added', [{ sessionId: 's-added' }], 's-added'],
+      ['api-session/deleted', ['s-deleted'], 's-deleted'],
       ['api-session/error', ['s-error', 'boom'], 's-error'],
       ['api-session/removed', ['s-removed'], 's-removed'],
       ['api-session/status', ['s-status', true], 's-status'],

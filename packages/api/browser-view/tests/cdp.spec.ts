@@ -27,7 +27,8 @@ async function boot(targets: Array<{ targetId: string; url: string; title: strin
   ctx.provide('subprocess', subprocess as never)
   const config: Config = {
     executablePath: '/fake/chrome', userDataDir: dir, port: browser.port, headless: true, noSandbox: true,
-    viewport: { width: 1280, height: 800 }, screencast: { quality: 60, maxFps: 8, maxWidth: 1280 },
+    viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, userControlIdleMs: 10000,
+    agentToolPrefixes: ['mcp__playwright-mcp__'], screencast: { quality: 60, maxFps: 8, maxWidth: 1280 },
   }
   const view = new BrowserView(ctx, config)
   cleanups.push(async () => { await ctx.fiber.dispose() })
@@ -57,12 +58,16 @@ async function until<T extends { type: string }>(
 
 it('attaches every page target and installs the page observer before reporting ready', async () => {
   const { view, browser, signal } = await boot([{ targetId: 'p1', url: 'about:blank', title: '' }])
-  await browser.waitFor('Runtime.evaluate', command => command.sessionId === 's-p1')
+  await browser.waitFor('Emulation.setDeviceMetricsOverride', command => command.sessionId === 's-p1')
   expect(browser.commands.find(command => command.method === 'Target.attachToTarget')?.params).toEqual({ targetId: 'p1', flatten: true })
   expect(browser.commands.find(command => command.method === 'Target.setDiscoverTargets')?.params).toEqual({ discover: true })
   expect(browser.commands.filter(command => command.sessionId === 's-p1').map(command => command.method)).toEqual([
     'Page.enable', 'Runtime.enable', 'Runtime.addBinding', 'Page.addScriptToEvaluateOnNewDocument', 'Runtime.evaluate',
+    'Emulation.setDeviceMetricsOverride',
   ])
+  expect(browser.commands.find(command => command.method === 'Emulation.setDeviceMetricsOverride')?.params).toEqual({
+    width: 1280, height: 800, deviceScaleFactor: 0, mobile: false,
+  })
   expect(browser.commands.find(command => command.method === 'Runtime.addBinding')?.params).toEqual({ name: '__dshView' })
   expect(browser.commands.find(command => command.method === 'Runtime.evaluate')?.params).toEqual({ expression: POINTER_SCRIPT })
   expect(await view.state(signal)).toEqual({
@@ -70,6 +75,7 @@ it('attaches every page target and installs the page observer before reporting r
     tabs: [{ targetId: 'p1', url: 'about:blank', title: '', active: true }],
     activeTargetId: 'p1',
     viewport: { width: 1280, height: 800 },
+    userControl: false,
   })
 })
 

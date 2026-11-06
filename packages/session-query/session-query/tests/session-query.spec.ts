@@ -163,6 +163,9 @@ class TestPersistence extends SessionPersistence {
     return Promise.resolve({ header: structuredClone(entry.meta), revision: entryRevision(entry) })
   }
 
+  delete(): Promise<void> {
+    return Promise.reject(new Error('delete is not supported by this test backend'))
+  }
   list(options?: { signal?: AbortSignal }): Promise<readonly SessionPersistenceSnapshot[]> {
     TestPersistence.listCalls += 1
     TestPersistence.listSignals.push(options?.signal)

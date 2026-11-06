@@ -30,4 +30,4 @@ live 消息反馈变更通过所属 Session 追加，并等待其持久化检查
 
 反馈随普通日志导出与回放保留，不消耗模型输入 token，也不改变 KV Cache。删除当前条目不等于抹除历史。DeepSeek 请求贡献可能让最终反馈留在本地，直到下次符合条件的请求；OTel 按自身策略独立发送已授权批次。Web 控制器仍消费一元 Remote，不消费反馈日志事件来更新其他标签页。
 
-[消息反馈测试](../../../../packages/feedback/message-feedback/tests/message-feedback.spec.ts)覆盖实质事件、无变更操作、严格版本、fork 隔离与持久化故障。[请求贡献测试](../../../../packages/session/session-log-deepseek/tests)负责后缀接受与重试；[命令测试](../../../../packages/feedback/command-feedback/tests/command-feedback.spec.ts)固定纯确认文本。
+消息反馈测试（随反馈包一并移除）覆盖实质事件、无变更操作、严格版本、fork 隔离与持久化故障。[请求贡献测试](../../../../packages/session/session-log-deepseek/tests)负责后缀接受与重试；命令测试（随反馈包一并移除）曾固定纯确认文本。

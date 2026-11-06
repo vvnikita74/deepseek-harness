@@ -33,7 +33,7 @@ kind: "package-reference"
 
 随附 profile 会挂载该插件，因此默认配置会注册请求字段并追加接受水位；`enabled: false` 会停止贡献。Web 开关可通过当前 profile 覆盖组合包默认值；home patch 和命令行 overlay 保持更高优先级，会拒绝与其冲突的表单写入。
 
-Web **设置 → 通用 → 在使用官方模型 API 时上传 Session Log** 开关通过 Host 配置持久化 `enabled`。进行中的请求保留已准备的载荷。重新开启后继续上传尚未确认的后缀，包括关闭期间记录的事件。OpenTelemetry 反馈上传使用独立设置。
+Web **设置 → 通用 → 在使用官方模型 API 时上传 Session Log** 开关通过 Host 配置持久化 `enabled`。进行中的请求保留已准备的载荷。重新开启后继续上传尚未确认的后缀，包括关闭期间记录的事件。OpenTelemetry 上传使用独立设置。
 
 <a id="request-field"></a>
 ## 请求字段

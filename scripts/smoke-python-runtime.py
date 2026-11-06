@@ -1764,7 +1764,7 @@ def smoke_sdk_snapshot_mode(
         dsh_home = root / "home"
         sessions = dsh_home / "sessions"
         patch = write_advanced_profile_patch(root, "snapshot.patch.yml", sessions, mode)
-        feedback_patch = write_profile_patch(root, "feedback.patch.yml", sessions, [{"insert": [
+        tools_patch = write_profile_patch(root, "snapshot-tools.patch.yml", sessions, [{"insert": [
             {"id": "snapshot-tool", "name": (
                 Path(__file__).resolve().parent / "fixtures/python-snapshot-tool.mjs"
             ).as_uri()},
@@ -1777,11 +1777,6 @@ def smoke_sdk_snapshot_mode(
                 "parentSessionId": SNAPSHOT_SESSION_ID, "prompt": SNAPSHOT_WORKFLOW_CHILD_PROMPT,
                 "direct": {"prompt": SNAPSHOT_DIRECT_CHILD_PROMPT, "callId": "advanced-direct-child"},
             }},
-            {"id": "snapshot-message-feedback", "name": "@deepseek-ai/dsh-message-feedback",
-             "config": {"maxNoteBytes": 1024}},
-            {"id": "snapshot-feedback-producer", "name": (
-                Path(__file__).resolve().parent.parent / "snapshots/sdk/text-turn/feedback-producer.mjs"
-            ).as_uri()},
         ]}])
         creation_patch = write_profile_patch(root, "creation.patch.yml", sessions, [
             {"insert": [{
@@ -1795,7 +1790,7 @@ def smoke_sdk_snapshot_mode(
             cwd=str(root),
             dsh_bin=str(executable),
             dsh_home=str(dsh_home),
-            patches=(str(patch), str(feedback_patch), str(creation_patch)),
+            patches=(str(patch), str(tools_patch), str(creation_patch)),
             env={
                 "DSH_PERMISSION_MODE": "danger-full-access",
                 "DSH_TELEMETRY_DISABLED": "1",
@@ -1835,10 +1830,6 @@ def smoke_sdk_snapshot_mode(
         targets = offloads[0]["data"]["targets"]
         if len(targets) != 1 or targets[0]["imageIndexes"] != [0]:
             raise AssertionError(f"advanced snapshot selected unexpected image occurrences: {targets}")
-        feedback_types = [event.get("type") for event in result.events
-                          if str(event.get("type")).startswith("feedback/")]
-        if feedback_types != ["feedback/record", "feedback/record", "feedback/message-put", "feedback/message-put", "feedback/message-delete"]:
-            raise AssertionError(f"advanced snapshot did not exercise all feedback mutations: {feedback_types}")
         methods = [notification.method for notification in result.notifications]
         expected_children = 2 if mode == "native" else 0
         if methods.count("subagent.started") != expected_children or methods.count("subagent.finished") != expected_children:
@@ -2710,24 +2701,6 @@ def build_snapshot_files(
         if record.get("type") == "command/run" and isinstance(data, dict):
             command_index += 1
             replacements.append((data["commandId"], f"{{{{command:{command_index}}}}}"))
-        if record.get("type") == "command/done" and isinstance(data, dict):
-            anonymous = re.search(r"Anonymous user: ([0-9a-f-]{36})", str(data.get("text")))
-            if anonymous is not None:
-                replacements.append((anonymous.group(1), "{{anonymous-user}}"))
-    feedback_targets = dict.fromkeys(
-        record["data"]["item"]["messageId"]
-        for record in logs[SNAPSHOT_SESSION_ID]
-        if record.get("type") == "feedback/message-put"
-    )
-    for index, message_id in enumerate(feedback_targets, start=1):
-        replacements.append((message_id, f"{{{{message:{index}}}}}"))
-    feedback_versions = dict.fromkeys(
-        record["data"]["item"]["version"]
-        for record in logs[SNAPSHOT_SESSION_ID]
-        if record.get("type") == "feedback/message-put"
-    )
-    for index, version in enumerate(feedback_versions, start=1):
-        replacements.append((version, f"{{{{feedback-version:{index}}}}}"))
     replacements.sort(key=lambda pair: len(pair[0]), reverse=True)
 
     result_value = {
@@ -2938,14 +2911,6 @@ def normalize_snapshot_value(
         )
         if not normalized["id"].startswith("{{message:") and not repair_id:
             normalized["id"] = "{{messageId}}"
-    if normalized.get("type") in ("feedback/message-put", "feedback/message-delete"):
-        data = normalized.get("data")
-        if isinstance(data, dict):
-            item = data.get("item") if normalized["type"] == "feedback/message-put" else data
-            if isinstance(item, dict):
-                if normalized["type"] == "feedback/message-put":
-                    item["createdAt"] = 0
-                    item["updatedAt"] = 0
     scrub_snapshot_header(normalized)
     scrub_snapshot_system_message(normalized)
     return normalized

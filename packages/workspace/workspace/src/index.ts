@@ -165,7 +165,9 @@ const compareHeaders = (left: SessionHeader, right: SessionHeader): number =>
  * one canonical-cwd header index, and completes the one-time history
  * bootstrap before the service becomes active. The persistence dependency is
  * mandatory so an unavailable peer can never be mistaken for an empty
- * history and commit the initialized marker.
+ * history and commit the initialized marker. A `session/deleted` event
+ * forgets the session everywhere the registry holds it: the header index, its
+ * account in every workspace, and its archive and pin entries.
  */
 export class WorkspaceRegistry extends Service {
   static inject = ['storageDomain', 'sessionPersistence']
@@ -217,6 +219,7 @@ export class WorkspaceRegistry extends Service {
     this.validateStoredState(this.requireState())
     this.rebuildEntities()
     this.reportFilteredCandidates()
+    this.ctx.on('session/deleted', event => this.forgetSession(event.sessionId))
   }
 
   /**
@@ -461,6 +464,32 @@ export class WorkspaceRegistry extends Service {
       await this.setState({
         ...state,
         pinnedSessionIds: state.pinnedSessionIds.filter(id => id !== sessionId),
+      })
+    })
+  }
+
+  /**
+   * Drop every registry trace of a deleted session. The header and path index
+   * entries go first; each workspace then detaches the session, which writes
+   * its record only when the session was accounted there. The archive and pin
+   * sets are cleared in one durable state write, and only when one of them
+   * held the session. An unknown id writes nothing.
+   * @param id - The session removed from persistence.
+   * @returns resolution after every durable write.
+   */
+  private forgetSession(id: SessionId): Promise<void> {
+    return this.enqueueOperation(async () => {
+      this.headers.delete(id)
+      this.sessionPaths.delete(id)
+      this.missingSessionPaths.delete(id)
+      this.invalidSessionPaths.delete(id)
+      for (const entity of this.entities.values()) await entity.detachSession(id)
+      const state = this.requireState()
+      if (!state.archivedSessionIds.includes(id) && !state.pinnedSessionIds.includes(id)) return
+      await this.setState({
+        ...state,
+        archivedSessionIds: state.archivedSessionIds.filter(sessionId => sessionId !== id),
+        pinnedSessionIds: state.pinnedSessionIds.filter(sessionId => sessionId !== id),
       })
     })
   }

@@ -128,6 +128,17 @@ Config 更新严格验证发生变化的 provider。初始加载将已存储的�
 
 模型发现会解析各路由的凭据配置。缺少必需凭据时返回空目录；其他解析错误继续抛出。使用原生认证或无需密钥的路由保留其配置的目录。此检查不会探测推理端点。
 
+<a id="provider-usage-limits"></a>
+### 提供方用量限制
+
+对 `anthropic-messages`、`openai-completions` 与 `openai-responses` 路由，适配器检查每次调用的 HTTP 响应，包括失败的响应。它从不读取响应正文。其他 pi-ai API 会拒绝注入的 `fetch`，因此不检查它们的响应。
+
+仅读取以下响应头：`anthropic-ratelimit-unified-5h-*` 与 `anthropic-ratelimit-unified-7d-*`（`-utilization`、`-reset`、`-status`）、`anthropic-ratelimit-unified-status`、`anthropic-ratelimit-unified-reset`，以及标准的 `retry-after`。其他响应头一概忽略，且从不存储。
+
+携带用量窗口响应头的响应会以解析后的 `5h` 与 `7d` 窗口发布 `llm/provider-limits`。利用率由 0 至 1 的小数换算为保留一位小数的百分比。重置时间不晚于响应时间的窗口会被跳过。消费者按路由保留最新值。
+
+错误码为 `RATE_LIMIT`、`QUOTA` 或 `ACCOUNT_QUOTA` 的失败会携带响应的 `status`；当响应给出延迟时，还携带 `providerRetryAfterMs`。延迟依次取自 `retry-after`（秒数或 HTTP 日期）、整体统一重置时间（整体状态为 `rejected` 时），最后取 `rejected` 窗口中最晚的重置时间。延迟从失败的响应起算。
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -267,7 +278,9 @@ pi-ai 事件变成 harness 的推理、文本、工具调用、用量与 finish 
 - **不支持 `GenerateOptions.stop`**——pi-ai 的通用流式选项无法跨提供方保证停止序列行为。
 - **对话更新支持只来自已安装的 pi-ai 目录**——原生系统与工具更新需要目录模型的对话中 compat 标志，profile 不能设置这些标志。手工声明的路由与未标记的模型会以用户角色提醒接收后续系统文本，并在每次请求开头接收完整的当前工具列表。
 - **图片只在 user 与工具结果消息中被接受**——system、developer 或 assistant 历史中的图片在两条转换路径上都会以 `UNSUPPORTED_CONTENT` 失败。
-- **提供方 HTTP 状态不可用**——pi-ai 错误事件不跨提供方暴露稳定 HTTP 状态。
+- **超出受检 API 时提供方 HTTP 状态不可用**——`status` 与 `providerRetryAfterMs` 只出现在 [提供方用量限制](#provider-usage-limits) 中列出的 API 所产生的 `RATE_LIMIT`、`QUOTA` 与 `ACCOUNT_QUOTA` 失败上；其他失败两者都不携带。
+- **用量限制只存在于 Anthropic 订阅（OAuth）账户**——API 密钥与网关路由不发送任何统一响应头，因此从不发布 `llm/provider-limits`。
+- **用量限制值只驻留于进程内存**——不持久化任何值，因此进程重启后，每条路由的最新值会在其下一次响应前丢失。
 - **重试策略由提供方自有，而非 SDK 重试**——pi-ai SDK 重试保持禁用，因此持久 agent（智能体）步骤与 `llm/retry` 事件拥有每个可见尝试，直接 `ctx.llm.stream()` 调用仍是单次尝试。
 - **流式 JSON 工具调用参数避免逐 delta 重复解析**——安装的 pi-ai 带有 [`patches/@earendil-works__pi-ai@1.3.0.patch`](../../../patches/@earendil-works__pi-ai@1.3.0.patch)，它移除了每个流适配器中对整段累计参数 JSON 的逐 delta 重新解析（上游 [earendil-works/pi#9265](https://github.com/earendil-works/pi/issues/9265)）；未打补丁时，数 MB 的参数流会在事件循环上消耗 O(n²) CPU，并使进程内所有会话停滞。完成事件提供解析后的参数；Responses 可能在参数完成和输出项完成时分别解析。本适配器只读取 delta 字符串与最终参数。每次升级 pi-ai 时都要重新应用或撤销该补丁。
 - **Chat Completions 中的 Gemini 工具调用思考签名由补丁保留**——同一补丁把 OpenAI 兼容流式响应里的 `tool_calls[].extra_content.google.thought_signature` 读入工具调用的重放签名，并在同一模型继续时以 `extra_content` 发回（上游 [earendil-works/pi#10157](https://github.com/earendil-works/pi/issues/10157)）；未打补丁时，Gemini 会以 HTTP 400 拒绝工具调用轮次的下一步。OpenRouter 的加密推理详情仍通过 `reasoning_details` 重放。

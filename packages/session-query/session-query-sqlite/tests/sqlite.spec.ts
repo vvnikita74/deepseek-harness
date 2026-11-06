@@ -188,6 +188,10 @@ class TestPersistence extends SessionPersistence {
     })
   }
 
+  async delete(): Promise<void> {
+    throw new Error('delete is not supported by this test backend')
+  }
+
   async list(options?: SessionPersistenceListOptions): Promise<readonly SessionPersistenceSnapshot[]> {
     TestPersistence.listSignals.push(options?.signal)
     TestPersistence.listStarted?.()

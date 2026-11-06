@@ -334,7 +334,11 @@ export class ScheduleService extends TypertRemoteService {
       const stop = ctx.on('workspace/session-stop', async ({ sessionId }) => {
         await this.stopSessionTasks(sessionId)
       })
+      // A deleted Session has no Agent to deliver into, so its rows (any status)
+      // are removed without a user notice.
+      const deleted = ctx.on('session/deleted', ({ sessionId }) => this.forgetSessionTasks(sessionId))
       return () => {
+        deleted()
         stop()
         activity()
       }
@@ -758,6 +762,24 @@ export class ScheduleService extends TypertRemoteService {
       if (active.length === 0) return
       await this.removeRows(active.map(task => task.record.id), 'schedule stop failed', true)
       for (const task of active) this.queueNotification(task, sessionId, 'deleted')
+    })
+  }
+
+  /**
+   * Remove every stored task of any status that delivers to a deleted Session,
+   * in the same queue slot as the other task writes. Unlike {@link stopSessionTasks},
+   * no change notice is queued: the target no longer exists to receive one.
+   * `new` targets are kept because they deliver to a Session created later.
+   * @param sessionId - Session removed from persistence.
+   */
+  private async forgetSessionTasks(sessionId: SessionId): Promise<void> {
+    await this.serialize(async () => {
+      const domain = await this.getDomain()
+      const ids = [...domain.table('tasks').entries()]
+        .map(([, task]) => task)
+        .filter(task => task.target.kind !== 'new' && task.target.sessionId === sessionId)
+        .map(task => task.record.id)
+      await this.removeRows(ids, 'schedule session cleanup failed', true)
     })
   }
 

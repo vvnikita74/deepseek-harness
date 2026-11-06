@@ -12,7 +12,7 @@ import type { SessionId, SessionSeqCursor } from '@deepseek-ai/dsh-session/types
 import type { SessionProjectionMap, SessionProjectionSummaryExcluded, SessionProjectionSummaryValues } from '@deepseek-ai/dsh-session-projection/types'
 import type { Principal } from '@deepseek-ai/dsh-typert-protocol'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
+import type { SessionActivity, WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 
 declare module '@deepseek-ai/dsh-session-projection/types' {
   interface SessionProjectionMap {
@@ -191,7 +191,10 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
       readonly existingCwd?: string
     }
     'session/projections-unavailable': Record<string, never>
-    'session/writer-held': { readonly sessionId: SessionId }
+    /** Another owner holds the Session writer; `deletedSessionIds` lists the Sessions a deletion removed before it. */
+    'session/writer-held': { readonly sessionId: SessionId; readonly deletedSessionIds?: readonly SessionId[] }
+    /** Stopping work did not finish before the deletion timeout; `activity` names what still runs. */
+    'session/active': { readonly sessionId: SessionId; readonly activity: readonly SessionActivity[] }
     'session/agent-busy': { readonly reason: string }
     'session/invalid-time-zone': { readonly value: string }
     'session/workspace-attach-failed': { readonly sessionId: SessionId; readonly workspaceId: string }
@@ -302,6 +305,16 @@ export interface SessionRenameRequest {
 export interface SessionRenameValue {
   readonly title: string
   readonly seq: number
+}
+
+/** Session deletion request. */
+export interface SessionDeleteRequest {
+  readonly sessionId: SessionId
+}
+
+/** Identities removed by one deletion, the requested Session first and its subagent descendants after it. */
+export interface SessionDeleteValue {
+  readonly deletedSessionIds: readonly SessionId[]
 }
 
 /** Session fork request. */
@@ -685,6 +698,12 @@ declare module '@deepseek-ai/cordis' {
      * @param sessionId - removed Session identity.
      */
     'api-session/removed'(sessionId: SessionId): void
+    /**
+     * A stored Session was irreversibly deleted by the Session Controller's delete operation.
+     * @mode emit
+     * @param sessionId - deleted Session identity.
+     */
+    'api-session/deleted'(sessionId: SessionId): void
     /**
      * One Agent changed running state.
      * @mode emit

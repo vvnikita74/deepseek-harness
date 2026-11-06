@@ -37,6 +37,7 @@ const NAMESPACES = [
   ['remoteAccess', 'remote-access', './types'],
   ['jevRouter', 'jev-router', './types'],
   ['browserView', 'browser-view', './types'],
+  ['providerLimits', 'provider-limits', './types'],
   ['gateway', 'gateway', './stream-protocol'],
 ] as const
 

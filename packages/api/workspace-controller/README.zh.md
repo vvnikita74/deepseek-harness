@@ -8,7 +8,7 @@ kind: "package-reference"
 
 ## 概述
 
-`@deepseek-ai/dsh-api-workspace-controller` 拥有 Host 的 `ctx.workspaceController` 服务和生成的 Client `ctx.remote.workspace` namespace。它的 Remote 方法负责创建、重命名、移除和重排 Workspace，在 Workspace 内重排 Session，归档与取消归档 Session，以及跟随完整的 Workspace 投影。当 Client 必须修改或跟随 Workspace 导航时，请通过 API 网关使用它。本包同时拥有 `ctx.directoryPickerController` 与生成的 `ctx.remote.directoryPicker` namespace，因为它承载的选目录 seam 是抽象的，自身从不作为 Loader entry。
+`@deepseek-ai/dsh-api-workspace-controller` 拥有 Host 的 `ctx.workspaceController` 服务和生成的 Client `ctx.remote.workspace` namespace。它的 Remote 方法负责创建、重命名、移除、销毁和重排 Workspace，在 Workspace 内重排 Session，归档与取消归档 Session，以及跟随完整的 Workspace 投影。当 Client 必须修改或跟随 Workspace 导航时，请通过 API 网关使用它。本包同时拥有 `ctx.directoryPickerController` 与生成的 `ctx.remote.directoryPicker` namespace，因为它承载的选目录 seam 是抽象的，自身从不作为 Loader entry。
 
 ## 目录
 
@@ -27,6 +27,29 @@ Host 控制器会串行执行正确性取决于当前注册表状态的变更，
 控制器注入 `remoteAccess`，并经 `typert.resources` 以默认字段 `workspaceId` 登记 `workspace` 资源种类。`workspace/follow` 不读取资源，其调用访问 `global` 资源：principal 不是 owner 的 Peer 只有在其 principal kind 于 [`dsh-api-remote-access`](../remote-access/README.zh.md) 中的 policy 绑定了列出该 action 的 `global` role 时才能订阅它。对这类调用方，baseline、`upsert` 帧与 `order` 中的 id 只保留 `ctx.remoteAccess.allows()` 作为 `workspace` 资源允许的 Workspace，以及它作为 `session` 资源允许的会话 id（各 Workspace 内的会话以及归档与置顶集合），因此 `workspace` role 与 `session` role 也列出同一 action。流记录已下发的 Workspace。某个 Workspace 在下一次变化或新顺序中已不被允许时，流发送一个携带完整过滤后状态的 `replace` 增量帧而不是 `remove`，因为 Client 不会复活已移除的 id；`replace` 是普通增量帧，Client 像开场 baseline 一样整体替换状态，但它不开启新的一代，因此既不报告错误也不重连；访问恢复后，该 Workspace 经普通 `upsert` 重新出现。`remove` 帧表示删除，只发给收到过该 Workspace 的调用方。owner 的帧不过滤。
 
 Client 入口提供 `ClientWorkspaceModel` 和 `createWorkspaceStateStream()`。该模型拥有 Workspace 行、registry 顺序、归档与置顶会话身份、一元变更回显，以及流与一元调用的竞态处理。较新的 Host 行按 `updatedAt` 获胜；已提交的流顺序优先于较旧的一元响应；已经移除的 Workspace id 不会被延迟数据复活。置顶快照仅在会话身份或顺序变化时更新。该包公开与框架无关的快照和订阅，把导航策略与 React 钩子留给 UI owner。`WorkspaceController.archiveSession(sessionId, { stopActivity })` 抛出携带 Host `rpcError` 的 `WorkspaceArchiveError`，界面因此能区分"仍有工作在跑"的拒绝与会话缺失或载体故障，并提议停止这些工作。
+
+<a id="destroy-workspace"></a>
+### 销毁 Workspace
+
+`workspace/destroy` 会不可逆地删除一个 Workspace、它的目录及其 Session。请求为 `{ workspaceId, confirmTitle }`；`confirmTitle` 必须与 Workspace 标题完全相等，不做去空白或大小写折叠，其他值会以 `workspace/confirm-mismatch` 失败且不改变任何内容。返回值为 `{ deleted: true, removedSessions, deferredSessions: 0, removedFiles }`；`deferredSessions` 始终为 0，保留它是为了浏览器契约不变。目录已经不存在时，`removedFiles` 为 false。
+
+该命令作为一个串行操作，按以下顺序执行：
+
+1. 解析 Workspace id；未知 id 以 `workspace/not-found` 失败。
+2. 确认标题。
+3. 把目录解析为规范路径并应用保护规则；目录已不存在时跳过本步骤和文件删除。违反规则时以 `workspace/path-protected` 失败，`details` 中给出规范路径。
+4. 收集要删除的 Session：Workspace 已登记的 Session，加上 `cwd` 位于 Workspace 路径或其规范目录之内的所有已存储 Session。只保留有已存储日志的 Session。
+5. 通过 `ctx.sessionController.deleteSessions` 删除这些 Session。仍有运行中工作的 Session 以 `workspace/session-active` 失败，`details` 中给出其 `sessionId` 与 `activity`；其他失败以 `workspace/destroy-failed` 失败。
+6. 递归删除目录。失败时以 `workspace/destroy-failed` 失败。
+7. 删除登记。失败时以 `workspace/destroy-failed` 失败。
+
+保护规则在第 3 步应用。规范目录在以下情况下被拒绝：非空路径段少于三个；等于或包含 Host 用户的主目录、harness 主目录或 Host 进程的工作目录；或等于或包含另一个已登记 Workspace 的规范路径。每个受保护路径都以 `realpath` 解析，不存在的受保护路径会被跳过。
+
+`workspace/destroy-failed` 错误会报告 `removedFiles` 与 `removedSessions`。失败步骤之前已删除的 Session 保持删除状态，登记保留。重试是安全的：目录已不存在时，重试会跳过文件删除，直接删除登记。第 6 步失败时，目录树可能只被部分删除。
+
+登记路径为符号链接时，只删除该链接；目标目录及其文件保留。保护与 Session 收集使用解析后的目标。harness 主目录下的附件是共享的，不会被删除。
+
+`workspace/delete` 只删除登记，保留目录与 Session；`workspace/destroy` 三者都删除。
 
 <a id="first-use-workspace"></a>
 ### 首次使用工作区
@@ -61,6 +84,7 @@ Documents 查询占用注册表变更队列，因此其他 Workspace 变更（�
 
 - `follow()` 在重连后替换完整投影，不提供持久 cursor 或增量追赶协议。
 - 进程内删除标记只会在 Client 模型生命周期内阻止延迟数据复活已移除的 Workspace。
+- `workspace/destroy` 先检查目录再删除它；若进程在这两步之间重命名该路径，删除可能指向另一个目录。
 
 
 <a id="dev-note"></a>

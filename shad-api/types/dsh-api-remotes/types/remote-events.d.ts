@@ -33,6 +33,12 @@ export declare const API_REMOTE_FORWARDED_EVENTS: readonly [{
         readonly session: (summary: import("../../dsh-api-session-controller/types/types.js").SessionSummary) => SessionId;
     };
 }, {
+    readonly event: "api-session/deleted";
+    readonly mode: "emit";
+    readonly resources: {
+        readonly session: (sessionId: SessionId) => SessionId;
+    };
+}, {
     readonly event: "api-session/error";
     readonly mode: "emit";
     readonly resources: {

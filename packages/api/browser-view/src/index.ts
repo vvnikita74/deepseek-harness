@@ -1,20 +1,23 @@
 /**
  * Shared browser view: one persistent Chromium on a loopback debugging port, its page tabs, and a watch stream of
- * what the active tab shows. Observation only: the plugin contributes no tools or prompt sections.
+ * what the active tab shows. It also forwards user input to a tab and pauses the agent's browser tools while a user
+ * holds control. The plugin contributes no tools or prompt sections.
  * @module @deepseek-ai/dsh-api-browser-view
  */
 
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-subprocess'
-import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import type {} from '@deepseek-ai/dsh-tools'
+import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { setTimeout as delay } from 'node:timers/promises'
 import { CdpClient, type CdpEvent } from './cdp.ts'
 import { launchChromium, type ChromiumOptions, type LaunchedChromium } from './chromium.ts'
 import { WatchFanout } from './fanout.ts'
+import { inputCommand, parseInputRequest } from './input.ts'
 import { parsePagePayload, POINTER_SCRIPT, type PagePayload } from './pointer-script.ts'
 import type {
-  BrowserViewEvent, BrowserViewFrameMetadata, BrowserViewState, BrowserViewTab, BrowserViewWatchRequest,
+  BrowserInputRequest, BrowserViewEvent, BrowserViewFrameMetadata, BrowserViewState, BrowserViewTab, BrowserViewWatchRequest,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -56,13 +59,19 @@ export interface Config {
     /** Height in CSS pixels. */
     height: number
   }
+  /** Device pixel ratio of the browser, 1 to 4. */
+  deviceScaleFactor: number
+  /** How long after the last forwarded input a user keeps control before the agent's browser tools resume. */
+  userControlIdleMs: number
+  /** Name prefixes of the agent's browser tools that wait while a user holds control. */
+  readonly agentToolPrefixes: readonly string[]
   /** Screencast settings for the followed and pinned tabs. */
   screencast: {
     /** JPEG quality, 1 to 100. */
     quality: number
     /** Frame rate limit of each watch. */
     maxFps: number
-    /** Frame width in pixels; height keeps the viewport aspect ratio. */
+    /** Frame width in pixels; height keeps the viewport aspect ratio. Set it to `viewport.width * deviceScaleFactor` for sharper frames. */
     maxWidth: number
   }
 }
@@ -85,6 +94,13 @@ interface Tab {
 interface Watcher {
   readonly pin?: string
   readonly fanout: WatchFanout
+}
+
+/** A user's control of the browser; the agent's browser tools wait while one is held. */
+interface UserControlLease {
+  readonly timer: ReturnType<typeof setTimeout>
+  /** Settles once the lease ends, whether by idle timeout, explicit release, or browser loss. */
+  readonly released: PromiseWithResolvers<void>
 }
 
 /**
@@ -114,13 +130,16 @@ export default class BrowserViewController extends TypertRemoteService {
     headless: z.boolean().default(true),
     noSandbox: z.boolean().default(true),
     viewport: z.object({
-      width: z.number().step(1).min(1).default(1280),
-      height: z.number().step(1).min(1).default(800),
+      width: z.number().step(1).min(1).default(1600),
+      height: z.number().step(1).min(1).default(900),
     }).default({}),
+    deviceScaleFactor: z.number().min(1).max(4).default(1),
+    userControlIdleMs: z.number().step(1).min(1).default(10000),
+    agentToolPrefixes: z.array(z.string().min(1)).default(['mcp__playwright-mcp__']),
     screencast: z.object({
-      quality: z.number().step(1).min(1).max(100).default(60),
-      maxFps: z.number().step(1).min(1).default(8),
-      maxWidth: z.number().step(1).min(1).default(1280),
+      quality: z.number().step(1).min(1).max(100).default(80),
+      maxFps: z.number().step(1).min(1).default(10),
+      maxWidth: z.number().step(1).min(1).default(1600),
     }).default({}),
   })
 
@@ -136,6 +155,7 @@ export default class BrowserViewController extends TypertRemoteService {
   private running: LaunchedChromium | undefined
   private cdp: CdpClient | undefined
   private screencastQueue: Promise<void> = Promise.resolve()
+  private userControl: UserControlLease | undefined
 
   /**
    * @param ctx - Host context carrying the process service and the Remote registry.
@@ -153,12 +173,19 @@ export default class BrowserViewController extends TypertRemoteService {
       headless: config.headless,
       noSandbox: config.noSandbox,
       viewport: config.viewport,
+      deviceScaleFactor: config.deviceScaleFactor,
     }
+    ctx.on('tools/pre-execute', async (exec, next) => {
+      if (!this.config.agentToolPrefixes.some(prefix => exec.name.startsWith(prefix))) return next()
+      await this.untilAgentMayAct(exec.signal)
+      return exec.signal.aborted ? { kind: 'cancel' } : next()
+    })
     ctx.effect(() => {
       const lifecycle = new AbortController()
       this.status = 'starting'
       const supervision = this.supervise(chromium, lifecycle.signal)
       return async () => {
+        this.releaseUserControl()
         lifecycle.abort()
         for (const watcher of this.watchers) watcher.fanout.close()
         await this.closeGracefully()
@@ -177,6 +204,41 @@ export default class BrowserViewController extends TypertRemoteService {
   state(signal: AbortSignal): Promise<BrowserViewState> {
     signal.throwIfAborted()
     return Promise.resolve(this.snapshot())
+  }
+
+  /**
+   * Forward one user input event to a tab and hold user control, which pauses the agent's browser tools until the
+   * idle window passes. Everything before the send runs synchronously so inputs reach Chromium in arrival order.
+   * @param request - target tab and the event to forward.
+   * @param signal - client cancellation, checked before the request is validated.
+   * @returns settles when Chromium acknowledges the command.
+   * @throws `gateway/bad-request` when the event is invalid, `browser-view/tab-not-found` when no open tab has the target id,
+   * `browser-view/unavailable` when the tab is not attached, or the CDP error when Chromium rejects the command.
+   */
+  @Remote('input')
+  async input(request: BrowserInputRequest, signal: AbortSignal): Promise<void> {
+    signal.throwIfAborted()
+    const { targetId, event } = parseInputRequest(request)
+    const tab = this.tabs.get(targetId)
+    if (tab === undefined) throw new RemoteError('browser-view/tab-not-found', `browser-view: no open tab ${targetId}`, { targetId })
+    if (tab.sessionId === undefined || this.cdp === undefined) {
+      throw new RemoteError('browser-view/unavailable', 'browser-view: the tab is not attached', {})
+    }
+    this.holdUserControl()
+    const { method, params } = inputCommand(event)
+    await this.send(method, params, tab.sessionId)
+  }
+
+  /**
+   * Give control back to the agent now instead of after the idle window.
+   * @param signal - client cancellation, checked before the release.
+   * @returns settles immediately.
+   */
+  @Remote('release')
+  release(signal: AbortSignal): Promise<void> {
+    signal.throwIfAborted()
+    this.releaseUserControl()
+    return Promise.resolve()
   }
 
   /**
@@ -287,7 +349,7 @@ export default class BrowserViewController extends TypertRemoteService {
     }
   }
 
-  /** Forget the process and its connection, and close every tab. */
+  /** Forget the process and its connection, close every tab, and end any user control. */
   private dropBrowser(): void {
     const cdp = this.cdp
     this.running = undefined
@@ -295,6 +357,7 @@ export default class BrowserViewController extends TypertRemoteService {
     this.tabs.clear()
     this.activeTargetId = undefined
     for (const watcher of this.watchers) if (watcher.pin !== undefined) watcher.fanout.close()
+    this.releaseUserControl()
     this.publish()
     void cdp?.close()
   }
@@ -421,6 +484,11 @@ export default class BrowserViewController extends TypertRemoteService {
       await this.send('Runtime.addBinding', { name: BINDING }, sessionId)
       await this.send('Page.addScriptToEvaluateOnNewDocument', { source: POINTER_SCRIPT }, sessionId)
       await this.send('Runtime.evaluate', { expression: POINTER_SCRIPT }, sessionId)
+      // `--window-size` sets the outer window; headless Chromium keeps about 143 px of browser UI, so without this
+      // override the page viewport was shorter than configured and frame metadata disagreed with it.
+      await this.send('Emulation.setDeviceMetricsOverride', {
+        width: this.config.viewport.width, height: this.config.viewport.height, deviceScaleFactor: 0, mobile: false,
+      }, sessionId)
       this.refresh()
       await this.captureFor(targetId)
     } catch (error) {
@@ -466,6 +534,41 @@ export default class BrowserViewController extends TypertRemoteService {
     this.publish()
   }
 
+  /** Take or extend user control: the idle window restarts from now, and the first hold publishes the new state. */
+  private holdUserControl(): void {
+    const previous = this.userControl
+    if (previous !== undefined) clearTimeout(previous.timer)
+    const timer = setTimeout(() => { this.releaseUserControl() }, this.config.userControlIdleMs)
+    this.userControl = { timer, released: previous?.released ?? Promise.withResolvers<void>() }
+    if (previous === undefined) this.publish()
+  }
+
+  /** End user control, wake any tool call waiting on it, and publish the new state. */
+  private releaseUserControl(): void {
+    const lease = this.userControl
+    if (lease === undefined) return
+    clearTimeout(lease.timer)
+    this.userControl = undefined
+    lease.released.resolve()
+    this.publish()
+  }
+
+  /**
+   * Wait while a user holds control. Browser tools wait rather than fail, so the agent resumes where it stopped.
+   * @param signal - the tool call's cancellation; an abort ends the wait.
+   * @returns settles when control is released or the call is aborted.
+   */
+  private async untilAgentMayAct(signal: AbortSignal): Promise<void> {
+    while (this.userControl !== undefined && !signal.aborted) {
+      const { released } = this.userControl
+      const aborted = Promise.withResolvers<void>()
+      const onAbort = (): void => { aborted.resolve() }
+      signal.addEventListener('abort', onAbort, { once: true })
+      await Promise.race([released.promise, aborted.promise])
+      signal.removeEventListener('abort', onAbort)
+    }
+  }
+
   /** Send the current snapshot to every watch when it differs from the last one published. */
   private publish(): void {
     const state = this.snapshot()
@@ -490,6 +593,7 @@ export default class BrowserViewController extends TypertRemoteService {
       tabs,
       ...this.activeTargetId === undefined ? {} : { activeTargetId: this.activeTargetId },
       viewport: { width: this.config.viewport.width, height: this.config.viewport.height },
+      userControl: this.userControl !== undefined,
     }
   }
 

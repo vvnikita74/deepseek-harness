@@ -165,9 +165,9 @@ describe('canonicalSessionFixture', () => {
 
   it.each(historicalVersions)('rejects v%i sequence gaps and invalid source-event ranges with source line diagnostics', (version) => {
     const header = JSON.stringify({ type: 'session', version, id: 'historical', createdAt: 1, delegationDepth: 0, ...(version >= 2 ? { isSeeded: false } : {}) })
-    expect(() => canonicalSessionFixture(`${header}\n{"type":"feedback/record","seq":3,"data":{"text":"gap"}}\n`, 'gap.jsonl'))
+    expect(() => canonicalSessionFixture(`${header}\n{"type":"user/message","seq":3,"data":{"role":"user","id":"gap","source":{"kind":"user"},"content":[]},"surfaceOp":"append"}\n`, 'gap.jsonl'))
       .toThrow(/gap\.jsonl: session snapshot line 2:.*seq/)
-    expect(() => canonicalSessionFixture(`${header}\n{"type":"feedback/record","data":{},"sourceEventSeqs":[[2,0]]}\n`, 'range.jsonl'))
+    expect(() => canonicalSessionFixture(`${header}\n{"type":"user/message","data":{},"sourceEventSeqs":[[2,0]]}\n`, 'range.jsonl'))
       .toThrow(/range\.jsonl: session snapshot line 2:/)
   })
 

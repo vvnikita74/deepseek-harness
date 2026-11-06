@@ -80,6 +80,24 @@ Shared browser Remote owner: starts one Chromium, tracks its tabs, and streams t
 @Remote('state') state(signal: AbortSignal): Promise<BrowserViewState>
 
 /**
+ * Forward one user input event to a tab and hold user control, which pauses the agent's browser tools until the
+ * idle window passes. Everything before the send runs synchronously so inputs reach Chromium in arrival order.
+ * @param request - target tab and the event to forward.
+ * @param signal - client cancellation, checked before the request is validated.
+ * @returns settles when Chromium acknowledges the command.
+ * @throws `gateway/bad-request` when the event is invalid, `browser-view/tab-not-found` when no open tab has the target id,
+ * `browser-view/unavailable` when the tab is not attached, or the CDP error when Chromium rejects the command.
+ */
+@Remote('input') async input(request: BrowserInputRequest, signal: AbortSignal): Promise<void>
+
+/**
+ * Give control back to the agent now instead of after the idle window.
+ * @param signal - client cancellation, checked before the release.
+ * @returns settles immediately.
+ */
+@Remote('release') release(signal: AbortSignal): Promise<void>
+
+/**
  * Stream what the browser shows: the state, then frames and discrete events of the followed tab, or of the pinned
  * tab, which ends when that tab closes. Pointer coordinates are CSS pixels of the page viewport.
  * @param request - optional tab to pin; omitted follows the active tab.

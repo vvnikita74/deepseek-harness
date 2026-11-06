@@ -2,7 +2,7 @@
 
 [English](session-telemetry.md) | 中文
 
-[捕获服务](../../packages/session/session-telemetry/README.zh.md) 负责规范事件捕获、脱敏和交接游标。[反馈后端](../../packages/session/session-telemetry-otel/README.zh.md) 授权 Session 前缀，并负责独立队列、逐请求调度及 4,000,000 字节上限。上报数据不会进入模型请求。
+[捕获服务](../../packages/session/session-telemetry/README.zh.md) 负责规范事件捕获、脱敏和交接游标。[OTel 后端](../../packages/session/session-telemetry-otel/README.zh.md) 负责独立队列、逐请求调度及 4,000,000 字节上限。上报数据不会进入模型请求。
 
 源码：[`packages/session/session-telemetry/src/index.ts`](../../packages/session/session-telemetry/src/index.ts)
 
@@ -87,7 +87,7 @@ interface SessionTelemetryCaptureOptions {
 }
 ```
 
-`includeHistory` 允许捕获存储与继承的记录，但本身不授权捕获。[OTel 后端](../../packages/session/session-telemetry-otel/README.zh.md)使用按需捕获，并要求新的自身显式反馈；它只释放截至该反馈的完整前缀，适用于所有提供方。
+`includeHistory` 允许捕获存储与继承的记录，但本身不授权捕获。[OTel 后端](../../packages/session/session-telemetry-otel/README.zh.md)在 `feedback-only` 模式下不捕获任何内容，因为授权捕获的反馈事件已不存在。
 
 ## 后端约定
 

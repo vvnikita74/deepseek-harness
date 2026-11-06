@@ -10,6 +10,7 @@ import { errorChain, ReasoningEffortId, type MessageSource } from '@deepseek-ai/
 import type {} from '@deepseek-ai/dsh-client-file-upload'
 import { canOpenNativePath, nativeFileManager, nativeFileApplications, openNativeFileApplication, openNativeAssociatedPath, revealNativePath } from '@deepseek-ai/dsh-native-command'
 import type { SessionId } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-session-persistence'
 import type {} from '@deepseek-ai/dsh-session-projection-cache'
 import type { SessionObservation } from '@deepseek-ai/dsh-session-query'
 import { Remote, RemoteError, TypertRemoteService, principalOf, type TypertResourceResolveInput } from '@deepseek-ai/dsh-typert-protocol'
@@ -21,6 +22,7 @@ import {
   type ApiSessionAgentResult,
 } from './agent.ts'
 import { SessionCommandController, hasPromptContent } from './commands.ts'
+import { ApiSessionDeletion } from './delete.ts'
 import { SessionControlController } from './control.ts'
 import { HistoryController } from './history/controller.ts'
 import { StateController } from './state/controller.ts'
@@ -42,6 +44,8 @@ import type {
   SessionControlFrame,
   SessionCreateRequest,
   SessionCreateValue,
+  SessionDeleteRequest,
+  SessionDeleteValue,
   SessionFollowFrame,
   SessionFollowRequest,
   SessionForkRequest,
@@ -112,10 +116,12 @@ export interface Config {
   readonly nativeOpen?: boolean
   /** Positive integral milliseconds of list work before yielding between complete rows. */
   readonly listWorkSliceMs?: number
+  /** Positive integral milliseconds the delete operation waits for stopped work to finish. */
+  readonly deleteStopTimeoutMs?: number
 }
 
 /** Deployment policy after schema defaults have been applied. */
-type ResolvedConfig = Config & { readonly listWorkSliceMs: number }
+type ResolvedConfig = Config & { readonly listWorkSliceMs: number; readonly deleteStopTimeoutMs: number }
 
 /** Host integrations replaceable by direct unit tests. */
 export interface SessionControllerInternals {
@@ -152,6 +158,7 @@ export class SessionController extends TypertRemoteService {
   static Config: z<Config, ResolvedConfig> = z.object({
     nativeOpen: z.boolean(),
     listWorkSliceMs: z.natural().min(1).default(16),
+    deleteStopTimeoutMs: z.natural().min(1).default(15_000),
   })
 
   private historyController!: HistoryController
@@ -159,6 +166,7 @@ export class SessionController extends TypertRemoteService {
   private webController!: WebController
 
   private agents!: ApiSessionAgentController
+  private deletions!: ApiSessionDeletion
   private commands!: SessionCommandController
   private controlState!: SessionControlController
   private listState!: ApiSessionList
@@ -168,6 +176,7 @@ export class SessionController extends TypertRemoteService {
   private readonly revealPath: (path: string, signal: AbortSignal) => Promise<void>
   private readonly canOpenPath: () => boolean
   private readonly listWorkSliceMs: number
+  private readonly deleteStopTimeoutMs: number
   private readonly promotions = new Set<Promise<void>>()
 
   /**
@@ -177,7 +186,9 @@ export class SessionController extends TypertRemoteService {
    */
   constructor(ctx: Context, config: Config, internals: SessionControllerInternals = {}) {
     super(ctx, 'sessionController', { namespace: 'session' })
-    this.listWorkSliceMs = SessionController.Config(config).listWorkSliceMs
+    const resolved = SessionController.Config(config)
+    this.listWorkSliceMs = resolved.listWorkSliceMs
+    this.deleteStopTimeoutMs = resolved.deleteStopTimeoutMs
     this.fileApplications = internals.fileApplications ?? nativeFileApplications
     this.openFileApplication = internals.openFileApplication ?? openNativeFileApplication
     this.openPath = internals.openPath ?? openNativeAssociatedPath
@@ -191,6 +202,7 @@ export class SessionController extends TypertRemoteService {
     ctx.typert.resources.register('session', { resolve: resolveSessionResource })
     this.agents = new ApiSessionAgentController(ctx)
     this.agents.initialize()
+    this.deletions = new ApiSessionDeletion(ctx, this.agents, this.deleteStopTimeoutMs)
     this.commands = new SessionCommandController(ctx, this.agents, process.cwd())
     ctx.effect(() => ctx.fileUploads.registerAgentResolver(async (sessionId) => {
       const result = await this.agents.resolveAgent(sessionId)
@@ -223,6 +235,9 @@ export class SessionController extends TypertRemoteService {
     })
     ctx.on('session/disposed', (session) => {
       ctx.emit('api-session/removed', session.id)
+    })
+    ctx.on('session/deleted', ({ sessionId }) => {
+      ctx.emit('api-session/deleted', sessionId)
     })
     const publishAgentAvailability = ({ agent }: { agent: Agent }): undefined => {
       if (ctx.sessions.get(agent.id) === agent.session) {
@@ -303,6 +318,20 @@ export class SessionController extends TypertRemoteService {
   @Remote('create')
   create(request: SessionCreateRequest): Promise<SessionCreateValue> {
     return this.commands.create(request)
+  }
+
+  /**
+   * Irreversibly delete Sessions: stop their work, unload their Agents, remove their subagent
+   * descendants, and remove their stored logs. Callers that pass an identity owned by another Host
+   * component must not rely on this method unloading that component's Agent.
+   * @param sessionIds - Session identities to delete; subagent descendants are added automatically.
+   * @param signal - cancellation observed before each wait and removal.
+   * @returns the identities removed, in deletion order.
+   * @throws RemoteError `session/not-found`, `session/active`, `session/agent-busy`, or `session/writer-held` when refused.
+   *   A refusal leaves the Sessions intact, except Sessions already removed before the failure.
+   */
+  deleteSessions(sessionIds: readonly SessionId[], signal?: AbortSignal): Promise<readonly SessionId[]> {
+    return this.deletions.deleteSessions(sessionIds, signal)
   }
 
   /**
@@ -433,6 +462,18 @@ export class SessionController extends TypertRemoteService {
   @Remote('rename')
   rename(request: SessionRenameRequest): Promise<SessionRenameValue> {
     return this.commands.rename(request)
+  }
+
+  /**
+   * Irreversibly delete one Session. Refusal leaves everything intact; a failure after some removals
+   * keeps those removals and reports them in the error's `deletedSessionIds`.
+   * @param request - Session identity to delete.
+   * @param signal - caller cancellation before or during the deletion.
+   * @returns the removed identities, the requested Session first and its subagent descendants after it.
+   */
+  @Remote('delete')
+  async delete(request: SessionDeleteRequest, signal: AbortSignal): Promise<SessionDeleteValue> {
+    return { deletedSessionIds: await this.deleteSessions([request.sessionId], signal) }
   }
 
   /**

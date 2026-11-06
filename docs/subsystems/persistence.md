@@ -334,6 +334,10 @@ interface SessionPersistenceSnapshot {
 
 The optional `eventCount`/`sizeBytes` fields remain cheap backend observations for consumers that explicitly need them. Session listing does not use either field to open cold logs: it reads headers plus identity-checked projection-cache hints only, so a cache or Session-format upgrade never turns startup into a body scan.
 
+## Whole-Session deletion
+
+`delete(id, options?)` removes every committed generation of one stored Session, and it is the only persistence operation that removes committed data; it serves user-initiated deletion. An unknown session rejects with `SessionPersistenceNotFoundError`, and held write ownership rejects with `SessionAlreadyOwnedError`. After the removal is durable, the backend dispatches `session/deleted` (`SessionDeletedEvent`, carrying the removed `sessionId`); a listener failure is logged and does not fail the call.
+
 ## The backend
 
 The shipped provider implements the abstract `SessionPersistence` contract (`create`/`open`/`stat`/`list`, with per-session `SessionHandle`s carrying `read`/`append`/`flush`/`close` and optional cancellation throughout) and passes the shared persistence contract suite:
@@ -359,6 +363,8 @@ Storage semantics shared by every backend: events are contiguous from seq 0 and 
 Visibility: a created session is observable through `stat`/`list`/`open` in this process from the moment `create` resolves, even while a backend defers physical materialization (a pure optimization); other processes see the session only once it materializes, and a session that never materialized before a crash never existed. `SessionHandle.flush` forces materialization.
 
 Freshness: once an `append` or `flush` resolves, reads started afterwards on this backend instance observe at least that prefix.
+
+Deletion: SessionPersistence.delete removes a whole session on user request. It is the one operation allowed to remove committed generations; format migrations never remove, overwrite, or move them.
 
 ```ts cordis-catalog
 /**
@@ -420,6 +426,29 @@ abstract stat(id: SessionId, options?: SessionPersistenceStatOptions): Promise<S
  * @returns one snapshot per stored session.
  */
 abstract list(options?: SessionPersistenceListOptions): Promise<readonly SessionPersistenceSnapshot[]>
+
+/**
+ * Remove one stored session irreversibly: every stored generation, the
+ * ownership marker, and any backend-owned per-session files.
+ *
+ * Requires write ownership. The call rejects with
+ * {@link SessionAlreadyOwnedError} when any handle of this service instance
+ * or any other process holds write ownership, including a created session
+ * that this process has not materialized, and then removes nothing. After
+ * it resolves, `stat(id)` returns `undefined`, `open(id, ...)` rejects with
+ * {@link SessionPersistenceNotFoundError}, and `list()` omits the session.
+ * Read handles opened before the deletion are not kept readable.
+ *
+ * The backend dispatches `session/deleted` after the removal is durable. A
+ * listener failure is logged by the backend and does not reject the call;
+ * derived state of that listener may stay stale.
+ * @param id - the stored session to remove.
+ * @param options - optional cancellation, observed before the irreversible removal starts.
+ * @returns resolution once the removal is durable and the event has been dispatched.
+ * @throws {SessionPersistenceNotFoundError} when the session does not exist.
+ * @throws {SessionAlreadyOwnedError} when write ownership is held.
+ */
+abstract delete(id: SessionId, options?: SessionPersistenceDeleteOptions): Promise<void>
 ```
 
 Types: [SessionId](core.md)

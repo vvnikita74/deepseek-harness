@@ -128,6 +128,17 @@ Changing `displayName`, `apiKeyEnv`, or `baseURL` without resolving the provider
 
 Model discovery resolves each route’s credential configuration. A missing required credential yields an empty catalog; other resolution errors propagate. Routes with native authentication or no required key retain their configured catalog. This check does not probe the inference endpoint.
 
+<a id="provider-usage-limits"></a>
+### Provider usage limits
+
+The adapter inspects the HTTP response of every call on `anthropic-messages`, `openai-completions`, and `openai-responses` routes, including failed responses. It never reads a response body. The other pi-ai APIs reject an injected `fetch`, so their responses are not inspected.
+
+Only these headers are read: `anthropic-ratelimit-unified-5h-*` and `anthropic-ratelimit-unified-7d-*` (`-utilization`, `-reset`, `-status`), `anthropic-ratelimit-unified-status`, `anthropic-ratelimit-unified-reset`, and the standard `retry-after`. Every other header is ignored and never stored.
+
+A response that carries usage-window headers publishes `llm/provider-limits` with the parsed `5h` and `7d` windows of its route. Utilization is converted from a 0 to 1 fraction to a percentage rounded to one decimal place. A window whose reset is not later than the response time is skipped. Consumers keep the latest value per route.
+
+A failure with code `RATE_LIMIT`, `QUOTA`, or `ACCOUNT_QUOTA` carries the response `status` and, when the response reports a delay, `providerRetryAfterMs`. The delay comes from `retry-after` (seconds or an HTTP-date), otherwise from the overall unified reset when the overall status is `rejected`, otherwise from the latest reset among `rejected` windows. The delay is measured from the failed response.
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -267,7 +278,9 @@ These limits define where the adapter stops and future work begins. They are cur
 - **`GenerateOptions.stop` is unsupported** — pi-ai's common stream options cannot guarantee stop-sequence behavior across providers.
 - **Conversation update support comes only from the installed pi-ai catalog** — native system and tool updates require the catalog model’s mid-conversation compat flags, which profiles cannot set. Hand-declared routes and unflagged models receive later system text as user-role reminders and the complete current tool list at the start of each request.
 - **Images are accepted only in user and tool-result messages** — images in system, developer, or assistant history fail with `UNSUPPORTED_CONTENT` on both conversion paths.
-- **Provider HTTP status is unavailable** — pi-ai error events do not expose a stable HTTP status across providers.
+- **Provider HTTP status is unavailable outside the inspected APIs** — `status` and `providerRetryAfterMs` ride only on `RATE_LIMIT`, `QUOTA`, and `ACCOUNT_QUOTA` failures from the APIs listed under [Provider usage limits](#provider-usage-limits); every other failure carries neither.
+- **Usage limits exist only for Anthropic subscription (OAuth) accounts** — API-key and gateway routes send none of the unified headers, so they never publish `llm/provider-limits`.
+- **Usage-limit values are in memory per process** — no value is persisted, so a restart forgets each route's last value until its next response.
 - **Retry policy is provider-owned, not an SDK retry** — pi-ai SDK retries stay disabled so durable agent steps and `llm/retry` events own every visible attempt, and direct `ctx.llm.stream()` calls remain single-attempt.
 - **Streamed JSON tool-call arguments avoid per-delta reparsing** — the installed pi-ai carries [`patches/@earendil-works__pi-ai@1.3.0.patch`](../../../patches/@earendil-works__pi-ai@1.3.0.patch), which removes the per-delta re-parse of the whole accumulated argument JSON in every stream adapter (upstream [earendil-works/pi#9265](https://github.com/earendil-works/pi/issues/9265)); unpatched, a multi-megabyte argument stream costs O(n²) CPU on the event loop and stalls every session in the process. Completion events supply parsed arguments; Responses may parse at both argument completion and output-item completion. This adapter reads only delta strings and finalized arguments. Re-apply or retire the patch on every pi-ai upgrade.
 - **Gemini tool-call thought signatures are patched into Chat Completions** — the same patch reads `tool_calls[].extra_content.google.thought_signature` from a streamed OpenAI-compatible response into the tool call's replay signature and sends it back as `extra_content` when the same model resumes (upstream [earendil-works/pi#10157](https://github.com/earendil-works/pi/issues/10157)); unpatched, Gemini rejects the next step of a tool-calling turn with HTTP 400. Encrypted OpenRouter reasoning details keep their `reasoning_details` replay.

@@ -1,9 +1,10 @@
 /**
  * OpenTelemetry Service Provider for the DeepSeek Harness telemetry capability.
  *
- * Authorizes feedback-bounded capture and hands complete event strings to the
- * Session-log reporter. This plugin owns resource identity and an outer
- * shutdown deadline; the reporter owns byte-bounded SDK delivery.
+ * Owns the OTel Session-log reporter lifecycle, resource identity, and an outer
+ * shutdown deadline; the reporter owns byte-bounded SDK delivery. No Session
+ * event authorizes capture now that feedback events are gone, so no record is
+ * handed to the reporter.
  *
  * @module @deepseek-ai/dsh-session-telemetry-otel
  */
@@ -11,21 +12,14 @@
 import { createRequire } from 'node:module'
 import z from '@deepseek-ai/schemastery'
 import type { Context } from '@deepseek-ai/cordis'
-import type {} from '@deepseek-ai/dsh-command-feedback'
-import type {} from '@deepseek-ai/dsh-message-feedback'
-import { Session, type SessionEvent } from '@deepseek-ai/dsh-session'
 import {
   SessionTelemetryBackend,
-  SessionTelemetryCoordinator,
-  type SessionTelemetrySink,
   type SessionTelemetryRecord,
-  type SessionTelemetrySeverity,
   type SessionTelemetrySharingStatus,
 } from '@deepseek-ai/dsh-session-telemetry'
 import { APP_IDENTITY } from '@deepseek-ai/dsh-llm'
 import { getOrCreateAnonymousUserId } from '@deepseek-ai/dsh-anonymous-user-id'
 import type { LogExporterOptions, SessionLogProcessorOptions, SessionLogReporter } from '@deepseek-ai/dsh-otel'
-import { SeverityNumber } from '@opentelemetry/api-logs'
 
 /** Session-sharing policy selected by {@link Config.mode}. */
 export enum SessionTelemetryMode {
@@ -35,20 +29,6 @@ export enum SessionTelemetryMode {
 
 /** Default session-sharing policy for schema and direct construction. */
 export const DEFAULT_TELEMETRY_MODE = SessionTelemetryMode.FEEDBACK_ONLY
-
-const DISABLED_FEEDBACK_WARNING = 'OpenTelemetry session upload is DISABLED; this feedback is not uploaded through OpenTelemetry'
-const NON_CANONICAL_EVENT_WARNING = 'session telemetry ignored an event absent from the canonical session log'
-
-/** Only this Session's explicit feedback authorizes replay; fork seeds do not. */
-function isFeedback(session: Session, event: SessionEvent): boolean {
-  if (event.seq < session.inheritedEventCount) return false
-  switch (event.type) {
-    case 'feedback/record': return true
-    case 'feedback/message-put':
-    case 'feedback/message-delete': return event.data.sessionId === session.id
-    default: return false
-  }
-}
 
 /** Resolve the default and reject unknown runtime values before transport setup. */
 function resolveMode(mode: SessionTelemetryMode | undefined): SessionTelemetryMode {
@@ -83,7 +63,7 @@ function sharingStatusFor(mode: SessionTelemetryMode): SessionTelemetrySharingSt
  * and shutdown deadline at plugin load; `DISABLED` reads neither.
  */
 export interface Config {
-  /** Defaults to `FEEDBACK_ONLY`: capture session history only when feedback is explicitly submitted. */
+  /** Defaults to `FEEDBACK_ONLY`, which captures nothing: feedback events no longer exist. */
   mode?: SessionTelemetryMode
   /**
    * Explicit SDK HTTP transport settings, including optional routing headers.
@@ -128,18 +108,10 @@ export const DEFAULT_SHUTDOWN_TIMEOUT_MILLIS = 3_000
 // protocol limit, not a deployment default.
 const MAX_TIMER_DELAY_MILLIS = 2_147_483_647
 
-/** Severity mapping from the Service Definition's three-level vocabulary to OTel severity numbers. */
-const SEVERITY: Record<SessionTelemetrySeverity, SeverityNumber> = {
-  info: SeverityNumber.INFO,
-  warn: SeverityNumber.WARN,
-  error: SeverityNumber.ERROR,
-}
-
 /**
  * The backend plugin — the only entry a deployment loads. It always registers
- * the `sessionTelemetry` service (duplicate load throws). `FEEDBACK_ONLY` wires the SDK
- * pipeline and on-demand {@link SessionTelemetryCoordinator}; `DISABLED` constructs no
- * SDK state and listens only to warn when recorded feedback stays local.
+ * the `sessionTelemetry` service (duplicate load throws). `FEEDBACK_ONLY` builds the
+ * SDK reporter but nothing feeds it; `DISABLED` constructs no SDK state.
  */
 export class OpenTelemetrySessionBackend extends SessionTelemetryBackend {
   static inject = ['sessions', 'otel']
@@ -156,9 +128,6 @@ export class OpenTelemetrySessionBackend extends SessionTelemetryBackend {
     if (mode === SessionTelemetryMode.DISABLED) {
       this.provider = undefined
       this.shutdownTimeoutMillis = DEFAULT_SHUTDOWN_TIMEOUT_MILLIS
-      ctx.on('session/event', (session, event) => {
-        if (isFeedback(session, event)) ctx.logger.warn(DISABLED_FEEDBACK_WARNING)
-      })
       return
     }
 
@@ -200,52 +169,10 @@ export class OpenTelemetrySessionBackend extends SessionTelemetryBackend {
       onFailure: (message, error) => { ctx.logger.warn(message, error) },
     })
     this.provider = reporter
-    const enqueue: SessionTelemetrySink['emit'] = (record) => {
-      if (record.sourceEvent === undefined) {
-        ctx.logger.warn('Session log record withheld: redaction removed sourceEvent')
-        return
-      }
-      reporter.reportSessionLog({
-        sessionId: record.sourceEvent.sessionId,
-        event: { ...record.sourceEvent.envelope, data: record.body },
-        severityNumber: SEVERITY[record.severity],
-        attributes: record.attributes,
-      })
-    }
-    const backend: SessionTelemetrySink = {
-      emit: enqueue,
-      shutdown: () => this.shutdown(),
-    }
-    const coordinator = new SessionTelemetryCoordinator(ctx, backend, {
-      capture: 'on-demand',
-      includeHistory: true,
-    })
-    ctx.on('session/event', (session, event) => {
-      if (!isFeedback(session, event)) return
-      // Only the canonical appended event authorizes this exact prefix.
-      // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
-      if (session.eventAt(event.seq) !== event) {
-        ctx.logger.warn(NON_CANONICAL_EVENT_WARNING)
-        return
-      }
-      coordinator.captureSession(session, event.seq)
-    })
-    ctx.on('feedback/committed', (inspection) => {
-      const snapshot = structuredClone(inspection)
-      const committed = snapshot.events.at(-1)
-      if (committed === undefined) return
-      const session = Session.fromRestore(
-        snapshot.meta.id, snapshot.events, snapshot.meta, snapshot.inheritedEventCount,
-        'detached', ctx.sessions.messageProjections,
-      )
-      // fromRestore appends a lifecycle marker that this submission did not commit.
-      if (isFeedback(session, committed)) coordinator.captureSession(session, committed.seq)
-    })
   }
 
   /**
-   * Drop direct records. Only a new canonical feedback submission can authorize
-   * capture through the private coordinator sink, for every provider.
+   * Drop direct records. No Session event authorizes capture, so none is uploaded.
    * @param _record - the direct record, never uploaded.
    */
   emit(_record: SessionTelemetryRecord): void {}

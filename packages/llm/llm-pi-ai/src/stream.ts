@@ -9,11 +9,23 @@
  */
 
 import { brandString } from '@deepseek-ai/dsh-brand'
-import { CONTEXT_WINDOW_EXCEEDED_CODE, EMPTY_RESPONSE_CODE, isContextWindowExceededError, isQuotaExceededError, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
+import {
+  ACCOUNT_QUOTA_EXCEEDED_CODE,
+  CONTEXT_WINDOW_EXCEEDED_CODE,
+  EMPTY_RESPONSE_CODE,
+  isContextWindowExceededError,
+  isQuotaExceededError,
+  LlmError,
+  QUOTA_EXCEEDED_CODE,
+} from '@deepseek-ai/dsh-llm'
 import type { FinishReason, StreamChunk, TokenUsage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import { isContextOverflow } from '@earendil-works/pi-ai/utils/overflow'
 import type { AssistantMessage, AssistantMessageEvent, Usage as PiUsage } from '@earendil-works/pi-ai'
+import type { ProviderFailureFacts } from './limits.ts'
 import { toPiReplayState } from './replay.ts'
+
+/** Failure codes that carry the provider's status and retry delay into the failure. */
+const PROVIDER_FACT_CODES: ReadonlySet<string> = new Set(['RATE_LIMIT', QUOTA_EXCEEDED_CODE, ACCOUNT_QUOTA_EXCEEDED_CODE])
 
 /**
  * Map pi-ai usage (reasoning folded into output by pi-ai).
@@ -128,14 +140,33 @@ export function mapStopReason(message: AssistantMessage, contextWindow?: number)
 }
 
 /**
+ * Merge the last failed provider response's status and retry delay into an
+ * error finish whose code is rate-limit or quota. Other finishes pass unchanged.
+ * @param reason - the finish reason mapped from a terminal pi-ai event.
+ * @param failureFacts - reads the probe's last response; undefined when no probe is installed.
+ * @returns the reason with `status` and `providerRetryAfterMs` merged into its failure when applicable.
+ */
+function withProviderFacts(
+  reason: FinishReason,
+  failureFacts: (() => ProviderFailureFacts | undefined) | undefined,
+): FinishReason {
+  if (reason.kind !== 'error' || !PROVIDER_FACT_CODES.has(reason.failure.code)) return reason
+  const facts = failureFacts?.()
+  return facts === undefined ? reason : { ...reason, failure: { ...reason.failure, ...facts } }
+}
+
+/**
  * Translate the pi-ai event stream into StreamChunks. pi-ai never throws
  * mid-stream — failures arrive as `error` events, which become error/aborted
  * `finish` chunks (the harness protocol's other error-delivery style).
+ * When the caller installed a response probe, error finishes with a rate-limit
+ * or quota code also carry that probe's `status` and `providerRetryAfterMs`.
  * @param events - one assistant turn's pi-ai event stream.
  * @param contextWindow - resolved catalog capacity for usage-based overflow detection.
  * @param callerSignal - caller cancellation state; an aborted caller makes any
  *   in-band terminal error an aborted finish.
  * @param requestedModel - request model identity recorded for durable replay.
+ * @param failureFacts - reads the last provider response's failure facts at each error finish.
  * @returns the harness chunks, ending with `usage` then `finish`; throws
  *   `LlmError` (`STREAM_CLOSED`) if the source ends without a terminal event, or
  *   `MALFORMED_RESPONSE` when completed tool arguments are invalid. Length-limited
@@ -146,6 +177,7 @@ export async function* toStreamChunks(
   contextWindow?: number,
   callerSignal?: AbortSignal,
   requestedModel?: string,
+  failureFacts?: () => ProviderFailureFacts | undefined,
 ): AsyncGenerator<StreamChunk> {
   // pi-ai contentIndex ↔ our block index map 1:1 (both count blocks from 0
   // in stream order), but we track ids per index for tool calls.
@@ -219,7 +251,7 @@ export async function* toStreamChunks(
         }
         yield {
           type: 'finish',
-          reason: mapStopReason(event.message, contextWindow),
+          reason: withProviderFacts(mapStopReason(event.message, contextWindow), failureFacts),
           replayState: toPiReplayState(event.message, requestedModel),
         }
         return
@@ -229,10 +261,10 @@ export async function* toStreamChunks(
         yield { type: 'usage', usage: mapUsage(event.error.usage) }
         yield {
           type: 'finish',
-          reason: mapStopReason(
+          reason: withProviderFacts(mapStopReason(
             callerSignal?.aborted ? { ...event.error, stopReason: 'aborted' } : event.error,
             contextWindow,
-          ),
+          ), failureFacts),
         }
         return
       // no default: AssistantMessageEvent is pi-ai's closed union; a new

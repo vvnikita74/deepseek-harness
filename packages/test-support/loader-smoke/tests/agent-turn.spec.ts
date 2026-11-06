@@ -120,7 +120,7 @@ describe('runFixtureTurn', () => {
         },
       })
       harness.emit(harness.session, {
-        type: 'feedback/record', seq: 4, time: 4, data: { text: 'interleaved' },
+        type: 'agent/inbox/spliced', seq: 4, time: 4, data: { inserted: [] },
       })
       harness.emit(harness.session, {
         type: 'assistant/message', seq: 5, time: 5,

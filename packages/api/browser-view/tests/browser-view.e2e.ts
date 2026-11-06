@@ -11,7 +11,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { LocalSubprocessRuntime } from '@deepseek-ai/dsh-subprocess-local'
 import BrowserView, { type Config } from '../src/index.ts'
 import { CdpClient } from '../src/cdp.ts'
-import type { BrowserViewEvent } from '../src/types.ts'
+import type { BrowserInputEvent, BrowserViewEvent } from '../src/types.ts'
 import { freePort } from './fake-browser.ts'
 
 const executablePath = process.env.DSH_BROWSER_EXECUTABLE
@@ -32,7 +32,8 @@ async function launch(userDataDir: string, port: number) {
   new LocalSubprocessRuntime(ctx)
   const config: Config = {
     executablePath: executablePath ?? '', userDataDir, port, headless: true, noSandbox: true,
-    viewport: { width: 1280, height: 800 }, screencast: { quality: 60, maxFps: 8, maxWidth: 1280 },
+    viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, userControlIdleMs: 10000,
+    agentToolPrefixes: ['mcp__playwright-mcp__'], screencast: { quality: 60, maxFps: 8, maxWidth: 1280 },
   }
   let view!: BrowserView
   const fork = ctx.plugin({ name: 'bv-probe', apply: (child: Context) => { view = new BrowserView(child, config) } })
@@ -101,18 +102,62 @@ async function load(browser: CdpClient, sessionId: string, url: string): Promise
 }
 
 /**
- * Serve one static page for the persistence check.
+ * Serve one static HTML document on a loopback port until the test ends.
+ * @param html - document served for every path.
  * @returns the server, its origin, and the page URL.
  */
-async function startPageServer(): Promise<{ server: Server; url: string }> {
+async function startPageServer(html: string): Promise<{ server: Server; url: string }> {
   const server = createServer((_request, response) => {
     response.setHeader('content-type', 'text/html')
-    response.end('<!doctype html><title>kept</title><body>kept</body>')
+    response.end(html)
   })
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+  cleanups.push(async () => { await new Promise<void>((resolve) => { server.close(() => { resolve() }) }) })
   const address = server.address()
   if (address === null || typeof address === 'string') throw new Error('no loopback port')
   return { server, url: `http://127.0.0.1:${address.port}/` }
+}
+
+/**
+ * Evaluate an expression in a page session.
+ * @param browser - browser-level CDP client.
+ * @param sessionId - page session.
+ * @param expression - script to run.
+ * @returns the value of the expression.
+ */
+async function evaluate(browser: CdpClient, sessionId: string, expression: string): Promise<unknown> {
+  const { result } = await browser.send<{ result: { value: unknown } }>('Runtime.evaluate', { expression, returnByValue: true }, sessionId)
+  return result.value
+}
+
+/**
+ * Read the pixel size from the start-of-frame segment of a JPEG.
+ * @param base64 - JPEG bytes in base64.
+ * @returns width and height in pixels.
+ */
+function jpegSize(base64: string): { width: number; height: number } {
+  const bytes = Buffer.from(base64, 'base64')
+  let offset = 2
+  while (offset + 9 < bytes.length) {
+    const marker = bytes.readUInt16BE(offset)
+    if (marker === 0xffc0 || marker === 0xffc2) return { height: bytes.readUInt16BE(offset + 5), width: bytes.readUInt16BE(offset + 7) }
+    offset += 2 + bytes.readUInt16BE(offset + 2)
+  }
+  throw new Error('no JPEG start-of-frame segment')
+}
+
+/**
+ * @param key - one printable character.
+ * @param modifiers - modifier bit mask, 0 for none.
+ * @returns the key-down and key-up events that press the character.
+ */
+function keyPress(key: string, modifiers = 0): BrowserInputEvent[] {
+  const keyCode = key.toUpperCase().charCodeAt(0)
+  const code = `Key${key.toUpperCase()}`
+  return [
+    { type: 'key', action: 'down', key, code, keyCode, modifiers, ...modifiers === 0 ? { text: key } : {} },
+    { type: 'key', action: 'up', key, code, keyCode, modifiers },
+  ]
 }
 
 describe.skipIf(executablePath === undefined)('shared browser over real Chromium', () => {
@@ -132,12 +177,50 @@ describe.skipIf(executablePath === undefined)('shared browser over real Chromium
     await watch.return?.(undefined)
   }, 120_000)
 
+  it('shows the configured viewport, forwards clicks, typing and navigation to the tab', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'dsh-browser-view-input-'))
+    cleanups.push(async () => { await rm(dir, { recursive: true, force: true }) })
+    const run = await launch(dir, await freePort())
+    cleanups.push(run.stop)
+    const form = await startPageServer(
+      '<!doctype html><title>form</title><body style="margin:0">'
+      + '<button id="go" style="position:absolute;left:100px;top:100px;width:200px;height:100px" '
+      + 'onclick="window.clicks=(window.clicks||0)+1">go</button>'
+      + '<input id="field" style="position:absolute;left:100px;top:300px;width:300px;height:40px">'
+      + '</body>',
+    )
+    const other = await startPageServer('<!doctype html><title>other</title><body>other</body>')
+    const page = await openPage(run.browser, 'about:blank')
+    await load(run.browser, page.sessionId, form.url)
+    const watch = run.view.watch({}, run.signal)[Symbol.asyncIterator]()
+    const frame = await until(watch, item => item.type === 'frame' && item.targetId === page.targetId)
+    expect(frame).toMatchObject({ type: 'frame', metadata: { deviceWidth: 1280, deviceHeight: 800 } })
+    // The override is per DevTools session, so only the controller's session shows the configured height; its JPEG carries that.
+    expect(jpegSize(frame.type === 'frame' ? frame.jpegBase64 : '')).toEqual({ width: 1280, height: 800 })
+
+    const send = (event: BrowserInputEvent): Promise<void> => run.view.input({ targetId: page.targetId, event }, run.signal)
+    await send({ type: 'mouse', action: 'down', x: 200, y: 150 })
+    await send({ type: 'mouse', action: 'up', x: 200, y: 150 })
+    await vi.waitFor(async () => { expect(await evaluate(run.browser, page.sessionId, 'window.clicks')).toBe(1) })
+
+    await send({ type: 'mouse', action: 'down', x: 250, y: 320 })
+    await send({ type: 'mouse', action: 'up', x: 250, y: 320 })
+    for (const event of [...keyPress('a'), ...keyPress('b'), ...keyPress('a', 2), ...keyPress('X')]) await send(event)
+    expect(await evaluate(run.browser, page.sessionId, "document.getElementById('field').value")).toBe('X')
+
+    await send({ type: 'navigate', url: other.url })
+    await vi.waitFor(async () => {
+      expect((await run.view.state(run.signal)).tabs.find(tab => tab.targetId === page.targetId)?.url).toBe(other.url)
+    }, { timeout: 10_000 })
+    await expect(send({ type: 'navigate', url: 'file:///etc/passwd' })).rejects.toMatchObject({ code: 'gateway/bad-request' })
+    await watch.return?.(undefined)
+  }, 120_000)
+
   it('keeps cookies and localStorage in the profile across a relaunch', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'dsh-browser-view-profile-'))
     cleanups.push(async () => { await rm(dir, { recursive: true, force: true }) })
     const port = await freePort()
-    const { server, url } = await startPageServer()
-    cleanups.push(async () => { await new Promise<void>((resolve) => { server.close(() => { resolve() }) }) })
+    const { url } = await startPageServer('<!doctype html><title>kept</title><body>kept</body>')
 
     const first = await launch(dir, port)
     const page = await openPage(first.browser, 'about:blank')

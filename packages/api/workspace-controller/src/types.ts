@@ -50,6 +50,15 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
       readonly sessionId: SessionId
       readonly beforeSessionId?: SessionId
     }
+    /** The confirmation title does not equal the Workspace title; nothing was changed. */
+    'workspace/confirm-mismatch': Record<string, never>
+    /** The Workspace directory is a protected location; `path` is its canonical target, which was not removed. */
+    'workspace/path-protected': { readonly path: string }
+    /**
+     * Workspace destruction stopped after some removals. `removedFiles` and
+     * `removedSessions` report what was already removed; the registration remains.
+     */
+    'workspace/destroy-failed': { readonly removedFiles: boolean; readonly removedSessions: number }
     /** The verb needs an interaction the composed backend does not serve. */
     'directory-picker/unavailable': { readonly capability: string }
     /** The target is not fully qualified, or the backend cannot list it. */
@@ -91,6 +100,24 @@ export interface WorkspaceDeleteRequest {
 /** Receipt after one Workspace registration is deleted. */
 export interface WorkspaceDeleteValue {
   readonly deleted: true
+}
+
+/** Irreversible Workspace destruction; the caller confirms by repeating the title. */
+export interface WorkspaceDestroyRequest {
+  readonly workspaceId: WorkspaceId
+  /** Exact current Workspace title; compared without trimming or case folding. */
+  readonly confirmTitle: string
+}
+
+/** Receipt after one Workspace, its directory, and its Sessions are removed. */
+export interface WorkspaceDestroyValue {
+  readonly deleted: true
+  /** Sessions removed by this call. */
+  readonly removedSessions: number
+  /** Always 0; kept so the browser client's existing contract does not change. */
+  readonly deferredSessions: 0
+  /** True when this call removed the directory; false when it was already absent. */
+  readonly removedFiles: boolean
 }
 
 /** DOM-insertBefore-like Workspace order mutation. */

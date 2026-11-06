@@ -1187,6 +1187,31 @@ Types: [FileAttachmentRef](attachment.md) · [ImageAttachmentRef](attachment.md)
 
 Source: [`packages/llm/llm/src/index.ts`](../../packages/llm/llm/src/index.ts)
 
+<a id="ctxproviderlimitscontroller--providerlimitscontroller"></a>
+
+### `ctx.providerLimitsController` — `ProviderLimitsController`
+
+Serves the last published usage windows of each provider route to browser clients over Typert Remote.
+
+```ts cordis-catalog
+/**
+ * Current limits of every reported provider route.
+ * @returns the reported providers; empty when no producer reported windows.
+ */
+@Remote('get') get(): ProviderLimits[]
+
+/**
+ * Stream the current limits: a snapshot first, then the full list after each change. A reader that pulls slowly
+ * receives the latest list once, not every intermediate change. The stream ends when `signal` aborts or the plugin
+ * is disposed.
+ * @param signal - stream cancellation.
+ * @returns the frames of one stream.
+ */
+@Remote({ mode: 'stream' }) async * follow(signal: AbortSignal): AsyncIterable<ProviderLimitsFrame>
+```
+
+Source: [`packages/api/provider-limits/src/index.ts`](../../packages/api/provider-limits/src/index.ts)
+
 <a id="llm-events"></a>
 
 ### `llm/*` events
@@ -1225,6 +1250,25 @@ A provider's advertised models or display metadata changed; consumers reload `li
  * @param provider - route whose model catalog changed.
  */
 'llm/models-updated'(provider: string): void
+```
+
+Source: [`packages/llm/llm/src/types.ts`](../../packages/llm/llm/src/types.ts)
+
+<a id="llmprovider-limits--emit"></a>
+
+#### `llm/provider-limits` — emit
+
+A provider response carried usage-window headers. Adapters publish the parsed values after each such response; consumers keep the latest value per `provider`.
+
+```ts cordis-catalog
+/**
+ * A provider response carried usage-window headers. Adapters publish the
+ * parsed values after each such response; consumers keep the latest value
+ * per `provider`.
+ * @mode emit
+ * @param limits - usage windows parsed from one provider response.
+ */
+'llm/provider-limits'(limits: ProviderLimits): void
 ```
 
 Source: [`packages/llm/llm/src/types.ts`](../../packages/llm/llm/src/types.ts)

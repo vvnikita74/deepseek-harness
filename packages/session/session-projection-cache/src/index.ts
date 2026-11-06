@@ -32,6 +32,7 @@ import type {
   ProjectionSnapshot,
   SessionProjectionMap,
 } from '@deepseek-ai/dsh-session-projection'
+import type {} from '@deepseek-ai/dsh-session-persistence'
 import type { KvTable } from '@deepseek-ai/dsh-storage-domain'
 import { projectionCacheDomainSpec } from './spec.ts'
 import type { CheckpointIdentity, CheckpointRecord } from './spec.ts'
@@ -99,8 +100,10 @@ interface DirtyState {
  * (count/interval triggers from {@link Config}) plus three mandatory points —
  * session creation, `turn/end`, and session disposal (the live-to-cold
  * moment) — and serves the
- * cached rows for a session header. Every durable write is fail-soft:
- * failures log a warning and the cache self-heals on the next write.
+ * cached rows for a session header. A `session/deleted` event removes the
+ * session's row and drops its write-behind state; that removal is not
+ * fail-soft, so a failure rejects the dispatch. Every other durable write is
+ * fail-soft: failures log a warning and the cache self-heals on the next write.
  */
 export class SessionProjectionCache extends Service {
   static inject = ['storageDomain', 'sessionProjections', 'sessions']
@@ -347,6 +350,18 @@ export class SessionProjectionCache extends Service {
       void this.flushSoft(session, 'detach')
       this.markClean(session)
       this.dirty.delete(session)
+    })
+
+    // Deletion: the stored session is gone, so its row must not serve a
+    // cached block for the id. The dispatcher awaits this promise; a failed
+    // delete propagates to it.
+    this.ctx.on('session/deleted', async (event) => {
+      const live = this.ctx.sessions.get(event.sessionId)
+      if (live !== undefined) {
+        this.markClean(live)
+        this.dirty.delete(live)
+      }
+      await this.requireTable().delete(event.sessionId)
     })
 
     // With the plugin (their sessions outlive the cache): clear pending

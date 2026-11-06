@@ -16,10 +16,6 @@ export const expectedUnsupported: Readonly<Partial<Record<string, { sourceVersio
     sourceVersion: 2,
     reason: 'session snapshot line 3: format v2 changed request prompt outside an open step cannot retain source chronology',
   },
-  'snapshots/web/message-feedback-protocol/session.v2.jsonl': {
-    sourceVersion: 2,
-    reason: 'session snapshot line 3: format v2 surface before first step cannot acquire a system head without changing chronology',
-  },
   'snapshots/web/navigation-panes/session.v2.jsonl': {
     sourceVersion: 2,
     reason: 'session snapshot line 3: format v2 surface before first step cannot acquire a system head without changing chronology',

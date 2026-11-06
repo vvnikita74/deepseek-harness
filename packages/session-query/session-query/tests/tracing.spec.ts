@@ -122,6 +122,9 @@ class TracePersistence extends SessionPersistence {
     })
   }
 
+  delete(): Promise<void> {
+    return Promise.reject(new Error('delete is not supported by this test backend'))
+  }
   list(): Promise<readonly SessionPersistenceSnapshot[]> {
     TracePersistence.listCalls += 1
     if (TracePersistence.listFailure !== undefined) return Promise.reject(TracePersistence.listFailure)

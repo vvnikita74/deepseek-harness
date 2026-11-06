@@ -51,7 +51,8 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/experimental/cot-translation-bundle': { kind: 'indirect', reason: 'The GUI consumer delegates paid query prompts to the translator and normal activation context to the Session preset.' },
   'packages/client/product-analytics': { kind: 'none', reason: 'Desktop analytics observes selected interactions without contributing model context or Session events.' },
-  'packages/api/browser-view': { kind: 'none', reason: 'Observes the shared browser without tools, prompt sections, or Session events; the browser-use providers own any model-facing contribution.' },
+  'packages/api/provider-limits': { kind: 'none', reason: 'Serves observed provider usage windows to browser clients without tools, prompt sections, or Session events; the providers own any model-facing effect.' },
+  'packages/api/browser-view': { kind: 'indirect', reason: 'User control delays the matching agent browser tool calls; the browser-use providers own the tools and any model-facing contribution.' },
   'packages/experimental/speech-to-text': { kind: 'none', reason: 'Routes transient recognition without adding model requests or Session events.' },
   'packages/experimental/api-speech-to-text': { kind: 'none', reason: 'Transports audio and preparation state; ordinary user submission owns model-visible text.' },
   'packages/experimental/speech-to-text-sensevoice': { kind: 'none', reason: 'Local recognition returns transient text without modifying model context.' },

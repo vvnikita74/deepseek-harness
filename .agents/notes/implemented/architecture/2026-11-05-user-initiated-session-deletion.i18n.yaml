@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-11-05-user-initiated-session-deletion.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-11-05-user-initiated-session-deletion.md
+/agent-note-user-initiated-session-deletion:
+  en: a11aa5ebeab3e953
+  zh: a5140e5a93430f75
+/agent-note-user-initiated-session-deletion/problem:
+  en: 9ce3c150444b1c9f
+  zh: 3f19d2b50b7dcf87
+/agent-note-user-initiated-session-deletion/decision:
+  en: ca6aaec0299f4a68
+  zh: b8f2414e3f1c4e3e
+/agent-note-user-initiated-session-deletion/alternatives-considered:
+  en: 92ecf39e7340187e
+  zh: c0dc76ee37c47605
+/agent-note-user-initiated-session-deletion/consequences:
+  en: 34f3038827154f74
+  zh: 6d3c29257ff1529c
+/agent-note-user-initiated-session-deletion/testing:
+  en: 0ba3b342bdf3650a
+  zh: 41e638e711fc39b1

@@ -3,10 +3,11 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import type { Context } from '@deepseek-ai/cordis'
-import type { Agent, AgentOptions, AgentSetup } from '@deepseek-ai/dsh-agent'
+import type { Agent, AgentHandle, AgentOptions, AgentSetup } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent-default-model'
 import { installModelSelection } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
+import type {} from '@deepseek-ai/dsh-subagent'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import type { Session, SessionId } from '@deepseek-ai/dsh-session'
 import { SessionQueryError, type SessionObservation } from '@deepseek-ai/dsh-session-query'
@@ -117,6 +118,7 @@ export class ApiSessionAgentController {
   private readonly resumes = new Map<SessionId, Promise<Agent>>()
   private readonly claims = new Map<SessionId, Promise<void>>()
   private readonly imageAdmissionChains = new WeakMap<Agent, Promise<void>>()
+  private readonly handles = new Map<SessionId, AgentHandle>()
 
   /** @param ctx - Host context carrying Agent, model, persistence, and Typert services. */
   constructor(private readonly ctx: Context) {}
@@ -126,6 +128,9 @@ export class ApiSessionAgentController {
    */
   initialize(): void {
     const ctx = this.ctx
+    ctx.on('agent/disposed', ({ agent }) => {
+      if (this.handles.get(agent.id)?.agent === agent) this.handles.delete(agent.id)
+    })
     ctx.typert.lookups.configure('agent', async (sessionId: SessionId) => {
       const found = await this.resolveAgent(sessionId)
       if ('error' in found) throw found.error
@@ -233,6 +238,41 @@ export class ApiSessionAgentController {
   }
 
   /**
+   * Keep the handle of an Agent this controller created or resumed, so `release` can unload it.
+   * @param handle - handle returned by `ctx.agents.create` or `ctx.agents.resume`.
+   * @returns the handle's Agent.
+   */
+  track(handle: AgentHandle): Agent {
+    this.handles.set(handle.agent.id, handle)
+    return handle.agent
+  }
+
+  /**
+   * Unload the live Agent of one Session: cancel its turn, wait for idle, drain its subagent
+   * descendants, flush its log, and dispose its handle, which releases the Session writer.
+   * @param sessionId - Session identity whose live Agent is unloaded.
+   * @returns once no live Agent remains for the identity.
+   * @throws RemoteError `session/agent-busy` when no handle tracked by {@link ApiSessionAgentController.track} belongs to the live Agent.
+   */
+  async release(sessionId: SessionId): Promise<void> {
+    const agent = this.ctx.agents.get(sessionId)
+    if (agent === undefined) return
+    const handle = this.handles.get(sessionId)
+    if (handle?.agent !== agent) {
+      throw new RemoteError(
+        'session/agent-busy',
+        `session "${sessionId}" runs an Agent this controller did not create`,
+        { reason: 'the component that created this Agent must unload it' },
+      )
+    }
+    agent.cancel({ kind: 'user' })
+    await agent.whenIdle()
+    await this.ctx.get('subagents')?.drainDescendants([agent])
+    await this.ctx.sessions.flush(agent.session)
+    await handle.dispose()
+  }
+
+  /**
    * Read the current Agent preset from the Session projection.
    * @param session - live Session whose projection state is available.
    * @returns the current preset, or undefined without a preset service or recorded selection.
@@ -310,11 +350,11 @@ export class ApiSessionAgentController {
     if (published !== undefined && hasApiSessionSubagentOwner(published)) {
       throw new ApiSessionSubagentOwnership(sessionId)
     }
-    return (await this.ctx.agents.resume({
+    return this.track(await this.ctx.agents.resume({
       resumeSessionId: sessionId,
       agentOptions: this.agentOptions(),
       setup: composition.setup,
-    })).agent
+    }))
   }
 
   private async inOrder<Value>(sessionId: SessionId, operation: () => Promise<Value>): Promise<Value> {
@@ -364,11 +404,11 @@ export class ApiSessionAgentController {
     if (!reusable) return this.createMinted(request.cwd, composition)
     this.assertPresetApplicable(sessionId, request.agentPreset)
     try {
-      return (await this.ctx.agents.resume({
+      return this.track(await this.ctx.agents.resume({
         resumeSessionId: sessionId,
         agentOptions: this.agentOptions(),
         setup: this.reuseSetup(composition),
-      })).agent
+      }))
     } catch (error: unknown) {
       if (error instanceof ApiSessionStartedSinceObserved) return this.createMinted(request.cwd, composition)
       if (!(error instanceof Error) || error.name !== 'SessionAlreadyOwnedError') throw error
@@ -439,7 +479,7 @@ export class ApiSessionAgentController {
     } catch (error: unknown) {
       throw new Error(`failed to ensure project directory "${cwd}": ${String(error)}`, { cause: error })
     }
-    return (await this.ctx.agents.create({
+    return this.track(await this.ctx.agents.create({
       sessionId,
       agentOptions: this.agentOptions(),
       meta: {
@@ -447,7 +487,7 @@ export class ApiSessionAgentController {
         ...(composition.agentPreset === undefined ? {} : { agentPreset: composition.agentPreset }),
       },
       setup: composition.setup,
-    })).agent
+    }))
   }
 
   private agentOptions(): AgentOptions {

@@ -5,14 +5,18 @@ import type {
   TypertRemoteInfo,
   TypertRemoteMethod,
 } from '../dsh-typert-protocol/types/index.js'
-import type { BrowserViewEvent, BrowserViewState, BrowserViewWatchRequest } from './types/types.js'
+import type { BrowserInputRequest, BrowserViewEvent, BrowserViewState, BrowserViewWatchRequest } from './types/types.js'
 
 declare module '../dsh-typert-protocol/types/index.js' {
   interface TypertRemoteNamespace$62726f7773657256696577 {
+    input: (request: BrowserInputRequest, signal?: AbortSignal) => Promise<RemoteResult<void>>
+    release: (signal?: AbortSignal) => Promise<RemoteResult<void>>
     state: (signal?: AbortSignal) => Promise<RemoteResult<BrowserViewState>>
     watch: (request: BrowserViewWatchRequest, signal?: AbortSignal) => RemoteStreamHandle<BrowserViewEvent, never>
   }
   interface TypertRemoteMap {
+    'browserView/input': (request: BrowserInputRequest, signal?: AbortSignal) => Promise<RemoteResult<void>>
+    'browserView/release': (signal?: AbortSignal) => Promise<RemoteResult<void>>
     'browserView/state': (signal?: AbortSignal) => Promise<RemoteResult<BrowserViewState>>
     'browserView/watch': (request: BrowserViewWatchRequest, signal?: AbortSignal) => RemoteStreamHandle<BrowserViewEvent, never>
   }
@@ -22,6 +26,8 @@ declare module '../dsh-typert-protocol/types/index.js' {
 }
 
 export declare const TYPERT_REMOTE: TypertRemoteInfo<{
+  readonly 'browserView/input': TypertRemoteMethod<{ readonly 'request': BrowserInputRequest }, void>
+  readonly 'browserView/release': TypertRemoteMethod<{  }, void>
   readonly 'browserView/state': TypertRemoteMethod<{  }, BrowserViewState>
   readonly 'browserView/watch': TypertRemoteMethod<{ readonly 'request': BrowserViewWatchRequest }, BrowserViewEvent, 'stream'>
 }>

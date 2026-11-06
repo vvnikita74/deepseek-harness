@@ -510,15 +510,6 @@
   "packages/client/ui-input-trigger/tests/apply.client.spec.ts": {
     "fc590cb703f599e5bb15f23909cedddeb2a77cb2cad0d4b9b8e664a62c46f44e": 1
   },
-  "packages/client/ui-message-feedback/tests/browser-plugin.client.spec.tsx": {
-    "04984a2ce1486250236e638e0197da0a1a840855ed3975c59130a85358c7e5fe": 2
-  },
-  "packages/client/ui-message-feedback/tests/message-feedback-actions.client.spec.tsx": {
-    "5f1e3248608b939697e96957b38dde92791d50ba4ce9d3fb7a755c6f9d8a39c2": 1,
-    "73832e418898d8cb7a2212f6b279ea046dfa6d0dc5e49536e420b360e640befc": 1,
-    "c1654cf1fe6e742258b37459980f19ad79e2790f53169a217a2ef2b2229d6cfc": 1,
-    "c2c2ad5ad04da6690ee73a360617395c54832b2a010000319a71e56bf6affceb": 1
-  },
   "packages/client/ui-open-in-app/tests/browser-plugin.client.spec.ts": {
     "7fdf7245d961ef29ffa74eb31e45825ca3c61bd7f5791f453acfd802184ee355": 1,
     "eee35b4d8641824c6eaacfe03ed60d353d81d5257d1111132f34d46a7b13ef35": 2,
@@ -1192,18 +1183,6 @@
   },
   "packages/extensions/ui-cordis/tests/inventory.client.spec.ts": {
     "205cd2f0d90ee000d0bd5f8c9e7e03d7d602f22e12220ebdf8043d68fd9b796a": 1
-  },
-  "packages/feedback/command-feedback/tests/loader-composition.spec.ts": {
-    "59c63f734e8bba862325f776e3fcbebd78a84cfb4161f8df41c216950d9bf351": 1
-  },
-  "packages/feedback/message-feedback/tests/helpers.ts": {
-    "b40f3bbda2adba664b54271ea4b552ffb2c78a239d39d8b1e882cca164d21c4f": 1
-  },
-  "packages/feedback/message-feedback/tests/loader-composition.spec.ts": {
-    "59c63f734e8bba862325f776e3fcbebd78a84cfb4161f8df41c216950d9bf351": 1
-  },
-  "packages/feedback/message-feedback/tests/message-feedback.spec.ts": {
-    "e87443b2dcbfcd641eba56e2afb1b9daaa697f89df846c40cdea6bfb9b8a7ef3": 1
   },
   "packages/fs/fs-local/tests/filesystem.spec.ts": {
     "002ddc98af9352c0e97f381118ea7815cd7721433ec527db75e09b42b37b3313": 1

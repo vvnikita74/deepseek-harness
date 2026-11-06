@@ -22,6 +22,8 @@ export interface ChromiumOptions {
   readonly noSandbox: boolean
   /** Window and page size in CSS pixels. */
   readonly viewport: { readonly width: number; readonly height: number }
+  /** Device pixel ratio of the browser; the screencast then carries this many frame pixels per CSS pixel up to `maxWidth`. */
+  readonly deviceScaleFactor: number
 }
 
 /** A launched process with its browser-level debugging endpoint. */
@@ -54,6 +56,7 @@ export function chromiumArgs(options: ChromiumOptions): string[] {
     '--remote-debugging-address=127.0.0.1',
     `--user-data-dir=${options.userDataDir}`,
     `--window-size=${options.viewport.width},${options.viewport.height}`,
+    `--force-device-scale-factor=${options.deviceScaleFactor}`,
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-dev-shm-usage',

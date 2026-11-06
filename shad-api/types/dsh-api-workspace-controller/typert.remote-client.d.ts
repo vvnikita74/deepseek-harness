@@ -5,7 +5,7 @@ import type {
   TypertRemoteInfo,
   TypertRemoteMethod,
 } from '../dsh-typert-protocol/types/index.js'
-import type { WorkspaceArchiveSessionRequest, WorkspaceArchiveValue, WorkspaceCreateRequest, WorkspaceCreateValue, WorkspaceDeleteRequest, WorkspaceDeleteValue, WorkspaceFollowFrame, WorkspaceInsertBeforeRequest, WorkspaceInsertSessionBeforeRequest, WorkspaceOrderValue, WorkspacePinSessionRequest, WorkspacePinValue, WorkspaceRenameRequest, WorkspaceUnarchiveSessionRequest, WorkspaceUnpinSessionRequest, WorkspaceValue } from './types/types.js'
+import type { WorkspaceArchiveSessionRequest, WorkspaceArchiveValue, WorkspaceCreateRequest, WorkspaceCreateValue, WorkspaceDeleteRequest, WorkspaceDeleteValue, WorkspaceDestroyRequest, WorkspaceDestroyValue, WorkspaceFollowFrame, WorkspaceInsertBeforeRequest, WorkspaceInsertSessionBeforeRequest, WorkspaceOrderValue, WorkspacePinSessionRequest, WorkspacePinValue, WorkspaceRenameRequest, WorkspaceUnarchiveSessionRequest, WorkspaceUnpinSessionRequest, WorkspaceValue } from './types/types.js'
 import type { DirectoryListing } from '../dsh-host-directory-picker/types/types.js'
 
 declare module '../dsh-typert-protocol/types/index.js' {
@@ -18,6 +18,7 @@ declare module '../dsh-typert-protocol/types/index.js' {
     archiveSession: (request: WorkspaceArchiveSessionRequest) => Promise<RemoteResult<WorkspaceArchiveValue>>
     create: (request: WorkspaceCreateRequest) => Promise<RemoteResult<WorkspaceCreateValue>>
     delete: (request: WorkspaceDeleteRequest) => Promise<RemoteResult<WorkspaceDeleteValue>>
+    destroy: (request: WorkspaceDestroyRequest, signal?: AbortSignal) => Promise<RemoteResult<WorkspaceDestroyValue>>
     follow: (signal?: AbortSignal) => RemoteStreamHandle<WorkspaceFollowFrame, never>
     initializeDefault: (signal?: AbortSignal) => Promise<RemoteResult<WorkspaceValue | undefined>>
     insertBefore: (request: WorkspaceInsertBeforeRequest) => Promise<RemoteResult<WorkspaceOrderValue>>
@@ -34,6 +35,7 @@ declare module '../dsh-typert-protocol/types/index.js' {
     'workspace/archiveSession': (request: WorkspaceArchiveSessionRequest) => Promise<RemoteResult<WorkspaceArchiveValue>>
     'workspace/create': (request: WorkspaceCreateRequest) => Promise<RemoteResult<WorkspaceCreateValue>>
     'workspace/delete': (request: WorkspaceDeleteRequest) => Promise<RemoteResult<WorkspaceDeleteValue>>
+    'workspace/destroy': (request: WorkspaceDestroyRequest, signal?: AbortSignal) => Promise<RemoteResult<WorkspaceDestroyValue>>
     'workspace/follow': (signal?: AbortSignal) => RemoteStreamHandle<WorkspaceFollowFrame, never>
     'workspace/initializeDefault': (signal?: AbortSignal) => Promise<RemoteResult<WorkspaceValue | undefined>>
     'workspace/insertBefore': (request: WorkspaceInsertBeforeRequest) => Promise<RemoteResult<WorkspaceOrderValue>>
@@ -56,6 +58,7 @@ export declare const TYPERT_REMOTE: TypertRemoteInfo<{
   readonly 'workspace/archiveSession': TypertRemoteMethod<{ readonly 'request': WorkspaceArchiveSessionRequest }, WorkspaceArchiveValue>
   readonly 'workspace/create': TypertRemoteMethod<{ readonly 'request': WorkspaceCreateRequest }, WorkspaceCreateValue>
   readonly 'workspace/delete': TypertRemoteMethod<{ readonly 'request': WorkspaceDeleteRequest }, WorkspaceDeleteValue>
+  readonly 'workspace/destroy': TypertRemoteMethod<{ readonly 'request': WorkspaceDestroyRequest }, WorkspaceDestroyValue>
   readonly 'workspace/follow': TypertRemoteMethod<{  }, WorkspaceFollowFrame, 'stream'>
   readonly 'workspace/initializeDefault': TypertRemoteMethod<{  }, WorkspaceValue | undefined>
   readonly 'workspace/insertBefore': TypertRemoteMethod<{ readonly 'request': WorkspaceInsertBeforeRequest }, WorkspaceOrderValue>

@@ -60,7 +60,7 @@ import type {} from '@deepseek-ai/cordis-plugin-loader'
 
 import type { Context } from '@deepseek-ai/cordis'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
-import { assertUsableApiKey, LlmError, resolveImageAttachmentAccess } from '@deepseek-ai/dsh-llm'
+import { assertUsableApiKey, errorChain, LlmError, resolveImageAttachmentAccess } from '@deepseek-ai/dsh-llm'
 import type { AdapterRegistrationHandle, DirectoryRegistrationHandle, LlmConfigurableProvider } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-fs'
 import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
@@ -251,6 +251,16 @@ export function apply(ctx: Context, config: Config): void {
         `llm-pi-ai: unusable replay state on assistant history for route "${provider}/${model}";`
         + ` sending that message as provider-neutral content (${reason})`,
       )
+    },
+    onProviderLimits: (limits) => {
+      try {
+        ctx.emit('llm/provider-limits', limits)
+      } catch (error) {
+        ctx.logger.warn(
+          `llm-pi-ai: a llm/provider-limits listener failed for route "${limits.provider}"; the response is kept`
+          + ` (${errorChain(error)})`,
+        )
+      }
     },
   })
   // Independent of the route set: signing in is what makes a route worth

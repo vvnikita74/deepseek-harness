@@ -178,7 +178,7 @@ v2 写入后，v1 程序会拒绝该存储。无效或有歧义的回执会被�
 
 历史与任务一同保存，只在追加时裁剪。旧历史缺失时保留最新回执，并标记更早记录不可用。历史 Session 日志中的 `schedule/change` 事件保留冻结类型，作为既有记录；Schedule 不解释这些事件、发出相关警告或将它们导入宿主存储。
 
-`archiveAdmission()` 报告 `session` 或预留的 `new_once` 目标的 `sessionId` 与该 Session 匹配的活动任务。停止操作在同一 FIFO 内通过一次领域批量写入删除该集合。批量写入被拒绝时发出 `schedule/changed`，让观察方重读目录；`unknown-state` 失败会隔离领域，直到重新打开。投递拒绝已归档的目的 Session，包括重试时复用的预留 Session。读取和删除不激活 Session。关闭存储前排空已接受的工作及通知。
+`archiveAdmission()` 报告 `session` 或预留的 `new_once` 目标的 `sessionId` 与该 Session 匹配的活动任务。停止操作在同一 FIFO 内通过一次领域批量写入删除该集合。批量写入被拒绝时发出 `schedule/changed`，让观察方重读目录；`unknown-state` 失败会隔离领域，直到重新打开。投递拒绝已归档的目的 Session，包括重试时复用的预留 Session。读取和删除不激活 Session。`session/deleted` 事件会在同一 FIFO 内通过一次领域批量写入移除所有状态的、其 `session` 或 `new_once` 目标指向被删除 Session 的已存任务，且不发出用户通知；`new` 逐次投递目标保持不变。关闭存储前排空已接受的工作及通知。
 
 </details>
 

@@ -115,9 +115,32 @@ export interface SessionPersistenceListOptions {
   readonly signal?: AbortSignal
 }
 
+/** Options for {@link SessionPersistence.delete}. */
+export interface SessionPersistenceDeleteOptions {
+  /** Optional cancellation observed before the irreversible removal starts. */
+  readonly signal?: AbortSignal
+}
+
+/** Payload of the `session/deleted` event, dispatched after {@link SessionPersistence.delete} durably removes a session. */
+export interface SessionDeletedEvent {
+  /** Id of the removed session. */
+  readonly sessionId: SessionId
+}
+
 declare module '@deepseek-ai/cordis' {
   interface Context {
     sessionPersistence: SessionPersistence
+  }
+
+  interface Events {
+    /**
+     * Dispatched after a stored session was durably removed by
+     * {@link SessionPersistence.delete}. Listeners drop derived per-session
+     * state such as caches, indexes, and accounting.
+     * @param event - the removed session's id.
+     * @mode parallel
+     */
+    'session/deleted'(event: SessionDeletedEvent): Promise<void> | void
   }
 }
 
@@ -140,6 +163,10 @@ declare module '@deepseek-ai/cordis' {
  *
  * Freshness: once an `append` or `flush` resolves, reads started afterwards
  * on this backend instance observe at least that prefix.
+ *
+ * Deletion: {@link SessionPersistence.delete} removes a whole session on user
+ * request. It is the one operation allowed to remove committed generations;
+ * format migrations never remove, overwrite, or move them.
  */
 export abstract class SessionPersistence extends Service {
   /** Process-local instance identity, stable through Context proxies and distinct after service replacement. */
@@ -208,6 +235,29 @@ export abstract class SessionPersistence extends Service {
    * @returns one snapshot per stored session.
    */
   abstract list(options?: SessionPersistenceListOptions): Promise<readonly SessionPersistenceSnapshot[]>
+
+  /**
+   * Remove one stored session irreversibly: every stored generation, the
+   * ownership marker, and any backend-owned per-session files.
+   *
+   * Requires write ownership. The call rejects with
+   * {@link SessionAlreadyOwnedError} when any handle of this service instance
+   * or any other process holds write ownership, including a created session
+   * that this process has not materialized, and then removes nothing. After
+   * it resolves, `stat(id)` returns `undefined`, `open(id, ...)` rejects with
+   * {@link SessionPersistenceNotFoundError}, and `list()` omits the session.
+   * Read handles opened before the deletion are not kept readable.
+   *
+   * The backend dispatches `session/deleted` after the removal is durable. A
+   * listener failure is logged by the backend and does not reject the call;
+   * derived state of that listener may stay stale.
+   * @param id - the stored session to remove.
+   * @param options - optional cancellation, observed before the irreversible removal starts.
+   * @returns resolution once the removal is durable and the event has been dispatched.
+   * @throws {SessionPersistenceNotFoundError} when the session does not exist.
+   * @throws {SessionAlreadyOwnedError} when write ownership is held.
+   */
+  abstract delete(id: SessionId, options?: SessionPersistenceDeleteOptions): Promise<void>
 }
 
 export default SessionPersistence

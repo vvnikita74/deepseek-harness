@@ -5,7 +5,7 @@ import type {
   TypertRemoteInfo,
   TypertRemoteMethod,
 } from '../dsh-typert-protocol/types/index.js'
-import type { ModelCatalog, SessionAttachmentRequest, SessionAttachmentValue, SessionCancelRequest, SessionCancelValue, SessionControlFrame, SessionCreateRequest, SessionCreateValue, SessionEventFrame, SessionEventsPage, SessionFollowFrame, SessionFollowRequest, SessionForkRequest, SessionForkValue, SessionListRequest, SessionListValue, SessionObserveEventRequest, SessionOpenWorkspacePathRequest, SessionOpenWorkspacePathValue, SessionPageRequest, SessionProjectionFrame, SessionProjectionsRequest, SessionProjectionsValue, SessionPromptRequest, SessionPromptValue, SessionRenameRequest, SessionRenameValue, SessionSearchRequest, SessionSearchValue, SessionSelectModelRequest, SessionSelectModelValue, SessionState, SessionStateRequest, SessionUpdateQueueRequest, SessionUpdateQueueValue, SessionWaitRequest, SessionWaitValue, SessionWorkspacePathApplication, SkillListRequest, SkillListValue } from './types/types.js'
+import type { ModelCatalog, SessionAttachmentRequest, SessionAttachmentValue, SessionCancelRequest, SessionCancelValue, SessionControlFrame, SessionCreateRequest, SessionCreateValue, SessionDeleteRequest, SessionDeleteValue, SessionEventFrame, SessionEventsPage, SessionFollowFrame, SessionFollowRequest, SessionForkRequest, SessionForkValue, SessionListRequest, SessionListValue, SessionObserveEventRequest, SessionOpenWorkspacePathRequest, SessionOpenWorkspacePathValue, SessionPageRequest, SessionProjectionFrame, SessionProjectionsRequest, SessionProjectionsValue, SessionPromptRequest, SessionPromptValue, SessionRenameRequest, SessionRenameValue, SessionSearchRequest, SessionSearchValue, SessionSelectModelRequest, SessionSelectModelValue, SessionState, SessionStateRequest, SessionUpdateQueueRequest, SessionUpdateQueueValue, SessionWaitRequest, SessionWaitValue, SessionWorkspacePathApplication, SkillListRequest, SkillListValue } from './types/types.js'
 import type { FileReferenceCandidate } from '../dsh-file-reference/types/types.js'
 import type { SessionId } from '../dsh-session/types/types.js'
 
@@ -19,6 +19,7 @@ declare module '../dsh-typert-protocol/types/index.js' {
     canOpenWorkspacePath: () => Promise<RemoteResult<boolean>>
     control: (signal?: AbortSignal) => RemoteStreamHandle<SessionControlFrame, never>
     create: (request: SessionCreateRequest) => Promise<RemoteResult<SessionCreateValue>>
+    delete: (request: SessionDeleteRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionDeleteValue>>
     events: (request: SessionPageRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionEventsPage>>
     follow: (request: SessionFollowRequest, signal?: AbortSignal) => RemoteStreamHandle<SessionFollowFrame, never>
     fork: (request: SessionForkRequest) => Promise<RemoteResult<SessionForkValue>>
@@ -50,6 +51,7 @@ declare module '../dsh-typert-protocol/types/index.js' {
     'session/canOpenWorkspacePath': () => Promise<RemoteResult<boolean>>
     'session/control': (signal?: AbortSignal) => RemoteStreamHandle<SessionControlFrame, never>
     'session/create': (request: SessionCreateRequest) => Promise<RemoteResult<SessionCreateValue>>
+    'session/delete': (request: SessionDeleteRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionDeleteValue>>
     'session/events': (request: SessionPageRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionEventsPage>>
     'session/follow': (request: SessionFollowRequest, signal?: AbortSignal) => RemoteStreamHandle<SessionFollowFrame, never>
     'session/fork': (request: SessionForkRequest) => Promise<RemoteResult<SessionForkValue>>
@@ -89,6 +91,7 @@ export declare const TYPERT_REMOTE: TypertRemoteInfo<{
   readonly 'session/canOpenWorkspacePath': TypertRemoteMethod<{  }, boolean>
   readonly 'session/control': TypertRemoteMethod<{  }, SessionControlFrame, 'stream'>
   readonly 'session/create': TypertRemoteMethod<{ readonly 'request': SessionCreateRequest }, SessionCreateValue>
+  readonly 'session/delete': TypertRemoteMethod<{ readonly 'request': SessionDeleteRequest }, SessionDeleteValue>
   readonly 'session/events': TypertRemoteMethod<{ readonly 'request': SessionPageRequest }, SessionEventsPage>
   readonly 'session/follow': TypertRemoteMethod<{ readonly 'request': SessionFollowRequest }, SessionFollowFrame, 'stream'>
   readonly 'session/fork': TypertRemoteMethod<{ readonly 'request': SessionForkRequest }, SessionForkValue>

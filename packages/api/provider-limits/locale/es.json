@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "API de límites de proveedores",
+    "description": "Sirve las últimas ventanas de uso conocidas de los proveedores y sus actualizaciones en vivo."
+  }
+}

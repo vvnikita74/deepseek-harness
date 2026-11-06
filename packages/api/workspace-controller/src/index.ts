@@ -4,6 +4,8 @@ import { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-api-remote-access'
+import type {} from '@deepseek-ai/dsh-api-session-controller'
+import type {} from '@deepseek-ai/dsh-session-persistence'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { WorkspaceCommands } from './commands.ts'
 import { DirectoryPickerController } from './directory-picker.ts'
@@ -17,6 +19,8 @@ import type {
   WorkspaceCreateValue,
   WorkspaceDeleteRequest,
   WorkspaceDeleteValue,
+  WorkspaceDestroyRequest,
+  WorkspaceDestroyValue,
   WorkspaceFollowFrame,
   WorkspaceId,
   WorkspaceInsertBeforeRequest,
@@ -53,7 +57,7 @@ declare module '@deepseek-ai/cordis' {
 
 /** Host service backing the generated `ctx.remote.workspace` namespace. */
 export class WorkspaceController extends TypertRemoteService {
-  static inject = ['remoteAccess', 'typert', 'workspaceRegistry']
+  static inject = ['remoteAccess', 'typert', 'workspaceRegistry', 'sessionController', 'sessionPersistence']
 
   static Config: z<Config, ResolvedConfig> = z.object({
     documentsDirectory: z.string(),
@@ -129,6 +133,17 @@ export class WorkspaceController extends TypertRemoteService {
   @Remote('delete')
   delete(request: WorkspaceDeleteRequest): Promise<WorkspaceDeleteValue> {
     return this.commands.delete(request)
+  }
+
+  /**
+   * Irreversibly delete one Workspace with its directory and Sessions; the caller must confirm by title.
+   * @param request - Workspace identity and the exact title the caller confirms.
+   * @param signal - caller lifetime; cancels Session listing and deletion.
+   * @returns the deletion receipt with the removed Session and directory counts.
+   */
+  @Remote('destroy')
+  destroy(request: WorkspaceDestroyRequest, signal: AbortSignal): Promise<WorkspaceDestroyValue> {
+    return this.commands.destroy(request, signal)
   }
 
   /**

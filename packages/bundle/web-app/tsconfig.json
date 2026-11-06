@@ -43,6 +43,9 @@
     },
     {
       "path": "../../api/browser-view"
+    },
+    {
+      "path": "../../api/provider-limits"
     }
   ]
 }

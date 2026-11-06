@@ -49,6 +49,8 @@ Client list rows and resident Sessions use the current `sessionListMetadata` pro
 
 Client list refreshes retain unchanged row objects and reuse the items array when order and values match. Each row's `retainedBy` contains positive local reference-source counts; Host metadata refreshes cannot overwrite them. Cache membership checks use a per-refresh ID set, so reconciliation grows linearly with the current list and retained cache sizes. Host summary updates replace running and Agent availability; local create/fork responses only fill missing metadata on existing rows. Removed ordinary Sessions retain projection stores only when their catalogs contain children.
 
+`session/delete` irreversibly deletes the named Sessions and their subagent descendants. It archives the closure with `stopActivity`, waits until each Session's `workspace/session-activity` answers empty within `deleteStopTimeoutMs`, releases the live Agents (requested roots first, whose subagent children drain with them), then removes the stored logs through `SessionPersistence.delete`, children before parents. The Remote method takes one `sessionId` and returns `{ deletedSessionIds }`; the service method `deleteSessions(sessionIds, signal?)` takes several and is the entry point the Workspace controller calls. A refusal leaves every Session intact and unarchives what the deletion archived, except Sessions already removed, which stay removed. Refusals use `session/not-found` for an unstored identity, `session/active` when stopping work outlasts the timeout, `session/agent-busy` when a live Agent cannot be unloaded by its parent, and `session/writer-held` when another owner holds a writer; its details carry `deletedSessionIds` for the removals that already happened. Abort returns `gateway/cancelled`. Each removed Session emits `api-session/deleted` once, after the persistence `session/deleted` dispatch.
+
 Background-job rows and observation streams belong to [`dsh-api-job-controller`](../job-controller/README.md); the control stream carries projections only.
 
 Projection reads retain loading and failure state independently of their values. Reconnect cancels reads from the previous connection and reloads previously requested projections; live membership updates arrive through the control stream. Parent availability comes from Host summaries and remains unknown until a summary or a successful list baseline establishes it. Address lookup resolves projected children without selecting them or creating scopes.
@@ -103,6 +105,7 @@ A successful `selectModel` response acknowledges the recorded Session selection 
 |---|---:|---|
 | `nativeOpen` | platform-detected | Whether Session workspace paths can be handed to a native desktop opener |
 | `listWorkSliceMs` | `16` | Positive integral list-work time slice in milliseconds; checks occur between complete rows |
+| `deleteStopTimeoutMs` | `15000` | Positive integral milliseconds the delete operation waits for stopped work to finish |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-api-session-controller) is the exhaustive source for accepted fields and their JSDoc.
 
@@ -130,6 +133,8 @@ No direct effect; model requests remain owned by the Agent and LLM packages.
 - File-reference completion uses the shared Agent lookup and can resume a cold Session; the `skills/list` catalog is the non-activating alternative for skill metadata.
 - Accepted/running display memory lives only in Client memory and is lost on page reload.
 - That memory is not shared between tabs: one tab can show a converted row while another still shows `New Session` for the same Session.
+- Agents created by other components, not through this controller, cannot be released: `session/delete` answers `session/agent-busy` for them until their owner unloads them.
+- A client that re-activates a session during its deletion can make the deletion fail with `session/writer-held`; retry the deletion.
 
 
 <a id="dev-note"></a>

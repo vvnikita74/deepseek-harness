@@ -1,6 +1,10 @@
 /** Workspace command implementation and stable Remote failure mapping. */
 
+import { rm } from 'node:fs/promises'
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-api-session-controller'
+import type {} from '@deepseek-ai/dsh-session-persistence'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { Workspace } from '@deepseek-ai/dsh-workspace'
 import {
   WorkspaceActiveSessionError,
@@ -12,6 +16,7 @@ import {
 } from '@deepseek-ai/dsh-workspace'
 import { RemoteError, remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
 import { workspaceView } from './feed.ts'
+import { assertDeletable, canonicalPath, isInside } from './protected-paths.ts'
 import type {
   WorkspaceArchiveSessionRequest,
   WorkspaceArchiveValue,
@@ -19,6 +24,8 @@ import type {
   WorkspaceCreateValue,
   WorkspaceDeleteRequest,
   WorkspaceDeleteValue,
+  WorkspaceDestroyRequest,
+  WorkspaceDestroyValue,
   WorkspaceInsertBeforeRequest,
   WorkspaceInsertSessionBeforeRequest,
   WorkspaceOrderValue,
@@ -101,6 +108,50 @@ export class WorkspaceCommands {
         throw workspaceNotFound(request.workspaceId)
       }
       return { deleted: true }
+    })
+  }
+
+  /**
+   * Irreversibly delete one Workspace. Steps run in order and each starts only
+   * after the previous one succeeded: confirm the title, check the directory
+   * against the protection rules, delete the Sessions, remove the directory,
+   * then remove the registration. A failure stops the sequence, so the
+   * registration stays and a retry is safe: a removed directory is skipped.
+   * Sessions removed before a failing step stay removed. A symlinked Workspace
+   * path loses only the link; the target is not removed. Shared attachments
+   * under the harness home are not removed.
+   * @param request - Workspace identity and the title the caller confirms.
+   * @param signal - caller lifetime; cancels Session listing and deletion.
+   * @returns the deletion receipt.
+   */
+  destroy(request: WorkspaceDestroyRequest, signal: AbortSignal): Promise<WorkspaceDestroyValue> {
+    return this.enqueue(async () => {
+      const workspace = this.requireWorkspace(request.workspaceId)
+      if (request.confirmTitle !== workspace.title) {
+        throw new RemoteError(
+          'workspace/confirm-mismatch',
+          `confirmation does not match the title of Workspace "${workspace.id}"`,
+          {},
+        )
+      }
+      const real = await this.checkDirectory(workspace)
+      const deleted = await this.deleteOwnedSessions(workspace, real, signal)
+      if (real !== undefined) await this.removeDirectory(workspace.path, deleted.length)
+      try {
+        await this.ctx.workspaceRegistry.delete(workspace.id)
+      } catch (error) {
+        throw destroyFailed(
+          `cannot remove the registration of Workspace "${workspace.id}": ${errorMessage(error)}`,
+          { removedFiles: real !== undefined, removedSessions: deleted.length },
+          error,
+        )
+      }
+      return {
+        deleted: true,
+        removedSessions: deleted.length,
+        deferredSessions: 0,
+        removedFiles: real !== undefined,
+      }
     })
   }
 
@@ -232,6 +283,107 @@ export class WorkspaceCommands {
     return workspace
   }
 
+  /**
+   * Resolve the Workspace directory and run the protection rules on it.
+   * @param workspace - Workspace whose directory is about to be removed.
+   * @returns the canonical directory, or undefined when the directory is already gone.
+   * @throws RemoteError `workspace/path-protected` when the directory is protected.
+   * @throws RemoteError `workspace/destroy-failed` when the directory cannot be inspected.
+   */
+  private async checkDirectory(workspace: Workspace): Promise<string | undefined> {
+    try {
+      const real = await canonicalPath(workspace.path)
+      if (real === undefined) return undefined
+      const others = this.ctx.workspaceRegistry.list()
+        .filter(candidate => candidate.id !== workspace.id)
+        .map(candidate => candidate.path)
+      await assertDeletable(real, others)
+      return real
+    } catch (error) {
+      if (remoteErrorOf(error) !== undefined) throw error
+      throw destroyFailed(
+        `cannot inspect the directory of Workspace "${workspace.id}": ${errorMessage(error)}`,
+        { removedFiles: false, removedSessions: 0 },
+        error,
+      )
+    }
+  }
+
+  /**
+   * Delete every Session the Workspace owns; no Session is deleted when the call fails before the deletion starts.
+   * @param workspace - Workspace whose Sessions are deleted.
+   * @param real - canonical Workspace directory, or undefined when it is already gone.
+   * @param signal - caller lifetime forwarded to Session listing and deletion.
+   * @returns the identities removed by the Session deletion.
+   * @throws RemoteError `workspace/session-active` when a Session still has running work.
+   * @throws RemoteError `workspace/destroy-failed` for any other deletion failure, counting the Sessions already removed.
+   */
+  private async deleteOwnedSessions(
+    workspace: Workspace,
+    real: string | undefined,
+    signal: AbortSignal,
+  ): Promise<readonly SessionId[]> {
+    try {
+      const ids = await this.ownedSessionIds(workspace, real, signal)
+      if (ids.length === 0) return []
+      return await this.ctx.sessionController.deleteSessions(ids, signal)
+    } catch (error) {
+      const failure = remoteErrorOf(error)
+      if (failure?.code === 'session/active') {
+        throw new RemoteError(
+          'workspace/session-active',
+          failure.message,
+          { sessionId: failure.details.sessionId, activity: failure.details.activity },
+          { cause: error },
+        )
+      }
+      const removedSessions = failure?.code === 'session/writer-held' ? (failure.details.deletedSessionIds?.length ?? 0) : 0
+      throw destroyFailed(
+        `cannot delete the Sessions of Workspace "${workspace.id}": ${errorMessage(error)}`,
+        { removedFiles: false, removedSessions },
+        error,
+      )
+    }
+  }
+
+  /**
+   * Collect the accounted Sessions and the stored Sessions whose cwd lies in the Workspace; only stored ids are returned.
+   * @param workspace - Workspace whose Sessions are collected.
+   * @param real - canonical Workspace directory, or undefined when it is already gone.
+   * @param signal - caller lifetime forwarded to Session listing.
+   * @returns stored Session identities owned by the Workspace.
+   */
+  private async ownedSessionIds(workspace: Workspace, real: string | undefined, signal: AbortSignal): Promise<SessionId[]> {
+    const stored = await this.ctx.sessionPersistence.list({ signal })
+    const storedIds = new Set(stored.map(snapshot => snapshot.header.id))
+    const owned = new Set<SessionId>(workspace.sessionIds)
+    for (const { header } of stored) {
+      const cwd = header.cwd
+      if (cwd !== undefined && (isInside(cwd, workspace.path) || (real !== undefined && isInside(cwd, real)))) {
+        owned.add(header.id)
+      }
+    }
+    return [...owned].filter(id => storedIds.has(id))
+  }
+
+  /**
+   * Remove the Workspace directory tree. A symlink at the path is removed as a link; its target is kept.
+   * @param path - Workspace path as registered, not resolved, so a symlink is removed as a link.
+   * @param removedSessions - Sessions already removed before this step, reported on failure.
+   * @throws RemoteError `workspace/destroy-failed` when removal fails; the registration stays for a retry.
+   */
+  private async removeDirectory(path: string, removedSessions: number): Promise<void> {
+    try {
+      await rm(path, { recursive: true, force: true })
+    } catch (error) {
+      throw destroyFailed(
+        `cannot remove directory "${path}": ${errorMessage(error)}`,
+        { removedFiles: false, removedSessions },
+        error,
+      )
+    }
+  }
+
   private enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.operationTail.then(operation)
     this.operationTail = result.then(() => undefined, () => undefined)
@@ -245,6 +397,21 @@ function workspaceNotFound(workspaceId: WorkspaceId): RemoteError<'workspace/not
     `Workspace "${workspaceId}" not found`,
     { workspaceId },
   )
+}
+
+/**
+ * Build the failure for a stopped Workspace destruction, reporting what was already removed.
+ * @param message - human diagnostic naming the failed step.
+ * @param details - removals completed before the failing step.
+ * @param cause - the original failure.
+ * @returns the typed `workspace/destroy-failed` error.
+ */
+function destroyFailed(
+  message: string,
+  details: { readonly removedFiles: boolean; readonly removedSessions: number },
+  cause: unknown,
+): RemoteError<'workspace/destroy-failed'> {
+  return new RemoteError('workspace/destroy-failed', message, details, { cause })
 }
 
 function errorMessage(error: unknown): string {

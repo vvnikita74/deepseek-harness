@@ -1,20 +1,15 @@
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
-import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
-import Storage from '@deepseek-ai/dsh-storage'
-import { DomainFacility } from '@deepseek-ai/dsh-storage-domain'
+import type { Context } from '@deepseek-ai/cordis'
+import { SessionId } from '@deepseek-ai/dsh-session'
 import { RemoteError, type PeerId, type Principal, type RemoteInvocation } from '@deepseek-ai/dsh-typert-protocol'
-import WorkspaceRegistry from '@deepseek-ai/dsh-workspace'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
-import RemoteAccessService, { type RemoteAccessCondition, type RemoteAccessRole } from '@deepseek-ai/dsh-api-remote-access'
-import WorkspaceController from '../src/index.ts'
+import { type RemoteAccessCondition, type RemoteAccessRole } from '@deepseek-ai/dsh-api-remote-access'
 import { DEFAULT_WORKSPACE_DIRECTORY } from '../src/default-workspace.ts'
 import { WorkspaceFeed } from '../src/feed.ts'
 import type { WorkspaceFollowFrame } from '../src/types.ts'
-import { MemoryStorageBackend } from '../../../storage/storage-domain/tests/helpers/memory-backend.ts'
+import { disposeHarnesses, harness, roots } from './helpers/workspace-harness.ts'
 
 // The controller relays whatever families the providers report; this suite merges its own.
 declare module '@deepseek-ai/dsh-workspace/types' {
@@ -30,15 +25,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
 }
 
-const roots: Context[] = []
-
-/** Workspace roots created per test, removed after their context settles. */
-const tempDirs: string[] = []
-
-afterEach(async () => {
-  await Promise.all(roots.splice(0).map(ctx => ctx.fiber.dispose()))
-  for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
-})
+afterEach(disposeHarnesses)
 
 interface Deferred<T> {
   readonly promise: Promise<T>
@@ -49,30 +36,6 @@ function deferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((settle) => { resolve = settle })
   return { promise, resolve }
-}
-
-async function harness(options: { systemDocuments?: boolean } = {}) {
-  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'dsh-workspace-controller-')))
-  tempDirs.push(root)
-  const ctx = new Context()
-  roots.push(ctx)
-  await ctx.plugin(SessionStore)
-  await ctx.plugin(Storage)
-  ctx.storage.backend.register('memory', new MemoryStorageBackend())
-  const storageDomain = new DomainFacility(ctx, { backend: 'memory', routes: {} })
-  ctx.storage.mount('domain', storageDomain)
-  ctx.provide('storageDomain', storageDomain)
-  ctx.provide('sessionPersistence', { list: () => Promise.resolve([]) } as never)
-  await ctx.plugin(WorkspaceRegistry)
-  const dispose = (): void => {}
-  ctx.provide('typert', {
-    lookups: { configure: () => dispose },
-    contexts: { configureHost: () => dispose },
-    resources: { register: vi.fn(() => dispose) },
-  } as never)
-  new RemoteAccessService(ctx)
-  const controller = new WorkspaceController(ctx, options.systemDocuments === true ? {} : { documentsDirectory: root })
-  return { controller, ctx, root, storageDomain }
 }
 
 declare module '@deepseek-ai/dsh-typert-protocol' {

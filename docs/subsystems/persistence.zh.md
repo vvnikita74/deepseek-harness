@@ -334,6 +334,10 @@ interface SessionPersistenceSnapshot {
 
 可选的 `eventCount`/`sizeBytes` 字段仍是供明确需要它们的 consumer 使用的低成本 backend observation。Session 列表不借助这两个字段打开冷日志，只读取 header 与经过 identity 校验的 projection cache hint，因此 cache 或 Session format 升级不会把启动变成 body scan。
 
+## 整会话删除
+
+`delete(id, options?)` 删除一个已存储 Session 的全部已提交 generation，它是唯一会移除已提交数据的持久化操作，仅服务于用户发起的删除。未知会话以 `SessionPersistenceNotFoundError` 拒绝，写所有权被持有时以 `SessionAlreadyOwnedError` 拒绝。删除持久化完成后，backend 派发 `session/deleted`（`SessionDeletedEvent`，携带被删除的 `sessionId`）；监听器失败会被记录，且不会使调用失败。
+
 ## 后端
 
 随产品交付的 provider 实现抽象 `SessionPersistence` 约定（`create`/`open`/`stat`/`list`，逐会话 `SessionHandle` 承载 `read`/`append`/`flush`/`close`，全程可选支持取消），并通过共享的持久化契约套件：
@@ -359,6 +363,8 @@ Storage semantics shared by every backend: events are contiguous from seq 0 and 
 Visibility: a created session is observable through `stat`/`list`/`open` in this process from the moment `create` resolves, even while a backend defers physical materialization (a pure optimization); other processes see the session only once it materializes, and a session that never materialized before a crash never existed. `SessionHandle.flush` forces materialization.
 
 Freshness: once an `append` or `flush` resolves, reads started afterwards on this backend instance observe at least that prefix.
+
+Deletion: SessionPersistence.delete removes a whole session on user request. It is the one operation allowed to remove committed generations; format migrations never remove, overwrite, or move them.
 
 ```ts cordis-catalog
 /**
@@ -420,6 +426,29 @@ abstract stat(id: SessionId, options?: SessionPersistenceStatOptions): Promise<S
  * @returns one snapshot per stored session.
  */
 abstract list(options?: SessionPersistenceListOptions): Promise<readonly SessionPersistenceSnapshot[]>
+
+/**
+ * Remove one stored session irreversibly: every stored generation, the
+ * ownership marker, and any backend-owned per-session files.
+ *
+ * Requires write ownership. The call rejects with
+ * {@link SessionAlreadyOwnedError} when any handle of this service instance
+ * or any other process holds write ownership, including a created session
+ * that this process has not materialized, and then removes nothing. After
+ * it resolves, `stat(id)` returns `undefined`, `open(id, ...)` rejects with
+ * {@link SessionPersistenceNotFoundError}, and `list()` omits the session.
+ * Read handles opened before the deletion are not kept readable.
+ *
+ * The backend dispatches `session/deleted` after the removal is durable. A
+ * listener failure is logged by the backend and does not reject the call;
+ * derived state of that listener may stay stale.
+ * @param id - the stored session to remove.
+ * @param options - optional cancellation, observed before the irreversible removal starts.
+ * @returns resolution once the removal is durable and the event has been dispatched.
+ * @throws {SessionPersistenceNotFoundError} when the session does not exist.
+ * @throws {SessionAlreadyOwnedError} when write ownership is held.
+ */
+abstract delete(id: SessionId, options?: SessionPersistenceDeleteOptions): Promise<void>
 ```
 
 Types: [SessionId](core.zh.md)

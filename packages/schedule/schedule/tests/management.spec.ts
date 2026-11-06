@@ -499,6 +499,31 @@ it('stops the Host tasks of an archived Session and tells the other live involve
   expect(notices(archived)).toEqual([expect.stringContaining('change: created')])
 })
 
+it('removes every stored task of a deleted Session in one change, keeping other and new-target tasks', async () => {
+  const test = await setup()
+  const actorId = SessionId('actor')
+  const deleted = SessionId('deleted')
+  await test.service.create({
+    title: 'Active', prompt: 'Prompt', timing: { kind: 'rrule', rrule: daily }, target: { kind: 'session', sessionId: deleted },
+  }, actorId)
+  const paused = await test.service.create({
+    title: 'Paused', prompt: 'Prompt', timing: { kind: 'rrule', rrule: daily }, target: { kind: 'session', sessionId: deleted },
+  }, actorId)
+  await test.service.edit({ id: paused.id, action: 'update', patch: { active: false } })
+  const other = await test.service.remoteCreate({
+    title: 'Other', prompt: 'Prompt', timing: { kind: 'rrule', rrule: daily }, target: { kind: 'session', sessionId: SessionId('other') },
+  })
+  const fresh = await test.service.remoteCreate({
+    title: 'Fresh', prompt: 'Prompt', timing: { kind: 'rrule', rrule: daily }, target: { kind: 'new' },
+  })
+  const changed = vi.fn()
+  test.ctx.on('schedule/changed', changed)
+
+  await test.ctx.parallel('session/deleted', { sessionId: deleted })
+  expect(changed).toHaveBeenCalledOnce()
+  expect((await test.service.list({})).items.map(item => item.id).sort()).toEqual([other.id, fresh.id].sort())
+})
+
 it('commits runtime delivery through the service and exposes its receipt', async () => {
   const test = await setup()
   const target = agentFor(test.ctx, 'delivery-target')

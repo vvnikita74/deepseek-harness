@@ -28,6 +28,14 @@ declare module '@deepseek-ai/cordis' {
      * @param provider - route whose model catalog changed.
      */
     'llm/models-updated'(provider: string): void
+    /**
+     * A provider response carried usage-window headers. Adapters publish the
+     * parsed values after each such response; consumers keep the latest value
+     * per `provider`.
+     * @mode emit
+     * @param limits - usage windows parsed from one provider response.
+     */
+    'llm/provider-limits'(limits: ProviderLimits): void
   }
 }
 
@@ -63,6 +71,39 @@ export interface LlmFailure {
    * selected occurrences in an `image/offload` event and retries the step.
    */
   readonly offloadImages?: number
+}
+
+/** One usage window of a provider subscription or quota. */
+export interface ProviderLimitWindow {
+  /** Stable window id, e.g. `5h` or `7d`. */
+  readonly id: string
+  /** Neutral English window name for display fallbacks, e.g. `5 h`; clients localize by `id`. */
+  readonly label: string
+  /** Share of the window already used, 0 through 100. */
+  readonly usedPercent: number
+  /** Instant the window resets, epoch milliseconds. */
+  readonly resetsAt: number
+  /** Provider-reported state; absent when the provider reports none. */
+  readonly status?: 'ok' | 'warning' | 'exhausted'
+}
+
+/** Money left on the account of a pay-per-use provider route. */
+export interface ProviderBalance {
+  /** Amount in `currency` units. */
+  readonly amount: number
+  /** ISO 4217 currency code, e.g. `RUB`. */
+  readonly currency: string
+}
+
+/** Last known usage windows and account balance of one provider route, as reported by its latest response or poll. */
+export interface ProviderLimits {
+  /** Provider route id, as listed by the model catalog. */
+  readonly provider: string
+  readonly windows: readonly ProviderLimitWindow[]
+  /** Account balance of a pay-per-use route; absent for subscription routes. */
+  readonly balance?: ProviderBalance
+  /** Epoch milliseconds of the provider response these values came from. */
+  readonly updatedAt: number
 }
 
 /** Plain text visible to the end user. */

@@ -509,6 +509,10 @@ describe('SessionObservationReader cold path', () => {
         })
       }
 
+      delete(): Promise<void> {
+        return Promise.reject(new Error('delete is not supported by this test backend'))
+      }
+
       list(): Promise<readonly SessionPersistenceSnapshot[]> {
         return Promise.resolve([])
       }

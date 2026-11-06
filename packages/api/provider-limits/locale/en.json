@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Provider limits API",
+    "description": "Serve the last known provider usage windows and their live updates."
+  }
+}

@@ -109,6 +109,14 @@ export class JsonlSessionHandle implements SessionHandle {
   }
 
   /**
+   * Drop the prepared historical prefix so later reads consult the stored log;
+   * after the session's removal, a read then refuses instead of serving it.
+   */
+  forgetPrepared(): void {
+    this.state.primed = undefined
+  }
+
+  /**
    * Read a slice of the valid contiguous logical log; see the seam contract.
    * @param offset - first logical seq to include (default 0).
    * @param length - maximum events returned (default: the rest).
@@ -497,6 +505,16 @@ export class JsonlBackendTracker {
     if (handle.access !== 'write') return
     this.writers.delete(handle.id)
     if (!materialized) this.pending.delete(handle.id)
+  }
+
+  /**
+   * Drop the prepared prefix of every open handle on a removed session.
+   * @param id - the session whose stored log was removed.
+   */
+  forgetPrepared(id: SessionId): void {
+    for (const handle of this.openHandles) {
+      if (handle instanceof JsonlSessionHandle && handle.id === id) handle.forgetPrepared()
+    }
   }
 
   /**

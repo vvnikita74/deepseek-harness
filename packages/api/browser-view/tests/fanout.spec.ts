@@ -4,7 +4,7 @@ import type { BrowserViewEvent, BrowserViewState } from '../src/types.ts'
 
 afterEach(() => { vi.useRealTimers() })
 
-const state: BrowserViewState = { status: 'ready', tabs: [], viewport: { width: 1280, height: 800 } }
+const state: BrowserViewState = { status: 'ready', tabs: [], viewport: { width: 1280, height: 800 }, userControl: false }
 
 /** @returns a frame event for one tab with the given sequence number. */
 function frame(seq: number, targetId = 't1') {

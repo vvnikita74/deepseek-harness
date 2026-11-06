@@ -323,7 +323,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     pkg: 'session',
     title: 'In-memory session store',
     mode: 'core',
-    consumers: ['agent-loop', 'agent', 'session-persistence', 'session-query', 'session-query-sqlite', 'subagent', 'message-feedback'],
+    consumers: ['agent-loop', 'agent', 'session-persistence', 'session-query', 'session-query-sqlite', 'subagent'],
     note: 'Owns append-only Session instances and emits the durable session event feed.',
   },
   {
@@ -360,6 +360,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Jev model router Remote controller',
     mode: 'core',
     note: 'Chooses the model tier for one prompt through Jev and switches the Session\'s next model step; Jev failures keep the current model.',
+  },
+  {
+    key: 'providerLimitsController',
+    pkg: 'api-provider-limits',
+    title: 'Provider limits Remote controller',
+    mode: 'core',
+    note: 'Serves the last known provider usage windows to browser clients and streams their live updates; observation only, with no model-facing tools.',
   },
   {
     key: 'browserViewController',
@@ -453,7 +460,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Durable session persistence seam',
     mode: 'seam',
     implementations: ['session-persistence-jsonl'],
-    consumers: ['agent-loop', 'tool-bash', 'hooks-claude-code', 'hooks-codex', 'session-query', 'session-query-sqlite', 'message-feedback'],
+    consumers: ['agent-loop', 'tool-bash', 'hooks-claude-code', 'hooks-codex', 'session-query', 'session-query-sqlite'],
     note: 'The JSONL backend persists the SessionEvent vocabulary as one artifact per Session.',
   },
   {
@@ -520,7 +527,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Shared OTel reporting channels',
     mode: 'service',
     consumers: ['host-product-telemetry-otel', 'session-telemetry-otel'],
-    note: 'Product analytics and Session feedback adapters create independent reporting channels through one injected service.',
+    note: 'Product analytics and Session telemetry adapters create independent reporting channels through one injected service.',
   },
   {
     key: 'productTelemetry',
@@ -555,20 +562,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     mode: 'core',
     consumers: ['workspace'],
     note: 'Waits for every configured backend, then publishes the domain form as one lifecycle-bound service for typed durable state.',
-  },
-  {
-    key: 'messageFeedback',
-    pkg: 'message-feedback',
-    title: 'Lifecycle-bound message feedback',
-    mode: 'core',
-    note: 'Owns per-assistant-message feedback in the canonical Session log, target validation, per-item compare-and-set, and the Host unary Remote contract. Feedback stays outside model history; log export follows the consumer policy.',
-  },
-  {
-    key: 'sessionFeedback',
-    pkg: 'command-feedback',
-    title: 'Session-level feedback recorder',
-    mode: 'core',
-    note: 'Records one Session-level remark with its category as a log-only feedback/record event on a live Session through the Host unary Remote contract; the /feedback command shares the same producer.',
   },
   {
     key: 'workspaceRegistry',

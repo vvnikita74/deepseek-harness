@@ -948,3 +948,38 @@ describe('SessionProjectionCache summary reads', () => {
     expect(cache.cachedSnapshot(headerOf(SessionId('summary-absent')), summaryKeys)).toBeUndefined()
   })
 })
+
+describe('SessionProjectionCache session deletion', () => {
+  it('removes the stored row of a deleted session and tolerates an id without a row', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-projcache-'))
+    roots.push(root)
+    const id = SessionId('deleted-row')
+    await seedRecord(root, 'deleted-row', {
+      'cache-test/marks': { ver: 1, seq: SessionSeq(2), val: { marks: ['stored'] } },
+    })
+    const { ctx, cache } = await harness({ root })
+    expect(cache.cachedSnapshot(headerOf(id))).toBeDefined()
+
+    await ctx.parallel('session/deleted', { sessionId: id })
+    expect(cache.cachedSnapshot(headerOf(id))).toBeUndefined()
+    expect(await storedRecord(root, id)).toBeUndefined()
+
+    await ctx.parallel('session/deleted', { sessionId: SessionId('never-stored') })
+    expect(await storedRecord(root, SessionId('never-stored'))).toBeUndefined()
+  })
+
+  it('drops the pending write-behind timer of a live session that is deleted', async () => {
+    vi.useFakeTimers()
+    const { ctx, root } = await harness({ config: { writeEveryEvents: 100, writeIntervalMs: 5000 } })
+    const id = SessionId('deleted-armed')
+    const created = whenWritten(ctx, id)
+    const session = ctx.sessions.create(id)
+    await created
+    mark(session, ['pending']) // interval timer armed, no write yet
+    await vi.advanceTimersByTimeAsync(0)
+    await ctx.parallel('session/deleted', { sessionId: id })
+    // The armed timer was cleared with the delete: advancing time writes nothing.
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(await storedRecord(root, id)).toBeUndefined()
+  })
+})

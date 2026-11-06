@@ -30,6 +30,9 @@
       "path": "../../storage/storage-json"
     },
     {
+      "path": "../session-persistence"
+    },
+    {
       "path": "../session-projection"
     }
   ]

@@ -61,9 +61,12 @@ describe('browser view over the real Loader', () => {
     const view = ctx.get('browserViewController')
     if (view === undefined) throw new Error('expected the browserView namespace')
     const signal = new AbortController().signal
-    expect(await view.state(signal)).toEqual({ status: 'disabled', tabs: [], viewport: { width: 1280, height: 800 } })
+    expect(await view.state(signal)).toEqual({ status: 'disabled', tabs: [], viewport: { width: 1600, height: 900 }, userControl: false })
     const watch = view.watch({}, signal)[Symbol.asyncIterator]()
-    expect(await watch.next()).toEqual({ done: false, value: { type: 'state', state: { status: 'disabled', tabs: [], viewport: { width: 1280, height: 800 } } } })
+    expect(await watch.next()).toEqual({
+      done: false,
+      value: { type: 'state', state: { status: 'disabled', tabs: [], viewport: { width: 1600, height: 900 }, userControl: false } },
+    })
     expect(await watch.next()).toEqual({ done: true, value: undefined })
   })
 

@@ -9,8 +9,8 @@
   en: f8ea869792c8b207
   zh: bc076172ce22ba9b
 /deepseek-ai-dsh-session-telemetry-otel/summary:
-  en: 828903209ef34983
-  zh: 8eac63f1e8df15d8
+  en: f1b369871999795d
+  zh: 953830998f6658c0
 /deepseek-ai-dsh-session-telemetry-otel/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
@@ -18,11 +18,11 @@
   en: 9b82f2819ddaa3f4
   zh: b6ad90b11e7e0ef7
 /deepseek-ai-dsh-session-telemetry-otel/use-this-package/modes:
-  en: bc7e598148a7f8c3
-  zh: 0209c6aa258ec134
+  en: 6a89e6fd5752d920
+  zh: e3587fb88781359e
 /deepseek-ai-dsh-session-telemetry-otel/use-this-package/minimal-configuration:
-  en: 11845fd50dc0a494
-  zh: ee990bfca3621bd3
+  en: 73f520b7a7e1f8d4
+  zh: b8b562b666c4d5ac
 /deepseek-ai-dsh-session-telemetry-otel/use-this-package/what-leaves-the-machine:
   en: 2a5ddd227e400455
   zh: 74b7bd9b9161b054
@@ -33,17 +33,17 @@
   en: ee672a6a6f0fa02d
   zh: c3bab8e6b60e768c
 /deepseek-ai-dsh-session-telemetry-otel/understand-the-implementation/design-concept:
-  en: 34f8a88224a1f6cf
-  zh: 40839dabaea39602
+  en: 3a5e074f4dbe15f8
+  zh: ad7c2accd9ad2452
 /deepseek-ai-dsh-session-telemetry-otel/understand-the-implementation/source-map:
-  en: 0b99d2e5c27213cd
-  zh: 3cbdaa7f6a45d81a
+  en: cdd2e0ba076288bc
+  zh: 7a19ece89e606a8b
 /deepseek-ai-dsh-session-telemetry-otel/understand-the-implementation/capture-wiring:
-  en: 5c85eb0992eb5b2b
-  zh: a19cdd5814c0e2b9
+  en: 6003efd0bd82be5a
+  zh: e00d9fe85a167416
 /deepseek-ai-dsh-session-telemetry-otel/understand-the-implementation/field-mapping:
-  en: a42e9e081fb93bee
-  zh: b8e817c2455278b9
+  en: 42d4aaec5d071288
+  zh: e62ff7794c805d7a
 /deepseek-ai-dsh-session-telemetry-otel/further-exploration:
   en: 155b75490ec65d86
   zh: 07d37d6e4ac90c89
@@ -54,8 +54,8 @@
   en: 7593cf5d0d2cedd6
   zh: f57cc48a1b5cbfa9
 /deepseek-ai-dsh-session-telemetry-otel/known-limitations-and-deferred-work:
-  en: 5d0b88f8256bd782
-  zh: 36b8d64645ed6c2e
+  en: 1cf0f70fe344fed8
+  zh: da38a6e8dcbc54a9
 /deepseek-ai-dsh-session-telemetry-otel/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98

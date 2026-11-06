@@ -1538,6 +1538,63 @@ describe('first-use Workspace preparation', () => {
   })
 })
 
+/** A registry with one workspace that accounts every id in `ids`, attached in that order. */
+async function accountedWorkspace(name: string, ids: string[]) {
+  const dir = await makeDir(name)
+  const result = await harness({ sessions: ids.map((id, index) => header(id, dir, index + 1)) })
+  const workspace = await result.registry.create(dir)
+  for (const id of ids) await workspace.attachSession(SessionId(id))
+  return { ...result, workspace }
+}
+
+describe('session deletion forgets registry membership', () => {
+  it('removes a deleted archived session from its account, the archive set, and the persisted record', async () => {
+    const { ctx, registry, pool, workspace, changes } = await accountedWorkspace('deleted-archived', ['kept', 'gone'])
+    await registry.archiveSession(SessionId('gone'))
+    changes.length = 0
+
+    await ctx.parallel('session/deleted', { sessionId: SessionId('gone') })
+    expect(workspace.sessionIds).toEqual([SessionId('kept')])
+    expect(registry.archivedSessionIds).toEqual([])
+    expect(storedRecord(pool, workspace.id).sessionIds).toEqual([SessionId('kept')])
+    expect(storedState(pool).archivedSessionIds).toEqual([])
+    // The workspace record write is the change the Workspace follow stream publishes.
+    expect(changes.some(change => change.table === 'workspaces' && change.key === workspace.id)).toBe(true)
+  })
+
+  it('removes a deleted pinned session from the pin set and its account', async () => {
+    const { ctx, registry, pool, workspace } = await accountedWorkspace('deleted-pinned', ['kept', 'gone'])
+    await registry.pinSession(SessionId('gone'))
+
+    await ctx.parallel('session/deleted', { sessionId: SessionId('gone') })
+    expect(registry.pinnedSessionIds).toEqual([])
+    expect(storedState(pool).pinnedSessionIds).toEqual([])
+    expect(workspace.sessionIds).toEqual([SessionId('kept')])
+    expect(storedRecord(pool, workspace.id).sessionIds).toEqual([SessionId('kept')])
+  })
+
+  it('keeps unrelated accounted sessions, their order, and their archive and pin entries', async () => {
+    const { ctx, registry, pool, workspace } = await accountedWorkspace('deleted-unrelated', ['kept', 'gone', 'other'])
+    await registry.archiveSession(SessionId('kept'))
+    await registry.pinSession(SessionId('other'))
+
+    await ctx.parallel('session/deleted', { sessionId: SessionId('gone') })
+    expect(workspace.sessionIds).toEqual([SessionId('other'), SessionId('kept')])
+    expect(registry.archivedSessionIds).toEqual([SessionId('kept')])
+    expect(registry.pinnedSessionIds).toEqual([SessionId('other')])
+    expect(storedRecord(pool, workspace.id).sessionIds).toEqual([SessionId('other'), SessionId('kept')])
+  })
+
+  it('writes nothing for an id the registry does not hold', async () => {
+    const { ctx, workspace, changes } = await accountedWorkspace('deleted-unknown', ['kept'])
+    changes.length = 0
+
+    await ctx.parallel('session/deleted', { sessionId: SessionId('ghost') })
+    expect(changes).toHaveLength(0)
+    expect(workspace.sessionIds).toEqual([SessionId('kept')])
+  })
+})
+
 // The registry knows no family: the providers merge theirs, and this suite merges its own.
 declare module '@deepseek-ai/dsh-workspace/types' {
   interface SessionActivityKindMap {

@@ -906,6 +906,18 @@ resolveAgent(sessionId: SessionId): Promise<ApiSessionAgentResult>
 @Remote('create') create(request: SessionCreateRequest): Promise<SessionCreateValue>
 
 /**
+ * Irreversibly delete Sessions: stop their work, unload their Agents, remove their subagent
+ * descendants, and remove their stored logs. Callers that pass an identity owned by another Host
+ * component must not rely on this method unloading that component's Agent.
+ * @param sessionIds - Session identities to delete; subagent descendants are added automatically.
+ * @param signal - cancellation observed before each wait and removal.
+ * @returns the identities removed, in deletion order.
+ * @throws RemoteError `session/not-found`, `session/active`, `session/agent-busy`, or `session/writer-held` when refused.
+ *   A refusal leaves the Sessions intact, except Sessions already removed before the failure.
+ */
+deleteSessions(sessionIds: readonly SessionId[], signal?: AbortSignal): Promise<readonly SessionId[]>
+
+/**
  * Select one Session-local model after explicitly resuming the Session; save the default in the background.
  * @param request - Session identity and requested model selection.
  * @returns the normalized selection installed for the Session, without waiting for default persistence.
@@ -960,6 +972,15 @@ workspaceDesktop(): { name: string; available: boolean; fileManager: 'finder' | 
  * @returns the accepted title and durable event sequence.
  */
 @Remote('rename') rename(request: SessionRenameRequest): Promise<SessionRenameValue>
+
+/**
+ * Irreversibly delete one Session. Refusal leaves everything intact; a failure after some removals
+ * keeps those removals and reports them in the error's `deletedSessionIds`.
+ * @param request - Session identity to delete.
+ * @param signal - caller cancellation before or during the deletion.
+ * @returns the removed identities, the requested Session first and its subagent descendants after it.
+ */
+@Remote('delete') async delete(request: SessionDeleteRequest, signal: AbortSignal): Promise<SessionDeleteValue>
 
 /**
  * Fork one cold-readable exact event prefix into a new Session. An omitted
@@ -1287,6 +1308,25 @@ A Session became visible or its Agent was created or disposed. Consumers upsert 
 
 Source: [`packages/api/session-controller/src/types.ts`](../../packages/api/session-controller/src/types.ts)
 
+<a id="api-sessiondeleted--emit"></a>
+
+#### `api-session/deleted` — emit
+
+A stored Session was irreversibly deleted by the Session Controller's delete operation.
+
+```ts cordis-catalog
+/**
+ * A stored Session was irreversibly deleted by the Session Controller's delete operation.
+ * @mode emit
+ * @param sessionId - deleted Session identity.
+ */
+'api-session/deleted'(sessionId: SessionId): void
+```
+
+Types: [SessionId](core.md)
+
+Source: [`packages/api/session-controller/src/types.ts`](../../packages/api/session-controller/src/types.ts)
+
 <a id="api-sessionerror--emit"></a>
 
 #### `api-session/error` — emit
@@ -1375,6 +1415,27 @@ Read-only creation announcement after store entry. New events reject until every
 Types: [Scoped](scope.md)
 
 Source: [`packages/core/session/src/index.ts`](../../packages/core/session/src/index.ts)
+
+<a id="sessiondeleted--parallel"></a>
+
+#### `session/deleted` — parallel
+
+Dispatched after a stored session was durably removed by SessionPersistence.delete. Listeners drop derived per-session state such as caches, indexes, and accounting.
+
+```ts cordis-catalog
+/**
+ * Dispatched after a stored session was durably removed by
+ * {@link SessionPersistence.delete}. Listeners drop derived per-session
+ * state such as caches, indexes, and accounting.
+ * @param event - the removed session's id.
+ * @mode parallel
+ */
+'session/deleted'(event: SessionDeletedEvent): Promise<void> | void
+```
+
+Types: [SessionDeletedEvent](persistence.md)
+
+Source: [`packages/session/session-persistence/src/index.ts`](../../packages/session/session-persistence/src/index.ts)
 
 <a id="sessiondisposed--emit"></a>
 

@@ -14,7 +14,7 @@ import {
   sessionFormatCatalog,
 } from '@deepseek-ai/dsh-session-format-catalog'
 import { readdirSync, type Dirent } from 'node:fs'
-import { open, mkdir, readdir, realpath, link, rm, stat, truncate } from 'node:fs/promises'
+import { open, mkdir, readdir, realpath, link, rm, rmdir, stat, truncate } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { scheduler } from 'node:timers/promises'
@@ -28,6 +28,7 @@ import {
   type SessionAccess, type SessionHandle,
   type SessionHandleReadResult,
   type SessionLocation, type SessionPersistenceCreateOptions,
+  type SessionPersistenceDeleteOptions,
   type SessionPersistenceListOptions, type SessionPersistenceOpenOptions,
   type SessionPersistenceSnapshot, type SessionPersistenceStatOptions,
   type SessionPersistenceRevision as PersistenceRevision,
@@ -561,6 +562,83 @@ class JsonlSessionPersistence extends SessionPersistence {
     }
     signal?.throwIfAborted()
     return snapshots
+  }
+
+  /**
+   * Remove one stored session irreversibly: the whole session directory, which
+   * holds every generation, the lock file, and any session-local files, then
+   * its project directory when no other session remains in it. A refused
+   * deletion (unknown id, another owner, cancellation) removes nothing.
+   * @param id - the stored session to remove.
+   * @param options - optional cancellation, observed before the removal starts.
+   * @throws {SessionPersistenceNotFoundError} when the session does not exist.
+   * @throws {SessionAlreadyOwnedError} when this instance or another process owns the session.
+   */
+  async delete(id: SessionId, options?: SessionPersistenceDeleteOptions): Promise<void> {
+    options?.signal?.throwIfAborted()
+    await this.ensureRootEncoding()
+    // Refuses an id this instance already holds, including a created session not yet materialized.
+    this.tracker.claimWrite(id)
+    let lease: SessionWriteLease | undefined
+    try {
+      const resolved = await this.findLog(id, options?.signal)
+      if (resolved === undefined) throw new SessionPersistenceNotFoundError(id)
+      // Every generation of the session and its lock file live in this directory.
+      const dir = dirname(resolved.currentPath)
+      lease = await this.acquireLease(id, undefined, dir)
+      options?.signal?.throwIfAborted()
+      await rm(dir, { recursive: true, force: true })
+      this.coldLogMemo.delete(id)
+      this.migrationPreparations.delete(id)
+      this.tracker.forgetPrepared(id)
+      await this.removeEmptyProjectDir(dir)
+    } catch (error: unknown) {
+      // Free the lock and the in-process claim before rethrowing; a release failure joins the primary failure.
+      try {
+        await lease?.release()
+      } catch (releaseError: unknown) {
+        this.tracker.releaseClaim(id)
+        throw new AggregateError([error, releaseError], `session "${id}": delete failed and its lock release failed`)
+      }
+      this.tracker.releaseClaim(id)
+      throw error
+    }
+    try {
+      await lease.release()
+    } catch (releaseError: unknown) {
+      // The removal is durable and the lock file went with the directory, so a release failure only needs a warning.
+      this.ctx.logger.warn(`${this.name}: session "${id}" was deleted but its lock release failed: ${String(releaseError)}`)
+    } finally {
+      this.tracker.releaseClaim(id)
+    }
+    // The removal is durable: a listener failure must not reject the deletion.
+    try {
+      await this.ctx.parallel('session/deleted', { sessionId: id })
+    } catch (error: unknown) {
+      // ctx.parallel settles every listener and rejects with one AggregateError.
+      /* v8 ignore next -- the plain arm guards a rethrowing dispatcher. */
+      const failures = error instanceof AggregateError ? error.errors : [error]
+      for (const failure of failures) {
+        this.ctx.logger.warn(`${this.name}: session/deleted listener for "${id}" failed: ${String(failure)}`)
+      }
+    }
+  }
+
+  /**
+   * Remove the project directory of a deleted session when no other session
+   * remains in it. Listing skips an empty project directory, so a failed
+   * removal is logged and does not undo the completed deletion.
+   * @param sessionDirectory - the removed session's directory; its parent is the project directory.
+   */
+  private async removeEmptyProjectDir(sessionDirectory: string): Promise<void> {
+    try {
+      await rmdir(dirname(sessionDirectory))
+    } catch (error: unknown) {
+      // ENOTEMPTY: a sibling session remains; ENOENT: already absent. Neither leaves anything to remove.
+      const code = (error as NodeJS.ErrnoException | null)?.code
+      if (code === 'ENOTEMPTY' || code === 'ENOENT') return
+      this.ctx.logger.warn(`${this.name}: empty project directory of a deleted session was not removed: ${String(error)}`)
+    }
   }
 
   // --- handle-facing storage internals (package-private via the handle class below) ---
