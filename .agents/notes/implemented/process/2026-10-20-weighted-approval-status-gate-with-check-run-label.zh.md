@@ -22,7 +22,7 @@ publisher 按 `app.slug` 选择由当前发布 token 创建的 run：App token �
 
 ## 验证
 
-[批准策略测试](../../../../.github/review-ownership/check-approval.test.mjs)锁定未改动的 status 状态、策略满足与未满足两种情况下 check run 的 conclusion、阶段写入、通过 conclusion 撤销已发布的成功、每个 head 只有一个 run、无效的列表响应、标签写入失败时 status 的兜底，以及 status client 与 check-run client 的分离。[工作流测试](../../../../scripts/ci-workflow.spec.ts)锁定 `checks: write` 与 `statuses: write` 权限、App token 步骤及其唯一的密钥引用、`DECISION_TOKEN` 的接线，以及 setup 阶段命令。
+批准策略测试锁定未改动的 status 状态、策略满足与未满足两种情况下 check run 的 conclusion、阶段写入、通过 conclusion 撤销已发布的成功、每个 head 只有一个 run、无效的列表响应、标签写入失败时 status 的兜底，以及 status client 与 check-run client 的分离。工作流测试锁定 `checks: write` 与 `statuses: write` 权限、App token 步骤及其唯一的密钥引用、`DECISION_TOKEN` 的接线，以及 setup 阶段命令。
 
 check run 的关联限制于 2026-10-20 在本仓库用回退的尝试与上一版尝试实测：用 job token 发布的必需 check run 在合并框里保持 `Expected`；用 job token 发布的非必需 check run 不在合并框的检查列表中，而 Checks 页能列出它。
 

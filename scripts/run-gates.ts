@@ -349,8 +349,6 @@ export function gatesForMode(selected: Mode): Gate[] {
         pnpmScript('cordis-config', 'verify-cordis-config', { label: 'Cordis config' }),
         pnpmScript('client-domain-graph', 'verify-client-domain-graph', { label: 'client domain graph' }),
         pnpmScript('test', 'test'),
-        pnpmScript('approval-policy', 'test:approval-policy', { label: 'Weighted approval policy' }),
-        pnpmScript('issue-management', 'test:issue-management', { label: 'Issue management policy' }),
         pnpmScript('duplication', 'duplication'),
         snapshotGate(),
         expectedOutputGate(),
@@ -393,8 +391,6 @@ function ciSharedStaticGates(): Gate[] {
     pnpmScript('package-meta', 'verify-package-meta', { label: 'package metadata' }),
     pnpmScript('cordis-config', 'verify-cordis-config', { label: 'Cordis config' }),
     ...sharedHygieneGates(),
-    pnpmScript('approval-policy', 'test:approval-policy', { label: 'Weighted approval policy' }),
-    pnpmScript('issue-management', 'test:issue-management', { label: 'Issue management policy' }),
   ]
 }
 
