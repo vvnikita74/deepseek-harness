@@ -2,21 +2,6 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/web-styling.md
-/web-ui-style-reference:
-  en: 54f780881dddbe3d
-  zh: d2e8312fccf8de30
-/web-ui-style-reference/ownership:
-  en: 20a9cc13d8ffcaeb
-  zh: 7720f32db6714e7a
-/web-ui-style-reference/component-rules:
-  en: cc1015ced3e114b0
-  zh: feb4a0077d40abd2
-/web-ui-style-reference/input-capabilities:
-  en: 47fec65d52e2dbc2
-  zh: 048eb5a570d7df59
-/web-ui-style-reference/corner-radii-and-settings-cards:
-  en: 118972f6c2bd6ce4
-  zh: 85f8416b03e4dd8b
-/web-ui-style-reference/changing-the-system:
-  en: 71501119492a3ad4
-  zh: 87bf6c9406d0d9ed
+/web-styling:
+  en: fc8fac392581e0ab
+  zh: 473c7a7f5ad82f6b

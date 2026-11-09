@@ -3,8 +3,8 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/defensive-patterns/client-components.md
 /client-component-rules:
-  en: a6e8a87976040c04
-  zh: 08b59ad3c14fe250
+  en: 293c05396fc5ee1e
+  zh: 37fe8b199aee4936
 /client-component-rules/state-arrives-through-injection:
   en: 112232a703ce472d
   zh: cf42bda22d8e4da4
@@ -36,8 +36,8 @@
   en: 580441bd6cce9ee9
   zh: a5f093d8e7dec2ee
 /client-component-rules/build-and-style-follow-their-owners:
-  en: 561df1e1709a004c
-  zh: 89ca6eb4533648b8
+  en: 0cb67c7caf4c8e0f
+  zh: fba8d1d3988fe332
 /client-component-rules/a-key-states-what-it-identifies:
   en: 1d6f9bdc2b267fef
   zh: cf4d579ca877c422

@@ -1,48 +1,5 @@
-# Web UI style reference
+# Web styling
 
 English | [中文](web-styling.zh.md)
 
-This reference defines styling ownership and component rules for browser client packages. The current token values live in `packages/client/ui-theme/src/styles/`; this document does not duplicate that generated-by-source inventory.
-
-## Ownership
-
-`ui-theme` owns the `--dsw-*` static scale, semantic aliases, typography, motion, gradients, shadows, scrollbar styles, and light/dark preference. `ui-layout` applies the resolved theme snapshot to the document. Feature packages consume semantic aliases and do not define another global theme.
-
-Global style sheets belong in `ui-theme/src/styles/`. Component styles live beside their component as CSS Modules. A component may define a local custom property when its value is part of that component's layout or presentation contract; shared colors, typography, elevation, and motion belong to the theme package.
-
-<a id="component-rules"></a>
-## Component rules
-
-- Use CSS Modules and `clsx`; do not add a component library or Tailwind.
-- Use `--dsw-alias-*` semantic tokens in feature components. Do not copy static palette values or write literal colors there.
-- Keep theme selectors out of feature component CSS. Light/dark overrides belong to the theme owner.
-- Pair font sizes with line heights and use the theme typography variables when an existing role matches.
-- Keep source text, terminal output, and diff lines unwrapped when their component contract requires column preservation; use the shared scrollbar styles rather than component-specific scrollbar selectors.
-- Put presentation in CSS. Inline React styles may pass component-local custom-property values but must not encode theme branches.
-- A relative `url()` in a plugin stylesheet points to a file in the package's `src/client/assets/`, and the build rewrites it to the [package asset](../packages/client/AGENTS.md#dependency-declaration) URL. `data:`, `#fragment`, `/`-rooted, scheme, and empty `url('')` references stay unchanged, a relative file reference with a fragment or query fails the build, and stylesheets from dependencies are not rewritten.
-- Put `:hover` selectors under `@media (hover: hover)`, independently of viewport width. Keep selected, expanded, pressed, and keyboard-focus styles outside that condition. Without hover, actions remain visible or accessible through an explicit control; pointer handlers ignore touch when opening hover-only previews. Preserve keyboard focus visibility and reduced-motion behavior.
-- Rounded corners inherit the global superellipse smoothing from ui-theme's `corner-shape.css` on supporting engines. Pair `corner-shape: round` with every full-round `border-radius` (`50%`, `100%`, or a pill radius) so circles and capsules keep circular arcs; the ui-theme corner-shape spec enforces the pairing.
-- Elevated surfaces (menus, popovers, modals, panels, floating buttons, the composer) set `border: 0` and take `box-shadow: var(--dsw-elevation-panel)`, `var(--dsw-elevation-prominent)`, or the composer's `var(--dsw-elevation-soft)` (larger blur at lower alpha): the 0.5px hairline stroke is the first shadow layer, and `--dsw-elevation-stroke-color` rebinds or suppresses it per surface or state. Never pair a `--dsw-alias-border-*` border with an lv/elevation shadow — the ui-theme elevation spec rejects the pairing; state-colored borders (warn panels) stay real borders.
-- Modal backdrops, including settings and confirmation dialogs, retain their translucent dark mask without blur. The theme sets `--dsw-mask-blur` to `none`; Desktop-owned modal overlays also leave the parent page unfiltered.
-- Menu background filtering stays on an isolated layer so nested menus and fixed overlays retain their positioning and backdrop. On macOS, `MenuSurface` adds an opaque backing behind page content only within each menu’s bounds, allowing Chromium to blur content over native vibrancy; CSS anchors follow placement and size, and unmounting removes the backing. Overlays without this backing use `--dsw-specific-menu`, whose theme-owned macOS fill is 94% opaque to keep underlying text from bleeding through. Other elevated surfaces using that fill pair it with the same filter on their own isolated background when they contain fixed overlays.
-- Flat borders and separators that use a neutral `--dsw-alias-border-*` token draw at `0.5px` — buttons, inputs, cards, row dividers, and separators drawn as filled boxes (menu separators, the conversation header seam, markdown `hr`, vertical rails) share the hairline weight, which Chromium paints as one device pixel. Dashed affordances and state-colored borders keep 1px; spinner ring tracks keep their width through the spec's explicit allowlist. The ui-theme elevation spec rejects wider neutral solid borders.
-
-<a id="input-capabilities"></a>
-## Input capabilities
-
-`pointer` and `hover` describe the primary pointing device chosen by the browser; `any-hover` considers every available pointing device. None detects a physical keyboard.
-
-- Use `(pointer: coarse)` for presentation that depends on pointing accuracy, such as touch-sized controls and text fields.
-- Keep CSS hover effects under `(hover: hover)` so a touch-first layout remains usable without hover.
-- JavaScript hover previews use `(any-hover: hover)` when accepting mouse entry and ignore touch entry. A secondary mouse can therefore open a preview even when the touchscreen remains the primary pointer. Enabling all CSS hover styles through `any-hover` would also enable them for touch-generated `:hover` states.
-
-On a mixed-input device, a mouse preview can appear while the primary-pointer CSS hover style stays inactive. Keyboard focus and shortcut hints follow actual keyboard interaction independently of these capability queries; Menu and input modality define the shared behavior.
-
-<a id="corner-radii-and-settings-cards"></a>
-## Corner radii and settings cards
-
-The [DSH unified corner-radius standard](ui-radius.md) defines the radius scale, component size mapping, circle and capsule exceptions, nested hover geometry, and settings-card fills and strokes.
-
-## Changing the system
-
-Add or change a shared token in the owning `ui-theme` sheet, then consume its semantic alias from feature packages. Update the owning package reference when a public styling contract changes. Visual behavior follows the [testing policy](testing.md); the [archived styling-system Agent Note](../.agents/notes/archived/process/2026-07-19-web-styling-system.md) records framework rationale.
+The built-in Web client is no longer part of this repository: it was removed with the bundled frontend, and the separate client repository owns its styling, design tokens, and component rules. This page remains only so sealed historical Agent Notes keep resolving; it states no current rule.

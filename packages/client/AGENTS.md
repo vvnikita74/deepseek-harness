@@ -113,9 +113,7 @@ One UI feature = one plugin package (`src/client/` browser half). A multi-domain
 
 ## Styling and localization
 
-[docs/web-styling.md](../../docs/web-styling.md) is authoritative. Shared `--dsw-*` tokens and global sheets live in `ui-theme/src/styles/`; feature components consume semantic aliases through CSS Modules and `clsx`, with no literal colors, component library, or Tailwind. Code comments are English. Design judgment beyond those rules — feedback surfaces, loading states, overlay safety, platform window adaptation — follows [dsh-client-ui-ux](../../.agents/skills/dsh-client-ui-ux/SKILL.md); responsive layout and telling a mobile or touch client from a desktop one follow [dsh-responsive-ui](../../.agents/skills/dsh-responsive-ui/SKILL.md).
-
-Menus use `Menu` or `MenuSurface`, including custom listboxes, except the explicitly listed schedule containers. Preserve the shared transparency and blur ([rules](../../docs/web-styling.md#component-rules)).
+The bundled Web application is gone: this group keeps only host-side packages (`connection`, `file-upload`, `product-analytics`, `resources`, `store`, and the slot and renderer helpers), so component styling belongs to the separate client repository.
 
 Every product-visible string—including text, accessibility names, tooltips, placeholders, status/unit formatters, and primitive chrome—lives in a typed locale dictionary and reaches components through the standard `t` seat or an already-localized prop. Cordis-free primitives require complete label props and own no fallback copy. Keep user/model/wire data and code tokens verbatim; internal matching uses discriminants or stable ids, never localized text. The source-ownership rule is recorded ([decision](../../.agents/notes/implemented/architecture/2026-08-23-locale-owned-client-ui-copy.md)).
 
