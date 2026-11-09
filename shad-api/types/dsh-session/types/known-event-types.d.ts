@@ -5,8 +5,9 @@
  * @module @deepseek-ai/dsh-session/known-event-types
  */
 /**
- * Every `SessionEventMap` member declared in this repository — the event
- * vocabulary this build understands. The persistence read path refuses to
+ * Every `SessionEventMap` member declared in this repository plus the retired
+ * event types existing logs may still contain — the event vocabulary this
+ * build reads. The persistence read path refuses to
  * interpret a log containing a type outside this set unless the event
  * carries the envelope's `ignorable` marker (see `SessionEvent.ignorable`
  * in `./types.ts`): such a log was likely written by a newer harness, and

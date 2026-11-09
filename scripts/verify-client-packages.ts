@@ -12,7 +12,7 @@ import {
   PACKAGE_ASSET_EXPORT_TARGET,
   PACKAGE_ASSET_FILES_ENTRY,
   packageAssetMediaType,
-} from '../packages/client/support/assets.ts'
+} from './support/assets.ts'
 import { TypeScriptProject } from './ts-project.ts'
 
 export {

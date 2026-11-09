@@ -1,1 +1,1 @@
-![Eine Unterhaltung mit verknüpftem GitHub-Pull-Request, Prüfungen, Reviews, Codeunterschieden und einem separaten Arbeitsbaum](preview.svg)
+In diesem Fork gibt es kein Panel für Änderungsanfragen; der GitHub-Provider und das Worktree-Werkzeug des Modells bleiben verfügbar.

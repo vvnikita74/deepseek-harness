@@ -16,27 +16,7 @@ export const expectedUnsupported: Readonly<Partial<Record<string, { sourceVersio
     sourceVersion: 2,
     reason: 'session snapshot line 3: format v2 changed request prompt outside an open step cannot retain source chronology',
   },
-  'snapshots/web/navigation-panes/session.v2.jsonl': {
-    sourceVersion: 2,
-    reason: 'session snapshot line 3: format v2 surface before first step cannot acquire a system head without changing chronology',
-  },
   // This recording contains an event absent from the released V2 event inventory.
-  'snapshots/web/present/session.v2.jsonl': {
-    sourceVersion: 2,
-    reason: 'session snapshot line 21: format v2 to v3 cannot safely transform unclassified event deliverables/presented',
-  },
-  'snapshots/web/pwsh-terminal/session.v2.jsonl': {
-    sourceVersion: 2,
-    reason: 'session snapshot line 3: format v2 surface before first step cannot acquire a system head without changing chronology',
-  },
-  'snapshots/web/schedule-catalog/session.v2.jsonl': {
-    sourceVersion: 2,
-    reason: 'session snapshot line 3: format v2 surface before first step cannot acquire a system head without changing chronology',
-  },
-  'snapshots/web/seeded-history/session.v2.jsonl': {
-    sourceVersion: 2,
-    reason: 'session snapshot line 3: format v2 surface before first step cannot acquire a system head without changing chronology',
-  },
 }
 
 /** Headerless snapshot-harness protocol examples, not released Session artifacts. */

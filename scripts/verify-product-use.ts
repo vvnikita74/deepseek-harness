@@ -3,7 +3,6 @@
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs'
 import { dirname, extname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { JSDOM } from 'jsdom'
 import ts from 'typescript'
 import { applyEntryPatches, type PatchOptions } from '@deepseek-ai/cordis-plugin-include'
 import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
@@ -114,8 +113,7 @@ export function verifyProductUse(
     const source = readFileSync(path, 'utf8')
     for (const specifier of collectRuntimeSourceSpecifiers(path, source)) reference(specifier, path, reach)
     for (const specifier of collectRuntimeLocalSourceSpecifiers(path, source, true)) {
-      const resolved = specifier.startsWith('/')
-        ? sourceFile(resolve(root, 'apps/web', `.${specifier}`)) : resolveModule(specifier, path)
+      const resolved = resolveModule(specifier, path)
       if (resolved !== undefined) scanSource(resolved, reach)
       else if (/\.[cm]?[jt]sx?$/.test(specifier)) failures.push(`${display(path)}: source import ${specifier} does not resolve to source`)
     }
@@ -215,19 +213,7 @@ export function verifyProductUse(
     const webBundles = stringList(web.bundles, `${PROFILE_SOURCE} web`)
     for (const bundle of optionals) scanEntries(composeEntries(layers([...webBundles, bundle], optional)), profilePath, optional)
   }
-  for (const path of ['apps/cli/src/bin.ts', 'apps/desktop/src/main.ts']) scanSource(resolve(root, path), defaults)
-  const htmlPath = resolve(root, 'apps/web/index.html')
-  const dom = new JSDOM(readFileSync(htmlPath, 'utf8'))
-  try {
-    const scripts = [...dom.window.document.querySelectorAll('script[type="module"]')]
-    if (scripts.length === 0) failures.push('apps/web/index.html: missing product module entry')
-    for (const script of scripts) {
-      const path = script.getAttribute('src')
-      if (path === null || /^(?:https?:)?\/\//.test(path)) {
-        failures.push('apps/web/index.html: product module entries must name local source files')
-      } else scanSource(resolve(root, 'apps/web', path.replace(/^\//, '')), defaults)
-    }
-  } finally { dom.window.close() }
+  scanSource(resolve(root, 'apps/cli/src/bin.ts'), defaults)
   for (const [path, entry] of Object.entries(policy)) {
     const pkg = directories.get(resolve(root, path))
     if (!/^packages\/[^/]+\/[^/]+$/.test(path) || path.startsWith('packages/experimental/') || pkg === undefined) {
@@ -236,11 +222,8 @@ export function verifyProductUse(
     }
     if (entry.reason.trim() === '') failures.push(`${path} (${pkg.name}): package policy requires a reason`)
     if (!validCategory(path, entry.category)) failures.push(`${path} (${pkg.name}): invalid policy category ${entry.category}`)
-    if (entry.category !== 'web-distribution' && defaults.packages.has(path)) {
+    if (defaults.packages.has(path)) {
       failures.push(`${path} (${pkg.name}): stale ${entry.category} policy; default runtime use requires removing this declaration`)
-    }
-    if (entry.category === 'web-distribution' && !defaults.packages.has(path)) {
-      failures.push(`${path} (${pkg.name}): stale web-distribution policy; restore its product source entry or correct its role`)
     }
   }
   for (const pkg of packages.values()) {
@@ -260,7 +243,6 @@ function validCategory(path: string, category: ProductPackagePolicy['category'])
     case 'test': return path.startsWith('packages/test-support/')
     case 'sdk': return path === 'packages/sdk/client'
     case 'build': return path === 'packages/typert/generator'
-    case 'web-distribution': return path === 'packages/client/web' || path === 'packages/client/ui-dockkit'
     case 'declarations': return path === 'packages/util/package-manifest'
     default: return assertNever(category)
   }

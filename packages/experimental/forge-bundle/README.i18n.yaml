@@ -3,29 +3,29 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/experimental/forge-bundle/README.md
 /:
-  en: 75db4d505f21f46f
-  zh: a0e463c38ed59efa
+  en: 516b7e9a5c65e4db
+  zh: 19ced55a546c13de
 /deepseek-ai-dsh-experimental-forge-bundle:
   en: 567570af44a77fa2
   zh: 3d7722fe3ade65d6
 /deepseek-ai-dsh-experimental-forge-bundle/summary:
-  en: 8d8189bb9a91f049
-  zh: 27f02215d6919b3d
+  en: 29c9788549829317
+  zh: 805b23fd90ddbcce
 /deepseek-ai-dsh-experimental-forge-bundle/table-of-contents:
   en: d152484eb41ac6b4
   zh: 2f8a621b991260a1
 /deepseek-ai-dsh-experimental-forge-bundle/use-this-package:
-  en: 25c0f298a0345203
-  zh: de0d19f3fb3e2b55
+  en: 618baef17ca23cb3
+  zh: 2a2c3fa3c33a7798
 /deepseek-ai-dsh-experimental-forge-bundle/understand-the-implementation:
-  en: 5cb4136ef2058890
-  zh: 5142828996eef6c7
+  en: 01c86c42da68c8bc
+  zh: ba2d3a5a5bba0898
 /deepseek-ai-dsh-experimental-forge-bundle/further-exploration:
-  en: 2d59412a0e932f92
-  zh: 7ed2c1d6a37b56cf
+  en: fbfe624b0a810252
+  zh: 6731725788b89421
 /deepseek-ai-dsh-experimental-forge-bundle/model-experience:
-  en: 65ec8e6b5476d9ab
-  zh: fb490e91818afa76
+  en: 94a4f8fb84714011
+  zh: 15ad42e63640997f
 /deepseek-ai-dsh-experimental-forge-bundle/model-experience/kv-cache-effect:
   en: 0192ab064b8000a7
   zh: 1a1de04f87631b9a

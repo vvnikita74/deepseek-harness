@@ -1,5 +1,5 @@
 ---
-description: "从插件管理页启用实验性的自定义插件索引。"
+description: "实验性的自定义插件索引服务；本分支不提供发现标签页。"
 kind: "package-bundle"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-此可选组合包（bundle）挂载自定义插件索引：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件索引，Web 端提供插件页的发现标签页。随包配置默认禁用。
+此可选组合包（bundle）挂载自定义插件索引：Host 的 [`pluginMarket`](../../boot/plugin-market/README.zh.md) 服务读取用户添加的插件索引。本分支没有发现标签页，因此该服务没有浏览器界面。随包配置默认禁用。
 
 ## 目录
 
@@ -24,7 +24,7 @@ kind: "package-bundle"
 <a id="use-this-package"></a>
 ## 使用此包
 
-打开 Web 侧栏中的**插件**，在**实验性插件**下启用**自定义插件索引**。页面随后显示**已安装**和**发现**两个标签页；**发现**用于添加索引源并安装其中的组合包。禁用此组合包会移除发现标签页和 `plugin_market` 工具；已保存的索引源保留在 profile 中。
+本分支没有此组合包的插件页开关或发现标签页。从 profile 中移除此组合包会移除 `plugin_market` 工具；已保存的索引源保留在 profile 中。
 
 -----
 
@@ -34,7 +34,7 @@ kind: "package-bundle"
 <details>
 <summary>维护者信息 — 点击展开</summary>
 
-静态 `cordis.patch.yml` 插入 `plugin-market` 服务行和 `ui-plugin-market` 浏览器行；与 `plugin-manager` 一样，服务行在没有 profile 时被禁用。Creator 预设保留其 `tool-plugin-market` 行；该插件只在 `pluginMarket` 已挂载时注册 `plugin_market`，因此没有此组合包时，该行既不等待，也不显示该工具。插件页只在存在 `plugins.tab` 条目时显示标签页，因此无需了解此组合包。
+静态 `cordis.patch.yml` 插入 `plugin-market` 服务行；与 `plugin-manager` 一样，服务行在没有 profile 时被禁用。Creator 预设保留其 `tool-plugin-market` 行；该插件只在 `pluginMarket` 已挂载时注册 `plugin_market`，因此没有此组合包时，该行既不等待，也不显示该工具。
 
 </details>
 
@@ -53,7 +53,7 @@ kind: "package-bundle"
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- 目前没有官方插件索引；发现标签页只列出用户添加的索引源。
+- 目前没有官方插件索引；服务只列出用户添加的索引源。
 
 -----
 

@@ -35,7 +35,7 @@ description: Use when reviewing a pull request in the deepseek-harness repo — 
 3. **Core type docs match.** Changes to spine or seam vocabulary update the appropriate [subsystems](../../../docs/subsystems/README.md) page and any `type-equiv` entry. Internal types need no catalog entry.
 4. **Cordis ownership and cleanup.** When reviewing Cordis plugin code or helpers reachable from its entrypoints, load and apply [cordis-styling-nitpicking](../cordis-styling-nitpicking/SKILL.md) to the changed behavior and affected consumers. Check its three P0 rules: singleton state, unreversed effects, and cleanup dependencies released before consumers finish. Verify each new registry contribution passes the disposal tests required by [packages/AGENTS.md](../../../packages/AGENTS.md).
 5. **Required evidence exists.** Verify the author ran the [relevant local checks](../../../AGENTS.md#run-relevant-checks-locally) for the diff and that CI covers the exhaustive matrix; review the semantic gaps neither can detect.
-6. **Client UI copy is locale-owned.** Reject product text embedded in JSX, templates, helper returns, accessibility attributes, or primitive defaults. Require typed dictionary keys, the standard `t` seat or explicit localized props, `verify-client-ui-i18n`, and behavior evidence in each affected locale; preserve user/model/wire data and code tokens verbatim.
+6. **Client UI copy is locale-owned.** Reject product text embedded in JSX, templates, helper returns, accessibility attributes, or primitive defaults. Require typed dictionary keys, the standard `t` seat or explicit localized props, and behavior evidence in each affected locale; preserve user/model/wire data and code tokens verbatim.
 
 ## Manual checks
 

@@ -53,7 +53,6 @@
   "files": [
     "locale/*.json",
     "lib/index.js",
-    "lib/client.js",
     "lib/remote-types.js",
     "lib/api.js",
     "lib/bridge.js",

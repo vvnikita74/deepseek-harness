@@ -7,7 +7,6 @@
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs'
 import { basename, dirname, extname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { JSDOM } from 'jsdom'
 import ts from 'typescript'
 import { applyEntryPatches, type PatchOptions } from '@deepseek-ai/cordis-plugin-include'
 import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
@@ -20,7 +19,7 @@ import {
   collectRuntimeSourceSpecifiers,
 } from './verify-client-packages.ts'
 
-import { isExperimentalPackageName } from './experimental-package-policy.ts'
+import { isExperimentalPackageName, SHIPPED_EXPERIMENTAL_PACKAGES } from './experimental-package-policy.ts'
 // The independently published entry package owns platform-engine dependencies.
 const EXTERNAL_KIT_PACKAGES = new Set(['@deepseek-ai/libreoffice-kit'])
 const PROFILE_SOURCE = 'packages/util/official-bundles/src/bundles.ts'
@@ -74,7 +73,7 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
     packages.set(manifest.name, pkg)
     directories.set(pkg.directory, pkg)
   }
-  for (const path of ['apps/cli/package.json', 'apps/web/package.json', 'python/sdk-runtime/package.json']) {
+  for (const path of ['apps/cli/package.json', 'python/sdk-runtime/package.json']) {
     if (!existsSync(resolve(root, path))) failures.push(`missing default product root ${path}`)
   }
   const cli = directories.get(resolve(root, 'apps/cli'))
@@ -107,8 +106,8 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
   const sources = new Set<string>()
   const configs = new Set<string>()
   let webPluginCount = 0
-  const isExperimental = (pkg: Package): boolean => isExperimentalPackageName(pkg.manifest.name)
-    || display(pkg.directory).startsWith('packages/experimental/')
+  const isExperimental = (pkg: Package): boolean => !SHIPPED_EXPERIMENTAL_PACKAGES.has(pkg.manifest.name)
+    && (isExperimentalPackageName(pkg.manifest.name) || display(pkg.directory).startsWith('packages/experimental/'))
   const add = (pkg: Package, origin: string): void => {
     if (isExperimental(pkg)) {
       failures.push(`${origin} -> ${pkg.manifest.name}: default product must not include experimental packages`)
@@ -136,7 +135,7 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
       return
     }
     const packageName = barePackageName(name)
-    if (isExperimentalPackageName(packageName)) {
+    if (isExperimentalPackageName(packageName) && !SHIPPED_EXPERIMENTAL_PACKAGES.has(packageName)) {
       failures.push(`${origin} -> ${name}: default product must not include experimental packages`)
       return
     }
@@ -162,21 +161,17 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
       .map(section => owner.manifest[section]?.[name]).find(value => value !== undefined)
     if (range !== undefined) dependency(name, range, owner, display(path))
   }
-  const scanSource = (path: string, followLocal = false, inlineSource?: string): void => {
+  const scanSource = (path: string): void => {
     if (sources.has(path)) return
     sources.add(path)
-    const source = inlineSource ?? readFileSync(path, 'utf8')
+    const source = readFileSync(path, 'utf8')
     for (const specifier of collectRuntimeSourceSpecifiers(path, source)) sourceReference(specifier, path)
     for (const specifier of runtimeLocalSpecifiers(path, source)) {
-      const local = followLocal && specifier.startsWith('/')
-        ? resolve(root, 'apps/web', `.${specifier.replace(/[?#].*$/, '')}`)
-        : resolve(dirname(path), specifier.replace(/[?#].*$/, ''))
-      const target = resolveSource(local)
-      const resolved = target ?? local
+      const local = resolve(dirname(path), specifier.replace(/[?#].*$/, ''))
+      const resolved = resolveSource(local) ?? local
       const owner = directories.get(resolved) ?? ownerOf(resolved)
       if (owner !== undefined && isExperimental(owner)) add(owner, display(path))
       if (/cordis[^/]*\.ya?ml$/.test(basename(resolved))) scanConfig(resolved)
-      if (followLocal && target !== undefined) scanSource(target, true)
     }
   }
   const scanEntries = (
@@ -266,29 +261,6 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
   if (presets.length === 0) failures.push(`no shipped presets matched ${PRESET_PATTERN}`)
   for (const path of presets) scanConfig(resolve(root, path))
 
-  const html = resolve(root, 'apps/web/index.html')
-  if (existsSync(html)) {
-    const dom = new JSDOM(readFileSync(html, 'utf8'))
-    try {
-      const entries = [...dom.window.document.querySelectorAll('script[type="module"]')]
-      if (entries.length === 0) failures.push('apps/web/index.html: missing default module entry')
-      for (const [index, entry] of entries.entries()) {
-        const src = entry.getAttribute('src')
-        if (src === null) {
-          scanSource(`${html}.inline-${String(index)}.js`, true, entry.textContent)
-          continue
-        }
-        if (/^(?:https?:)?\/\//.test(src)) {
-          failures.push(`apps/web/index.html: external default module entry cannot be checked: ${src}`)
-          continue
-        }
-        scanSource(resolve(root, 'apps/web', src.replace(/^\//, '')), true)
-      }
-    } finally {
-      dom.window.close()
-    }
-  } else failures.push('missing default Web entry apps/web/index.html')
-
   for (const pkg of queue) {
     const { manifest } = pkg
     for (const section of RUNTIME_SECTIONS) {
@@ -306,8 +278,7 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
       if (files.length === 0) failures.push(`${display(treePath)}: declared config tree has no composition files`)
       for (const path of files) scanConfig(resolve(treePath, path))
     }
-    if (display(pkg.directory) === 'apps/web') continue
-    const files = globSync('src/**/*.{ts,tsx,mts,cts,js,mjs,cjs}', { cwd: pkg.directory,
+    const files = globSync('src/**/*.{ts,tsx,jsx,mts,cts,js,mjs,cjs}', { cwd: pkg.directory,
       exclude: ['**/*.spec.*', '**/*.test.*', '**/*.d.ts', '**/tests/**', '**/__tests__/**', '**/node_modules/**'] })
     if (display(pkg.directory) === 'apps/cli' && files.length === 0) failures.push('apps/cli: no default runtime sources')
     for (const path of files) {

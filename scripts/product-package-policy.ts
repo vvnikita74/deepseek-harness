@@ -1,7 +1,7 @@
 /** Non-default package roles retained outside the experimental group. */
 
 /** Product role that does not require a default runtime mount. */
-export type ProductPackageCategory = 'optional' | 'sdk' | 'build' | 'test' | 'web-distribution' | 'declarations'
+export type ProductPackageCategory = 'optional' | 'sdk' | 'build' | 'test' | 'declarations'
 
 /** One explicitly maintained package role and its reason. */
 export interface ProductPackagePolicy {
@@ -17,7 +17,6 @@ export interface ProductPackagePolicy {
  */
 export const PRODUCT_PACKAGE_POLICY: Readonly<Record<string, ProductPackagePolicy>> = {
   'packages/core/agent-tool-presentation': { category: 'optional', reason: 'Deprecated selector retained for existing executor configurations.' },
-  'packages/browser-use/browser-use': { category: 'optional', reason: 'Service definition used by explicitly selected browser providers.' },
   'packages/computer-use/computer-use': { category: 'optional', reason: 'Service definition used by explicitly selected computer providers.' },
   'packages/lsp/lsp': { category: 'optional', reason: 'Service definition for deployment-configured language servers.' },
   'packages/lsp/lsp-stdio': { category: 'optional', reason: 'Requires an explicit server list and language-server executables.' },
@@ -39,13 +38,13 @@ export const PRODUCT_PACKAGE_POLICY: Readonly<Record<string, ProductPackagePolic
   'packages/typert/generator': { category: 'build', reason: 'Build-time generation of type metadata.' },
   'packages/test-support/agent-loop-testkit': { category: 'test', reason: 'Published agent-loop test harness.' },
   'packages/test-support/tool-testkit': { category: 'test', reason: 'Shared tool definition and execution fixtures for tests and benchmarks.' },
-  'packages/test-support/client-runtime': { category: 'test', reason: 'Published browser plugin test harness.' },
   'packages/test-support/llm-mock-server': { category: 'test', reason: 'Published model-provider test server.' },
   'packages/test-support/llm-replay': { category: 'test', reason: 'Published recorded-model replay harness.' },
   'packages/test-support/loader-smoke': { category: 'test', reason: 'Published plugin Loader smoke-test harness.' },
   'packages/test-support/remote-mock': { category: 'test', reason: 'Published typed Remote test proxies.' },
   'packages/test-support/session-snapshot': { category: 'test', reason: 'Published Session snapshot replay harness.' },
-  'packages/client/web': { category: 'web-distribution', reason: 'Browser boot kernel bundled into the Web distribution.' },
-  'packages/client/ui-dockkit': { category: 'web-distribution', reason: 'Layout library bundled into the Web distribution.' },
+  'packages/host/frontend-static': { category: 'optional', reason: 'Serves a built browser client from the Host when a deployment mounts it.' },
+  'packages/host/directory-picker-native': { category: 'optional', reason: 'Native directory dialog for desktop deployments.' },
+  'packages/util/file-drag': { category: 'optional', reason: 'Client-side file-drop helper reached by a browser client, not the Host.' },
   'packages/util/package-manifest': { category: 'declarations', reason: 'Shared package metadata declarations have no runtime mount.' },
 }

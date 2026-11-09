@@ -1,1 +1,1 @@
-![Adding a plugin index URL, then installing its plugins from the Discover tab](preview.svg)
+This fork ships no Discover tab; the plugin index service reads the index sources the user adds.

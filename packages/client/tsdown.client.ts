@@ -33,9 +33,9 @@ import {
   packageAssetReference,
   packageAssetRevision,
   packageAssetRevisionedPath,
-} from './support/assets.ts'
-import { optionalStringArray } from './support/manifest.ts'
-import { PLATFORM_MODULES, PRELOADED_CLIENT_EXTERNALS } from './support/platform.ts'
+} from '../../scripts/support/assets.ts'
+import { optionalStringArray } from '../../scripts/support/manifest.ts'
+import { PLATFORM_MODULES, PRELOADED_CLIENT_EXTERNALS } from '../../scripts/support/platform.ts'
 import { clientBuildEnvironmentDefines, clientBuildValueDefines } from '../../scripts/client-build-environment.ts'
 import { isExperimentalPackageName } from '../../scripts/experimental-package-policy.ts'
 import { BundleInputIsolation, physicalBundleInput } from '../../scripts/bundle-input-isolation.ts'

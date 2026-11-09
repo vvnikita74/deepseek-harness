@@ -3,35 +3,35 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/experimental/cot-translation-bundle/README.md
 /:
-  en: 48432c317d712e6d
-  zh: 74d79e7df5bc9036
+  en: 67ba507ede8620e2
+  zh: c26407f323a9c119
 /deepseek-ai-dsh-experimental-cot-translation-bundle:
   en: 05eca6db27f8c62b
   zh: 9e5f60e80863d49f
 /deepseek-ai-dsh-experimental-cot-translation-bundle/summary:
-  en: b42d79a3fe61d3b2
-  zh: a65aef3e75acf942
+  en: 1bebe36f2170e0df
+  zh: bef8fa0e5b2f0d42
 /deepseek-ai-dsh-experimental-cot-translation-bundle/table-of-contents:
   en: d152484eb41ac6b4
   zh: ce40cab8e7534137
 /deepseek-ai-dsh-experimental-cot-translation-bundle/use-this-package:
-  en: 62bd702a16fbcbd4
-  zh: 1f57d7e298681c53
+  en: b2c5bb509dbafb7c
+  zh: b3c97f62d6e37c4a
 /deepseek-ai-dsh-experimental-cot-translation-bundle/understand-the-implementation:
-  en: df56a846235d004d
-  zh: d7e0a54f6f6985f5
+  en: f7219b473b423903
+  zh: 15c74b391aa0a743
 /deepseek-ai-dsh-experimental-cot-translation-bundle/further-exploration:
-  en: bf70f0a2d46b5dfc
-  zh: cde5ebed7d13b831
+  en: 8bd79720998be9dc
+  zh: 340342f4cf24a142
 /deepseek-ai-dsh-experimental-cot-translation-bundle/model-experience:
   en: 3abb215d69a83fa6
   zh: 5000ed802a0db760
 /deepseek-ai-dsh-experimental-cot-translation-bundle/model-experience/kv-cache-effect:
-  en: 27a17e3b3dd7824b
-  zh: 3caca3e46f14d0ce
+  en: 6c8850eaa83bd582
+  zh: 8dd00f890c8b33a1
 /deepseek-ai-dsh-experimental-cot-translation-bundle/known-limitations-and-deferred-work:
-  en: caafc57396d85a41
-  zh: 9c56f15ff1812139
+  en: 73ff12846b7efb86
+  zh: a4c7563cda6c44d1
 /deepseek-ai-dsh-experimental-cot-translation-bundle/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 8ec3e73528ddb1a6

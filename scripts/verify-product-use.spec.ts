@@ -39,12 +39,7 @@ function fixture(): string {
   roots.push(root)
   write(root, 'tsconfig.base.json', { compilerOptions: { moduleResolution: 'bundler', paths: {} } })
   pkg(root, 'apps/cli', '@deepseek-ai/dsh')
-  pkg(root, 'apps/desktop', '@fixture/desktop')
-  pkg(root, 'apps/web', '@fixture/web')
   write(root, 'apps/cli/src/bin.ts', 'export {}\n')
-  write(root, 'apps/desktop/src/main.ts', 'export {}\n')
-  write(root, 'apps/web/src/main.ts', 'export {}\n')
-  write(root, 'apps/web/index.html', '<script type="module" src="/src/main.ts"></script>')
   pkg(root, 'packages/bundle/base', base, { dsh: { bundle: { patch: './cordis.patch.yml' } } })
   pkg(root, 'packages/core/core', core)
   write(root, patch, [{ insert: [{ id: 'core', name: core }] }])
@@ -118,13 +113,6 @@ describe('product package use', () => {
     write(root, 'apps/cli/src/bin.ts', "import './cycle.ts'\nnew URL('./worker.js', import.meta.url)")
     write(root, 'apps/cli/src/cycle.ts', "import './bin.ts'")
     write(root, 'apps/cli/src/worker.ts', `import '${candidate}'`)
-    expect(failures(root)).toBe('')
-  })
-
-  it.each(['apps/desktop/src/main.ts', 'apps/web/src/main.ts'])('reaches the %s entrypoint', (entry) => {
-    const root = fixture()
-    pkg(root, candidateDir, candidate)
-    write(root, entry, `import '${candidate}'`)
     expect(failures(root)).toBe('')
   })
 
@@ -226,7 +214,7 @@ describe('product package use', () => {
     } } })
     pkg(root, 'packages/core/host-only', '@deepseek-ai/dsh-host-only')
     write(root, `${candidateDir}/src/index.ts`, "import '@deepseek-ai/dsh-host-only'")
-    write(root, 'apps/web/src/main.ts', `import '${candidate}/remote'`)
+    write(root, 'apps/cli/src/bin.ts', `import '${candidate}/remote'`)
     const result = verifyProductUse(root, {})
     expect(result.defaultPackages).toContain(candidateDir)
     expect(result.defaultPackages).not.toContain('packages/core/host-only')
@@ -279,17 +267,6 @@ describe('product package use', () => {
     pkg(root, candidateDir, candidate)
     expect(failures(root, declarations('declarations'))).toContain('invalid policy category declarations')
     expect(failures(root, { 'packages/core/missing': { category: 'optional', reason: 'Missing.' } })).toContain('stale package policy')
-  })
-
-  it('requires a declared Web distribution package to remain source-reachable', () => {
-    const root = fixture()
-    const directory = 'packages/client/web'
-    const name = '@deepseek-ai/dsh-client-web'
-    pkg(root, directory, name)
-    const policy = { [directory]: { category: 'web-distribution', reason: 'Browser boot kernel.' } } as const
-    expect(failures(root, policy)).toContain('stale web-distribution policy')
-    write(root, 'apps/web/src/main.ts', `import '${name}'`)
-    expect(failures(root, policy)).toBe('')
   })
 
   it('fails when the shipped profile corpus is narrowed', () => {

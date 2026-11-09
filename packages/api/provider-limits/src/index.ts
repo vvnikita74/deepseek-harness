@@ -24,6 +24,7 @@ declare module '@deepseek-ai/cordis' {
 
 /** Polled account balance of a pay-per-use provider route. Absent `balance` disables polling. */
 export interface Config {
+  /** Account balance polling for one pay-per-use provider route. */
   balance?: {
     /** Provider route id the balance is published under. */
     provider: string

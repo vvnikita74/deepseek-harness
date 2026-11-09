@@ -27,9 +27,6 @@ function fixture(): string {
   roots.push(root)
   write(root, 'apps/cli/package.json', { name: '@deepseek-ai/dsh', dependencies: { [core]: 'workspace:^' } })
   write(root, 'apps/cli/src/bin.ts', 'export {}\n')
-  write(root, 'apps/web/package.json', { name: '@deepseek-ai/dsh-web-frontend' })
-  write(root, 'apps/web/index.html', '<script type="module" src="/src/main.ts"></script>')
-  write(root, 'apps/web/src/main.ts', 'export {}\n')
   write(root, 'python/sdk-runtime/package.json', { name: '@deepseek-ai/dsh-python-runtime' })
   write(root, 'packages/core/core/package.json', { name: core })
   write(root, 'packages/core/core/src/index.ts', 'export {}\n')
@@ -99,10 +96,10 @@ describe('default product isolation', () => {
     const root = fixture()
     manifest(root, 'apps/cli/package.json', { devDependencies: { [experimental]: 'workspace:^' } })
     write(root, 'apps/cli/src/bin.ts', `import type { Options } from '${experimental}'\nexport type { Options }\n`)
-    write(root, 'apps/web/src/preview.ts', `import '${experimental}'\n`)
+    write(root, 'apps/cli/preview/preview.ts', `import '${experimental}'\n`)
     write(root, 'packages/experimental/prototype/cordis.patch.yml', [{ name: experimental }])
 
-    expect(verifyDefaultProductIsolation(root)).toMatchObject({ failures: [], packageCount: 6, configCount: 2 })
+    expect(verifyDefaultProductIsolation(root)).toMatchObject({ failures: [], packageCount: 5, configCount: 2 })
   })
 
   it('ignores dependency trees and directories whose names end in a source extension', () => {
@@ -126,7 +123,7 @@ describe('default product isolation', () => {
     write(root, profile, `export const PROFILE_TEMPLATES = { web: { bundles: ['${base}'] } }\n`
       + `export const DEFAULT_PROFILE_BUNDLES = ['${base}']\n`
       + `export const OPTIONAL_BUNDLES = ['${layer}']\n`)
-    expect(verifyDefaultProductIsolation(root)).toMatchObject({ failures: [], packageCount: 6 })
+    expect(verifyDefaultProductIsolation(root)).toMatchObject({ failures: [], packageCount: 5 })
 
     // The exception covers the dependency edge alone: a runtime import or a default template still names the product.
     write(root, 'apps/cli/src/bin.ts', `import '${layer}'\n`)
@@ -240,8 +237,8 @@ describe('default product isolation', () => {
     "import './preview.ts'", "import './preview.ts?worker'", "new Worker(new URL('./preview.ts', import.meta.url))",
   ])('rejects default Web entry reaching preview via %s', (source) => {
     const root = fixture()
-    write(root, 'apps/web/src/main.ts', source)
-    write(root, 'apps/web/src/preview.ts', `import '${experimental}'\n`)
+    write(root, 'apps/cli/src/main.ts', source)
+    write(root, 'apps/cli/src/preview.ts', `import '${experimental}'\n`)
 
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
@@ -253,55 +250,47 @@ describe('default product isolation', () => {
     "new Worker(new URL('/src/preview.ts', import.meta.url))",
   ])('follows Web-root runtime reference %s', (source) => {
     const root = fixture()
-    write(root, 'apps/web/src/main.ts', source)
-    write(root, 'apps/web/src/preview.ts', `import '${experimental}'\n`)
+    write(root, 'apps/cli/src/main.ts', source)
+    write(root, 'apps/cli/src/preview.ts', `import '${experimental}'\n`)
 
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
 
-  it('does not follow type-only Web-root references', () => {
+  it.each(['.js', '.jsx', '.mjs', '.ts', '.tsx', '.mts'])('follows extensionless source imports to %s in a dotted checkout', (extension) => {
     const root = fixture()
-    write(root, 'apps/web/src/main.ts', "import type { Value } from '/src/preview.ts'\nexport type { Value } from '/src/preview.ts'\n")
-    write(root, 'apps/web/src/preview.ts', `import '${experimental}'\n`)
-
-    expect(verifyDefaultProductIsolation(root).failures).toEqual([])
-  })
-
-  it.each(['.js', '.jsx', '.mjs', '.ts', '.tsx', '.mts'])('follows extensionless Web imports to %s in a dotted checkout', (extension) => {
-    const root = fixture()
-    write(root, 'apps/web/src/main.ts', "import './preview'\n")
-    write(root, `apps/web/src/preview${extension}`, `import '${experimental}'\n`)
+    write(root, 'apps/cli/src/main.ts', "import './preview'\n")
+    write(root, `apps/cli/src/preview${extension}`, `import '${experimental}'\n`)
 
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
 
-  it.each(['.js', '.jsx', '.mjs'])('follows Web directory imports to index%s', (extension) => {
+  it.each(['.js', '.jsx', '.mjs'])('follows source directory imports to index%s', (extension) => {
     const root = fixture()
-    write(root, 'apps/web/src/main.ts', "import './preview'\n")
-    write(root, `apps/web/src/preview/index${extension}`, `import '${experimental}'\n`)
+    write(root, 'apps/cli/src/main.ts', "import './preview'\n")
+    write(root, `apps/cli/src/preview/index${extension}`, `import '${experimental}'\n`)
 
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
 
   it.each([['.mjs', '.mts'], ['.cjs', '.cts']])('follows %s runtime requests to their %s source', (request, source) => {
     const root = fixture()
-    write(root, 'apps/web/src/main.ts', `import './preview${request}'\n`)
-    write(root, `apps/web/src/preview${source}`, `import '${experimental}'\n`)
+    write(root, 'apps/cli/src/main.ts', `import './preview${request}'\n`)
+    write(root, `apps/cli/src/preview${source}`, `import '${experimental}'\n`)
 
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
 
-  it('follows a Web directory import whose directory name contains a dot', () => {
+  it('follows a source directory import whose directory name contains a dot', () => {
     const root = fixture()
-    write(root, 'apps/web/src/main.ts', "import './preview.v1'\n")
-    write(root, 'apps/web/src/preview.v1/index.js', `import '${experimental}'\n`)
+    write(root, 'apps/cli/src/main.ts', "import './preview.v1'\n")
+    write(root, 'apps/cli/src/preview.v1/index.js', `import '${experimental}'\n`)
 
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
 
   it('identifies a relative package-directory import using its exact directory owner', () => {
     const root = fixture()
-    write(root, 'apps/web/src/main.ts', "import '../../../packages/experimental/prototype'\n")
+    write(root, 'apps/cli/src/main.ts', "import '../../../packages/experimental/prototype'\n")
     manifest(root, 'packages/experimental/prototype/package.json', { main: 'src/entry.js' })
     write(root, 'packages/experimental/prototype/src/entry.js', 'export {}\n')
 
@@ -464,15 +453,7 @@ describe('default product isolation', () => {
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
 
-  it('checks inline modules alongside the default Web script', () => {
-    const root = fixture()
-    write(root, 'apps/web/index.html', '<script type="module" src="/src/main.ts"></script>'
-      + `<script type="module">import '${experimental}'</script>`)
-
-    expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
-  })
-
-  it.each(['apps/cli/package.json', 'apps/web/index.html', 'python/sdk-runtime/package.json', preset])(
+  it.each(['apps/cli/package.json', 'python/sdk-runtime/package.json', preset])(
     'fails closed when required input %s is missing',
     (path) => {
       const root = fixture()

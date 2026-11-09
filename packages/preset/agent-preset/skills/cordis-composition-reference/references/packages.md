@@ -19,7 +19,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-api-gateway` | yes | Typert Remote Host dispatcher and Client API endpoint |
 | `@deepseek-ai/dsh-api-jev-router` | yes | Routes each prompt to a configured model tier through a Jev complexity score |
 | `@deepseek-ai/dsh-api-job-controller` | yes | Job Remote observation stream and the reference-counted client job-output service |
-| `@deepseek-ai/dsh-api-provider-limits` | no | Serves the last known provider usage windows and their live updates |
+| `@deepseek-ai/dsh-api-provider-limits` | yes | Serves the last known provider usage windows and their live updates |
 | `@deepseek-ai/dsh-api-remote-access` | no | Method-level Remote access control for non-owner Peers and the per-Peer access snapshot |
 | `@deepseek-ai/dsh-api-remotes` | no | Remote BFF assembly for application-selected Host capabilities |
 | `@deepseek-ai/dsh-api-session-controller` | yes | Session Remote commands, cold reads, and live control transport |

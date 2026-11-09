@@ -1,1 +1,1 @@
-![An expanded Think row translated from Chinese into English, with a View original button](preview.svg)
+This fork ships no browser control for reasoning translation; the mounted translator service is available to code that calls it.

@@ -347,6 +347,32 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-api-job-controller -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-provider-limits -->
+<a id="deepseek-aidsh-api-provider-limits"></a>
+
+## `@deepseek-ai/dsh-api-provider-limits`
+
+- `inject`: `llm` · `typert`
+- `source`: [`packages/api/provider-limits/src/index.ts:26`](../packages/api/provider-limits/src/index.ts)
+
+```ts config-catalog
+/** Polled account balance of a pay-per-use provider route. Absent `balance` disables polling. */
+export interface Config {
+  /** Account balance polling for one pay-per-use provider route. */
+  balance?: {
+    /** Provider route id the balance is published under. */
+    provider: string
+    /** Credential reference holding the Timeweb Cloud API token. */
+    tokenEnv: string
+    /** Timeweb Cloud `account/finances` endpoint. */
+    url: string
+    /** Poll period in milliseconds. */
+    intervalMs: number
+  }
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-api-provider-limits -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-api-session-controller -->
 <a id="deepseek-aidsh-api-session-controller"></a>
 
@@ -4673,7 +4699,6 @@ export interface Config {
 | `@deepseek-ai/dsh-acp-app` | `cmdlineArgs` | [`packages/bundle/acp-app/src/index.ts`](../packages/bundle/acp-app/src/index.ts) |
 | `@deepseek-ai/dsh-agent` | `sessionProjections` | [`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts) |
 | `@deepseek-ai/dsh-api-account-controller` | `deepseekAccount` · `agents` | [`packages/api/account-controller/src/index.ts`](../packages/api/account-controller/src/index.ts) |
-| `@deepseek-ai/dsh-api-provider-limits` | `llm` · `typert` | [`packages/api/provider-limits/src/index.ts`](../packages/api/provider-limits/src/index.ts) |
 | `@deepseek-ai/dsh-api-remote-access` | — | [`packages/api/remote-access/src/index.ts`](../packages/api/remote-access/src/index.ts) |
 | `@deepseek-ai/dsh-api-remotes` | `typertGateway` | [`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts) |
 | `@deepseek-ai/dsh-authorization` | `credentials` | [`packages/credentials/authorization/src/index.ts`](../packages/credentials/authorization/src/index.ts) |

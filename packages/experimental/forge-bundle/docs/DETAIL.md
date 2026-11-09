@@ -1,1 +1,1 @@
-![A conversation linked to a GitHub pull request, with checks, reviews, code diffs, and an isolated worktree](preview.svg)
+This fork ships no change request panel; the GitHub provider and the model's worktree tool remain available.

@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import ts from 'typescript'
 import { WorkspaceTypertGenerator } from '../packages/typert/generator/src/workspace.ts'
-import { PACKAGE_ASSET_EXPORT } from '../packages/client/support/assets.ts'
+import { PACKAGE_ASSET_EXPORT } from './support/assets.ts'
 import { writeModuleGraph } from './gen-module-graph.ts'
 import {
   hasClientDeclaration,

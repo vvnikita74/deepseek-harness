@@ -1,5 +1,5 @@
 ---
-description: "Enable the change request panel and worktree Sessions from the Plugins page."
+description: "Change request services and worktree Sessions; this fork ships no panel."
 kind: "package-bundle"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Review each Session's change requests, checks, and diffs, start a new Session in a Git worktree, or ask the model to create one during a conversation. Enable Change requests & worktrees on the Web or Desktop Plugins page; shipped profiles leave it disabled. GitHub status comes from the Host's signed-in `gh` CLI; local worktree creation does not require GitHub authentication.
+This optional bundle mounts the change request services, the GitHub provider, and the model's worktree tool, so the model can create a Git worktree during a conversation. This fork ships no change request panel or composer control, and shipped profiles leave the bundle disabled. GitHub status comes from the Host's signed-in `gh` CLI; local worktree creation does not require GitHub authentication.
 
 ## Table of Contents
 
@@ -25,9 +25,9 @@ Review each Session's change requests, checks, and diffs, start a new Session in
 <a id="use-this-package"></a>
 ## Use this package
 
-Open Plugins and enable Change requests & worktrees in the Official group. In a Git workspace, check Worktree in the composer before the first message to start the Session in a new worktree. In a Session whose directory is inside a Git checkout, the header button opens the panel. GitHub pull requests that the Session creates with `gh pr create`, opens with `gh pr view`, `gh pr edit`, or `gh pr checkout`, or works on as its branch or updates with a later `git push`, appear as change requests without further steps. Run `gh auth login --hostname <host>` in a terminal to sign in; the panel shows the command when sign-in is missing. The panel package describes each control.
+This fork ships no panel, composer control, or Plugins-page switch for this bundle, so no surface shows change requests or worktree choices. Run `gh auth login --hostname <host>` in a terminal to sign in; the GitHub provider uses the signed-in `gh` CLI.
 
-The same switch enables the model's [`create_worktree`](../tool-worktree/README.md) tool. Turning it off removes both the panel and the tool while retaining existing checkouts and branches. For profiles that already selected the standalone worktree bundle, follow the [upgrade guide](../../../docs/upgrade-guide/v0.2.2-alpha.2/forge-worktree-entry/guide.md) before enabling this bundle.
+The bundle mounts the model's [`create_worktree`](../tool-worktree/README.md) tool. Disabling the bundle removes the tool while retaining existing checkouts and branches. For profiles that already selected the standalone worktree bundle, follow the [upgrade guide](../../../docs/upgrade-guide/v0.2.2-alpha.2/forge-worktree-entry/guide.md) before enabling this bundle.
 
 -----
 
@@ -37,7 +37,7 @@ The same switch enables the model's [`create_worktree`](../tool-worktree/README.
 <details>
 <summary>Maintainer details — click to expand</summary>
 
-The bundle mounts the forge registry, GitHub provider, Session bindings, and the worktree model tool. The tool uses the top-level `worktree` service; the panel keeps its isolated `forge-worktree` service inside `optional-forge-panel`. Their configuration ids and creation flows stay independent. The panel records worktrees requested before a Session starts; model-created worktrees do not acquire the panel's recovery records. The rows use the Session projection, working-directory, filesystem, subprocess, and sandbox services from base-backed profiles.
+The bundle mounts the forge registry, GitHub provider, Session bindings, and the worktree model tool. The tool uses the top-level `worktree` service. The rows use the Session projection, working-directory, filesystem, subprocess, and sandbox services from base-backed profiles.
 
 </details>
 
@@ -46,14 +46,14 @@ The bundle mounts the forge registry, GitHub provider, Session bindings, and the
 <a id="further-exploration"></a>
 ## Further Exploration
 
-[Forge subsystem](../../../docs/subsystems/forge.md) · [Session bindings](../forge-session/README.md) · Panel
+[Forge subsystem](../../../docs/subsystems/forge.md) · [Session bindings](../forge-session/README.md)
 
 -----
 
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through the [`create_worktree`](../tool-worktree/README.md#model-experience) tool and the panel’s directory notice for Sessions that start in a worktree.
+Indirectly, through the [`create_worktree`](../tool-worktree/README.md#model-experience) tool.
 
 #### KV Cache effect
 

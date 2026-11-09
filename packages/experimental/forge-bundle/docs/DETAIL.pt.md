@@ -1,1 +1,1 @@
-![Uma conversa vinculada a um pull request do GitHub, com verificações, revisões, diferenças de código e uma árvore de trabalho isolada](preview.svg)
+Este fork não inclui painel de solicitações de alteração; o provedor do GitHub e a ferramenta de árvore de trabalho do modelo continuam disponíveis.

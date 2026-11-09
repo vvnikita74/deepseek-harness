@@ -8,9 +8,9 @@
     "rewriteRelativeImportExtensions": false
   },
   "include": [
-    "packages/client/support/assets.ts",
-    "packages/client/support/manifest.ts",
-    "packages/client/support/platform.ts",
+    "scripts/support/assets.ts",
+    "scripts/support/manifest.ts",
+    "scripts/support/platform.ts",
     "apps/cli/tests/**/*.ts",
     "apps/plugin-market-generator/tests/**/*.ts",
     "benchmarks/**/*.ts",
