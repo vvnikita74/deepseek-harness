@@ -103,7 +103,7 @@ runner 基于两项职责划分。**注册表与沙箱是同一个服务。** `D
 - [工具包](../tool-cordis/README.zh.md)——使用其检查注册表的只读工具。
 - [生成的配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-cordis-host-runner)——每个受支持配置字段。
 - [extensions 子系统](../../../docs/subsystems/extensions.zh.md)——生成的 `ctx.cordisInspect` 与 `ctx.dynamicCordisRunner` API 及 `cordis/*` 事件。
-- [历史自引用 Cordis 工具集 Agent Note](../../../.agents/notes/archived/feature/2026-07-08-self-referential-cordis-toolset.md)——沙箱语义、生命周期与组合的理由。
+- 历史自引用 Cordis 工具集 Agent Note——沙箱语义、生命周期与组合的理由。
 
 -----
 

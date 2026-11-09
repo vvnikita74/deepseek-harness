@@ -6,7 +6,7 @@ Status: implemented
 
 ## 问题
 
-spawn 子 Agent 需要可复用的 persona、工具和技能组合，同时保留[隐式加入父方 preset](../../archived/bug-fix/2026-08-10-child-agents-join-their-parent-preset.md) 的行为。恢复时必须区分独立选择与历史子会话日志，不改变 Session 格式或 fork 行为。
+spawn 子 Agent 需要可复用的 persona、工具和技能组合，同时保留隐式加入父方 preset 的行为。恢复时必须区分独立选择与历史子会话日志，不改变 Session 格式或 fork 行为。
 
 ## 决策
 

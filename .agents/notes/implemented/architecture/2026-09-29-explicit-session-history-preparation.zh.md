@@ -22,7 +22,7 @@ WorkspaceBrowser 行菜单的 fork 请求携带 `allowMigration: false`，由 Ho
 
 create/adopt、全文搜索和普通历史打开允许自动迁移。
 
-本决策为[目录投影查询](../../archived/simplification/2026-09-08-web-subagent-catalog-projections.md)增加迁移例外。[会话观察](2026-08-25-session-observations-and-projection-owned-client-state.zh.md)的准确读取和租约，以及[投影缓存读取](2026-09-19-projection-cache-listing-identity-and-cached-rows.zh.md)的身份校验与缓存／有序分层继续适用。
+本决策为目录投影查询增加迁移例外。[会话观察](2026-08-25-session-observations-and-projection-owned-client-state.zh.md)的准确读取和租约，以及[投影缓存读取](2026-09-19-projection-cache-listing-identity-and-cached-rows.zh.md)的身份校验与缓存／有序分层继续适用。
 
 ## 考虑过的替代方案
 

@@ -26,7 +26,7 @@ Playwright MCP and Chrome DevTools MCP validate the effective directory when acq
 
 File links and command directory labels use result metadata captured when each operation runs, so historical rows remain correct after later directory changes.
 
-The [prompt-variables note](2026-07-05-prompt-variables-and-tool-guidance-ownership.md) retains strict interpolation, route-variable ownership, and tool-guidance ownership. The [environment-suffix note](../../archived/bug-fix/2026-09-06-environment-prompt-suffix.md) retains ordered prefix/suffix placement for deployment, Harness source, and Web guidance. This decision owns directory state and placement in user context.
+The [prompt-variables note](2026-07-05-prompt-variables-and-tool-guidance-ownership.md) retains strict interpolation, route-variable ownership, and tool-guidance ownership. The environment-suffix note retains ordered prefix/suffix placement for deployment, Harness source, and Web guidance. This decision owns directory state and placement in user context.
 
 ## Alternatives considered
 

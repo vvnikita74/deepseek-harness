@@ -213,8 +213,6 @@ function runInstaller(
 // Windows coverage lane passes as --testTimeout: a describe value overrides that
 // flag rather than yielding to it, so a smaller one here lowers what the lane
 // grants every case in this file, none of which carries an allowance of its own.
-// Rationale and the paired hook budget are in
-// .agents/notes/archived/testing/2026-08-29-windows-lane-hook-and-lefthook-budget.md.
 describe('worktree-local Lefthook installer', { timeout: 90_000 }, () => {
   for (const [label, extraEnv] of [
     ['CI', { CI: 'true' }],

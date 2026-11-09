@@ -103,7 +103,7 @@ Read these pages when the package-level contract is not enough. They move from t
 - [Tool package](../tool-cordis/README.md) — the read-only tools that use its inspection registry.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-cordis-host-runner) — every accepted config field.
 - [Extensions subsystem](../../../docs/subsystems/extensions.md) — the generated `ctx.cordisInspect` and `ctx.dynamicCordisRunner` API and `cordis/*` events.
-- [historical Self-referential Cordis toolset Agent Note](../../../.agents/notes/archived/feature/2026-07-08-self-referential-cordis-toolset.md) — sandbox semantics, lifecycle, and composition rationale.
+- historical Self-referential Cordis toolset Agent Note — sandbox semantics, lifecycle, and composition rationale.
 
 -----
 

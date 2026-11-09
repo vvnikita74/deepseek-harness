@@ -18,7 +18,7 @@ Status: proposed
 
 让直接调用辅助函数的测试改用显式管理生命周期的本地或受控提供方。[测试套件](../../../../packages/context/agent-instructions/tests/agent-instructions.spec.ts)已经挂载了这两类实现。保留独有断言，把重复的 Node mock 场景合并到提供方覆盖中。预计在更新签名和文档之前删除约 50–65 行生产源码，另加冗余测试机制；实施时测量实际减少量。
 
-[agent-instructions 参考](../../../../packages/context/agent-instructions/README.zh.md)负责保留的符号链接加载行为。实施时更新其中对提供方读取的描述及英文对侧。[已归档的工作区上下文说明](../../archived/feature/2026-06-24-workspace-context.md)保持冻结；本提案无需修改该历史记录。
+[agent-instructions 参考](../../../../packages/context/agent-instructions/README.zh.md)负责保留的符号链接加载行为。实施时更新其中对提供方读取的描述及英文对侧。已归档的工作区上下文说明保持冻结；本提案无需修改该历史记录。
 
 ## 备选方案
 

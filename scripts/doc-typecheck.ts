@@ -13,7 +13,6 @@ import ts from 'typescript'
 import { builtDeclarationPath, isFrozenUpgradeGuidePath } from './doc-typecheck-paths.ts'
 import { markdownFences } from './markdown.ts'
 import { partitionPairedMarkdownDerivatives } from './paired-markdown-derivatives.ts'
-import { isArchivedAgentNotePath } from './repo-files.ts'
 
 const root = resolve(import.meta.dirname, '..')
 
@@ -210,7 +209,7 @@ const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 for (const pattern of markdownGlobs) {
   for (const match of globSync(pattern, { cwd: root })) {
     const file = match.replaceAll('\\', '/')
-    if (!isArchivedAgentNotePath(file) && !isFrozenUpgradeGuidePath(file, version)) files.push(resolve(root, file))
+    if (!isFrozenUpgradeGuidePath(file, version)) files.push(resolve(root, file))
   }
 }
 files.sort()

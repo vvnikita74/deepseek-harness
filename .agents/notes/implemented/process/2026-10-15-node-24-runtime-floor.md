@@ -10,7 +10,7 @@ The root `engines.node` range promises that the installed workspace supports eac
 
 ## Decision
 
-Set `engines.node` to `>=24.9.0`. Node 24.9 is the minimum for DSH and its development carriers, including the experimental OAR subagent integration, whose `@botiverse/oar` library requires Node 24. This supersedes the [Node 22.19 floor](../../archived/process/2026-07-06-node-engine-floor.md); its Node 23 exclusion remains satisfied, and the declaration policy below remains narrower than the runtime floor. Migration instructions live in the [upgrade guide](../../../../docs/upgrade-guide/v0.2.1-rc.2/node-24/guide.md).
+Set `engines.node` to `>=24.9.0`. Node 24.9 is the minimum for DSH and its development carriers, including the experimental OAR subagent integration, whose `@botiverse/oar` library requires Node 24. This supersedes the Node 22.19 floor; its Node 23 exclusion remains satisfied, and the declaration policy below remains narrower than the runtime floor. Migration instructions live in the [upgrade guide](../../../../docs/upgrade-guide/v0.2.1-rc.2/node-24/guide.md).
 
 The primary Node 24 jobs own complete typechecking and unit coverage. Focused compatibility jobs run on pinned Node 24.9 and Node 26. Node 24.9 supports the existing `import.meta.main` script entrypoints and native TypeScript stripping. Pinning 24.9 exercises this verified minimum and its v1 private module loader; the primary jobs track the latest Node 24 and exercise its v2 loader, introduced in 24.12.0. A floating `24` compatibility job would duplicate the primary loader coverage and stop testing the minimum.
 

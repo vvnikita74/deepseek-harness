@@ -29,11 +29,6 @@ export interface ReferenceViolation {
   ref: string
 }
 
-/** Whether a repository path is frozen Agent Note history, not evolving source prose. */
-export function isArchivedAgentNotePath(path: string): boolean {
-  return path.replaceAll('\\', '/').startsWith('.agents/notes/archived/')
-}
-
 /**
  * Whether a pattern segment matches a directory or file name. Supports `*` and
  * `?` inside a segment and mirrors node's glob `dot: false`: a segment whose

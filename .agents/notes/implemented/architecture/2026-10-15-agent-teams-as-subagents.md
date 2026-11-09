@@ -20,7 +20,7 @@ Every root Agent and its descendants form the Team identified by the root Sessio
 
 Task ownership uses `ownerId`; root reassignment accepts itself or any reachable continuable descendant. Historical roster records remain decode-only. Team persists task changes without ending inbox waits or starting idle turns; [inbox-only waiting](../simplification/2026-10-29-inbox-only-agent-wait.md) owns wake behavior. Historical `team/message/*` records remain readable but are never delivered or acknowledged.
 
-This supersedes the roster, provisioning, recovery, and messaging decisions in [Agent Teams](../feature/2026-08-05-agent-teams.md) and the [Team direct inbox decision](../../archived/simplification/2026-09-26-team-direct-inbox.md). The task-board and shared-checkout decisions remain active. [Adjacent Agent messaging](2026-08-27-adjacent-agent-steer-messaging.md) includes sibling routing, while [required runtime-context identity](2026-10-13-team-identity-runtime-context.md) owns the role statement. The [upgrade guide](../../../../docs/upgrade-guide/v0.2.1-rc.2/agent-team-subagents/guide.md) lists removed tools, methods, and configuration.
+This supersedes the roster, provisioning, recovery, and messaging decisions in [Agent Teams](../feature/2026-08-05-agent-teams.md) and the Team direct inbox decision. The task-board and shared-checkout decisions remain active. [Adjacent Agent messaging](2026-08-27-adjacent-agent-steer-messaging.md) includes sibling routing, while [required runtime-context identity](2026-10-13-team-identity-runtime-context.md) owns the role statement. The [upgrade guide](../../../../docs/upgrade-guide/v0.2.1-rc.2/agent-team-subagents/guide.md) lists removed tools, methods, and configuration.
 
 ## Alternatives considered
 

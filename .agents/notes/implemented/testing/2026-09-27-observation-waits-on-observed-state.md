@@ -30,7 +30,7 @@ The loader-composition settle-reason assertions carry the recorded reasons and a
 
 Both plugin-manager record cases now observe the record while the run is in flight on a loaded runner, and a genuinely missing record still fails the same assertion. The bounded wait costs 2 s only when the operation never writes the record.
 
-The [archived task-detail close diagnosis](../../archived/testing/2026-09-28-detail-close-waits-on-observed-state.md) records the same rule in a Web client case, where the sampled state landed in a passive effect one commit after the list the case had awaited.
+The archived task-detail close diagnosis records the same rule in a Web client case, where the sampled state landed in a passive effect one commit after the list the case had awaited.
 
 ## Deferred
 

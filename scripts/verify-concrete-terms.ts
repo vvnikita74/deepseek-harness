@@ -8,7 +8,7 @@ import { historicalSchemaRegion } from './historical-schema-region.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const blockedTerm = 'prove' + 'nance'
-const excludedPrefixes = ['vendor/', '.agents/notes/archived/'] as const
+const excludedPrefixes = ['vendor/'] as const
 
 /** One blocked term occurrence in a tracked path or text line. */
 export interface ConcreteTermViolation {
@@ -56,8 +56,7 @@ function trackedFiles(repoRoot: string): string[] {
   if (!files.includes('AGENTS.md')
     || !files.some(file => file.startsWith('packages/'))
     || !files.some(file => file.startsWith('docs/'))
-    || !files.some(file => file.startsWith('vendor/'))
-    || !files.some(file => file.startsWith('.agents/notes/archived/'))) {
+    || !files.some(file => file.startsWith('vendor/'))) {
     throw new Error('verify-concrete-terms: tracked-file discovery omitted a required repository area')
   }
   return files

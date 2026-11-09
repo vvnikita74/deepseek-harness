@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决策
 
-将 `engines.node` 设为 `>=24.9.0`。Node 24.9 是 DSH 及其开发载体的下限，也允许实验性 OAR 子代理集成使用要求 Node 24 的 `@botiverse/oar` 库。此决策取代 [Node 22.19 下限](../../archived/process/2026-07-06-node-engine-floor.md)；Node 23 仍被排除，下文的声明策略也仍比运行时下限更窄。迁移说明见[升级指南](../../../../docs/upgrade-guide/v0.2.1-rc.2/node-24/guide.zh.md)。
+将 `engines.node` 设为 `>=24.9.0`。Node 24.9 是 DSH 及其开发载体的下限，也允许实验性 OAR 子代理集成使用要求 Node 24 的 `@botiverse/oar` 库。此决策取代 Node 22.19 下限；Node 23 仍被排除，下文的声明策略也仍比运行时下限更窄。迁移说明见[升级指南](../../../../docs/upgrade-guide/v0.2.1-rc.2/node-24/guide.zh.md)。
 
 主要的 Node 24 任务负责完整的类型检查和单元测试覆盖率。聚焦的兼容性任务在固定的 Node 24.9 和 Node 26 上运行。Node 24.9 支持现有 `import.meta.main` 脚本入口和原生 TypeScript 类型剥离。固定 24.9 能验证这个已验证的下限及其 v1 私有模块加载器；主要任务跟随最新的 Node 24，验证 24.12.0 引入的 v2 加载器。浮动的 `24` 兼容性任务会重复主要任务的加载器覆盖，并停止验证下限。
 

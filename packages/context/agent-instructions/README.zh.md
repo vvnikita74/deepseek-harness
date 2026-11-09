@@ -39,7 +39,7 @@ kind: "package-reference"
 
 存放用户全局 `AGENTS.md` 的 harness home 属于进程策略，而不是配置行：该插件通过 `@deepseek-ai/dsh-home-paths` 解析 `$DSH_HOME` 或 `~/.dsh`，因此指令加载始终读取进程 home。共享 agents 根目录同样如此解析：`$DSH_AGENTS_HOME` 或 `~/.agents`。残留的 `dshHome` 与 `agentsHome` 配置行字段会被忽略。
 
-只有确认项目根标记不存在时，项目根发现才会继续上溯。权限或 I/O 失败会停止发现，并抛出宿主或文件系统提供方的原始错误，而不会选择祖先项目。[历史根标记元数据决策](../../../.agents/notes/archived/bug-fix/2026-09-03-root-marker-metadata-failures.md)说明发现为何必须失败，而不能替换为其他根目录。
+只有确认项目根标记不存在时，项目根发现才会继续上溯。权限或 I/O 失败会停止发现，并抛出宿主或文件系统提供方的原始错误，而不会选择祖先项目。历史根标记元数据决策说明发现为何必须失败，而不能替换为其他根目录。
 
 ```yaml
 - name: '@deepseek-ai/dsh-agent-instructions'
@@ -118,7 +118,7 @@ export interface Config {
 包级约定不够用时阅读以下页面。它们从指令文件格式逐步进入设计决策与穷尽式配置。
 
 - [文档标准](../../../docs/AGENTS.md)——`AGENTS.md` 指令文件包含什么、如何维护。
-- [工作区上下文决策记录](../../../.agents/notes/archived/feature/2026-06-24-workspace-context.md)——按 agent／会话隔离与生命周期理由。
+- 工作区上下文决策记录——按 agent／会话隔离与生命周期理由。
 - [上下文组地图](../README.zh.md)——相邻的请求上下文包。
 - [生成的配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-agent-instructions)——每个受支持配置字段及其源声明。
 

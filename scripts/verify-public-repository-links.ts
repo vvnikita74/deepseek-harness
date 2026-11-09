@@ -9,7 +9,6 @@ const root = resolve(import.meta.dirname, '..')
 const unavailableOwner = ['deepseek', 'ai'].join('-')
 const unavailableRepositoryName = ['deepseek', 'harness', 'sdk'].join('-')
 const unavailableRepository = `${unavailableOwner}/${unavailableRepositoryName}`
-const archivedAgentNotePrefix = '.agents/notes/archived/'
 
 const namedReferenceCharacters: Readonly<Record<string, string>> = {
   hyphen: '-',
@@ -52,11 +51,9 @@ export interface UnavailableRepositoryReference {
  * Locate unavailable-repository references in one active text file.
  * @param file - Repository-relative path used in diagnostics.
  * @param source - Text to inspect.
- * @returns every matching source line, excluding frozen archived Agent Notes.
+ * @returns every matching source line.
  */
 export function findUnavailableRepositoryReferences(file: string, source: string): UnavailableRepositoryReference[] {
-  if (file.startsWith(archivedAgentNotePrefix)) return []
-
   const references: UnavailableRepositoryReference[] = []
   for (const [index, line] of source.split('\n').entries()) {
     const canonicalLine = canonicalReferenceText(line)

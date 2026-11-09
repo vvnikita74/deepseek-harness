@@ -78,4 +78,4 @@ The standalone `@deepseek-ai/dsh-tool-subagent-report` package, `report` schema,
 - The initial task carries JSON-encoded dynamic parent addressing after a fork prefix, while the request-head system prompt and tool ordering remain reusable.
 - Human prompts, settlement notices, QueueDock, and the base bundle's one-shot fork policy remain separate decisions.
 
-This decision consolidates and removes the fully superseded report-tool and child-report-obligation records. It supersedes the `followup` naming choice in [Intent-named subagent continuation operations](../../archived/simplification/2026-07-27-intent-named-subagent-continuation-operations.md) and retains the accepted-order guarantee in [Child Agent messages precede their settlement notices](../../../../packages/subagent/subagent/README.md).
+This decision consolidates and removes the fully superseded report-tool and child-report-obligation records. It supersedes the `followup` naming choice in Intent-named subagent continuation operations and retains the accepted-order guarantee in [Child Agent messages precede their settlement notices](../../../../packages/subagent/subagent/README.md).

@@ -22,7 +22,7 @@ The title service appends `session/title` directly after its existing service, r
 
 `SessionStore.fork()` preserves standalone title and other plugin-owned log-only records. The [exact-event fork reference](../../../../packages/core/session/README.md) owns cut selection and child-owned closers for an open tail.
 
-The historical [universal turn-enclosure decision](../../archived/architecture/2026-06-15-turn-enclosure-invariant.md) remains useful only as the reason the synthetic mechanism was introduced. The [context-injection decision](../architecture/2026-07-24-separate-context-injection-from-turn-execution.md) established the current meaning: one turn represents one model-loop execution. The [queued manual compaction reference](../../../../packages/compaction/compaction/README.md) applies that rule to a durable multi-event bracket and owns its marker and admission semantics.
+The historical universal turn-enclosure decision remains useful only as the reason the synthetic mechanism was introduced. The [context-injection decision](../architecture/2026-07-24-separate-context-injection-from-turn-execution.md) established the current meaning: one turn represents one model-loop execution. The [queued manual compaction reference](../../../../packages/compaction/compaction/README.md) applies that rule to a durable multi-event bracket and owns its marker and admission semantics.
 
 ## Alternatives considered
 

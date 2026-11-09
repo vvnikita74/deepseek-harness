@@ -10,7 +10,7 @@ Status: proposed
 
 ### 语义正确性可以在没有现行归属者的情况下通过检查
 
-这些门禁证明结构和生成内容的新鲜度，却不能证明维护中的正文仍指向实际机制。以前的 `dsh-doc-site-sync` 技能曾要求作者复用并不存在的 `en-docs` 侧边栏，还要求把章节加入已经移除的 `sectionOrder`；website/docs.ts实际拥有 `en-guide`、`en-develop`、`en-reference` 和 `sections`。已实现的[产品优先 README 决策](../../archived/process/2026-07-22-product-first-root-readme.md)描述了内部测试说明，以及 ACP、Python 与 JSON-RPC 界面章节，但[根 README](../../../../README.zh.md)并无这些内容；与此同时，已实现 Agent Note 必须跟随已交付事实。
+这些门禁证明结构和生成内容的新鲜度，却不能证明维护中的正文仍指向实际机制。以前的 `dsh-doc-site-sync` 技能曾要求作者复用并不存在的 `en-docs` 侧边栏，还要求把章节加入已经移除的 `sectionOrder`；website/docs.ts实际拥有 `en-guide`、`en-develop`、`en-reference` 和 `sections`。已实现的产品优先 README 决策描述了内部测试说明，以及 ACP、Python 与 JSON-RPC 界面章节，但[根 README](../../../../README.zh.md)并无这些内容；与此同时，已实现 Agent Note 必须跟随已交付事实。
 
 预算策略也存在相同的分裂。[docs/AGENTS.md](../../../../docs/AGENTS.md#wordcount-budgets)为 `architecture.md` 规定 1,800 词目标和 5% 余量，但[预算 manifest（元数据清单）](../../../../scripts/doc-budgets.manifest.json)允许 2,400 词，而该文件实际包含 1,313 词。预算门禁之所以通过，是因为它只检查 manifest 上限，不检查目标或棘轮规则。因此，高影响正文需要一个具名真源或消费真源的聚焦检查；第二份手写副本不是新鲜度机制。
 
@@ -32,7 +32,7 @@ Status: proposed
 
 ### 基线
 
-本次审计排除 `vendor/`、冻结的 `.agents/notes/archived/`、录制快照和 fixture（测试前置数据）。受维护语料包含 1,042 个英文 Markdown 文件和 986 个中文对侧文件，共 1,106,138 个英文词。活跃 Agent Note 占 580 个文件和 637,850 词；`packages/` 下的 Markdown 占 276 个文件和 225,630 词；`docs/` 占 112 个文件和 193,456 词。这些数量描述维护和检索压力，本身并不构成缺陷。
+本次审计排除 `vendor/`、录制快照和 fixture（测试前置数据）。受维护语料包含 1,042 个英文 Markdown 文件和 986 个中文对侧文件，共 1,106,138 个英文词。活跃 Agent Note 占 580 个文件和 637,850 词；`packages/` 下的 Markdown 占 276 个文件和 225,630 词；`docs/` 占 112 个文件和 193,456 词。这些数量描述维护和检索压力，本身并不构成缺陷。
 
 系统最强的性质应予保留：按层级为每项事实指定一个归属者；把规范 Markdown 投影到站点而不创建副本；完整双语配对；源变更时快速失败的生成目录；源等价声明；可编译的 TypeScript 示例；受检查的链接与锚点；以及包局部的模型体验与限制约定。提案改变的是质量标准和入口结构，而不是这些保证。
 

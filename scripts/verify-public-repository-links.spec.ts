@@ -30,13 +30,9 @@ describe('repository link policy', () => {
     ])
   })
 
-  it('preserves frozen archived Agent Notes', () => {
+  it('reports active Agent Notes', () => {
     const unavailableRepository = ['deepseek-ai', 'deepseek-harness-sdk'].join('/')
 
-    expect(findUnavailableRepositoryReferences(
-      '.agents/notes/archived/process/historical-record.md',
-      `https://github.com/${unavailableRepository}`,
-    )).toEqual([])
     expect(findUnavailableRepositoryReferences(
       '.agents/notes/implemented/process/active-record.md',
       `https://github.com/${unavailableRepository}`,

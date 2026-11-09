@@ -121,7 +121,7 @@ Read these pages when the package-level contract is not enough. They move from t
 - [Model-facing job controls](../tool-jobs/README.md) — the `job_output`, `job_list`, and `job_kill` tools and completion notices.
 - [Generic long-running tool runtime reference](../jobs/README.md) — the design behind the background-job runtime.
 - [Job lifecycle recording decision](../../../.agents/notes/implemented/bug-fix/2026-09-30-job-session-lifecycle.md) — durable timing, execution identity, and recording-failure behavior.
-- [job-registry seam Agent Note](../../../.agents/notes/archived/architecture/2026-07-26-job-registry-seam.md) — the owner-fenced registry contract and its rationale.
+- job-registry seam Agent Note — the owner-fenced registry contract and its rationale.
 
 -----
 

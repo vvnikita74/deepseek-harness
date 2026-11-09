@@ -121,7 +121,7 @@ kind: "package-reference"
 - [模型侧任务控制](../tool-jobs/README.zh.md)——`job_output`、`job_list` 与 `job_kill` 工具及完成通知。
 - [通用长时间运行工具运行时 reference](../jobs/README.zh.md)——后台任务运行时背后的设计。
 - [job 生命周期记录决策](../../../.agents/notes/implemented/bug-fix/2026-09-30-job-session-lifecycle.zh.md)——持久化时间、执行标识及记录失败行为。
-- [任务注册表 seam Agent Note](../../../.agents/notes/archived/architecture/2026-07-26-job-registry-seam.md)——按所有者隔离的注册表约定及其理由。
+- 任务注册表 seam Agent Note——按所有者隔离的注册表约定及其理由。
 
 -----
 

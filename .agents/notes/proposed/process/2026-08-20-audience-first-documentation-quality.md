@@ -10,7 +10,7 @@ The documentation system has strong placement, freshness, linking, bilingual, an
 
 ### Semantic correctness can pass without a current owner
 
-The gates prove structure and generated freshness, not that maintained prose still names the live mechanism. The former `dsh-doc-site-sync` skill told authors to reuse a nonexistent `en-docs` sidebar and to add sections to a removed `sectionOrder`; website/docs.ts owns `en-guide`, `en-develop`, `en-reference`, and `sections`. The implemented [product-first README decision](../../archived/process/2026-07-22-product-first-root-readme.md) describes an internal-testing notice and ACP, Python, and JSON-RPC surface sections absent from the [root README](../../../../README.md), although implemented Agent Notes must track shipped facts.
+The gates prove structure and generated freshness, not that maintained prose still names the live mechanism. The former `dsh-doc-site-sync` skill told authors to reuse a nonexistent `en-docs` sidebar and to add sections to a removed `sectionOrder`; website/docs.ts owns `en-guide`, `en-develop`, `en-reference`, and `sections`. The implemented product-first README decision describes an internal-testing notice and ACP, Python, and JSON-RPC surface sections absent from the [root README](../../../../README.md), although implemented Agent Notes must track shipped facts.
 
 The budget policy has the same split. [docs/AGENTS.md](../../../../docs/AGENTS.md#wordcount-budgets) states a 1,800-word target and 5% headroom for `architecture.md`, but the [budget manifest](../../../../scripts/doc-budgets.manifest.json) allows 2,400 words while the file contains 1,313. The budget gate passes because it checks the manifest ceiling, not the target or ratchet rule. High-impact prose therefore needs a named source or a focused check that consumes the source; a second hand-written copy is not a freshness mechanism.
 
@@ -32,7 +32,7 @@ The standing documentation file is 1,320 words against a 1,320-word ceiling and 
 
 ### Baseline
 
-The audit excludes `vendor/`, frozen `.agents/notes/archived/`, recorded snapshots, and fixtures. It counts 1,042 English Markdown files and 986 Chinese counterparts in the maintained corpus, with 1,106,138 English words. Active Agent Notes account for 580 files and 637,850 words; Markdown under `packages/` accounts for 276 files and 225,630 words; `docs/` accounts for 112 files and 193,456 words. These quantities describe maintenance and retrieval pressure, not defects by themselves.
+The audit excludes `vendor/`, recorded snapshots, and fixtures. It counts 1,042 English Markdown files and 986 Chinese counterparts in the maintained corpus, with 1,106,138 English words. Active Agent Notes account for 580 files and 637,850 words; Markdown under `packages/` accounts for 276 files and 225,630 words; `docs/` accounts for 112 files and 193,456 words. These quantities describe maintenance and retrieval pressure, not defects by themselves.
 
 The system’s strongest properties should remain: one fact owner by tier, canonical Markdown projected into the website without copies, complete bilingual pairing, generated catalogs that fail when source changes, type-equivalent declarations, compilable TypeScript examples, checked links and anchors, and package-local model-experience and limitation contracts. The proposal changes quality criteria and entry structure, not those guarantees.
 

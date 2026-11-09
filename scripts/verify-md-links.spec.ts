@@ -51,7 +51,6 @@ describe('Markdown source discovery', () => {
       'packages/core/README.md': '[missing](missing.md)\n',
       'packages/core/probe/README.md': '[missing](missing.md)\n',
       'packages/core/probe/docs/DETAIL.md': '![missing](missing.png)\n',
-      '.agents/notes/archived/process/frozen.md': '[historical](missing.md)\n',
     })
     const sources = markdownLinkSourcePaths(root)
     const violations = sources.flatMap(file => findViolations(join(root, file), markdownLinkCache(), root))

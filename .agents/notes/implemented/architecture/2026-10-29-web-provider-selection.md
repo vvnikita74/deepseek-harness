@@ -52,7 +52,7 @@ The Messages provider owns and writes `web/deepseek-search-llm-request`. The dec
 
 **Keep one switch for both APIs.** It lets Fetch API adoption need no configuration edit, but it ties fetch billing and target access policy to the search choice, and it cannot express a provider that another plugin registers.
 
-**Filter the lists by availability, or add availability to each entry.** A filtered list hides a provider while its credential is missing, right when the user needs to choose and configure it. Availability also depends on the request's model route and credential state, so a listed boolean could disagree with execution. The archived [observation-surface decision](../../archived/simplification/2026-07-04-drop-unconsumed-web-observation-surface.md) allows only the smallest signal a consumer reads; the menus read registration only.
+**Filter the lists by availability, or add availability to each entry.** A filtered list hides a provider while its credential is missing, right when the user needs to choose and configure it. Availability also depends on the request's model route and credential state, so a listed boolean could disagree with execution. The archived observation-surface decision allows only the smallest signal a consumer reads; the menus read registration only.
 
 **Keep a fixed provider catalog in the Client.** The Client would show ids the Host does not register as normal choices and would never show a provider that a plugin registers at runtime.
 

@@ -69,7 +69,7 @@ git 通过 `subprocess` 能力运行，使用净化后的环境、`GIT_CONFIG_CO
 ## 进一步探索
 
 - [子进程能力](../../subprocess/README.zh.md)——git 运行所经过的接缝。
-- [历史本轮改动文件卡片决策](../../../.agents/notes/archived/feature/2026-09-11-turn-changed-files-card.md)——快照设计、覆盖规则、暂缓的影子仓库与被否决的备选方案。
+- 历史本轮改动文件卡片决策——快照设计、覆盖规则、暂缓的影子仓库与被否决的备选方案。
 
 <a id="model-experience"></a>
 ## 模型体验

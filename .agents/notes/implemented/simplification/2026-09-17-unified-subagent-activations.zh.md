@@ -24,7 +24,7 @@ ACP、DSH SDK、Codex 和 Claude Code 保留单次执行适配器，共享 activ
 
 原生 Session 读取器对本地与外部目录条目都拒绝重复的子级成员记录。
 
-[可继续驻留](../feature/2026-07-28-continuable-subagent-conversations.zh.md)、[fork 请求前缀](../architecture/2026-08-10-fork-children-stay-one-shot.zh.md)与[父级拥有的目录](../architecture/2026-09-01-parent-owned-subagent-catalog.zh.md)保留各自独立理由。具名提供方、结果投递与 activation 容量的当前约定见 [subagent 包文档](../../../../packages/subagent/subagent/README.zh.md)；相应的[能力 seam](../../archived/feature/2026-06-21-subagent-capability-seam.md)、[结算投递](../../archived/feature/2026-08-06-manager-owned-subagent-settlement-delivery.md)与[容量](../../archived/feature/2026-09-15-continuable-activation-capacity.md)记录作为历史快照保留。本决策拥有共享入口、外部执行参与以及调用方与父级之间的结果投递选择。
+[可继续驻留](../feature/2026-07-28-continuable-subagent-conversations.zh.md)、[fork 请求前缀](../architecture/2026-08-10-fork-children-stay-one-shot.zh.md)与[父级拥有的目录](../architecture/2026-09-01-parent-owned-subagent-catalog.zh.md)保留各自独立理由。具名提供方、结果投递与 activation 容量的当前约定见 [subagent 包文档](../../../../packages/subagent/subagent/README.zh.md)；相应的能力 seam、结算投递与容量记录作为历史快照保留。本决策拥有共享入口、外部执行参与以及调用方与父级之间的结果投递选择。
 
 已发布 Session 世代保持不可变。历史一次性描述符仍可读取；移除当前执行路径不构成改写或丢弃持久历史的理由。
 

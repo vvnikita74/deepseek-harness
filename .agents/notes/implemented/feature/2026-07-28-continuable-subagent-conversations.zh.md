@@ -4,7 +4,7 @@ Status: implemented
 
 [English](2026-07-28-continuable-subagent-conversations.md) | 中文
 
-本记录取代[可继续的后台 subagent](../../archived/feature/2026-07-21-continuable-background-subagents.md)中由 Task 支撑的继续执行管理器。它保留[将 subagent 控制合并到 subagent 服务](../../archived/simplification/2026-07-26-merge-subagent-control-service.md)确立的单一 `ctx.subagents` 服务。
+本记录取代可继续的后台 subagent中由 Task 支撑的继续执行管理器。它保留将 subagent 控制合并到 subagent 服务确立的单一 `ctx.subagents` 服务。
 
 ## 问题
 

@@ -6,7 +6,7 @@ Status: implemented
 
 ## 问题
 
-[通过 Host settings 持久化 Web 用户偏好](../../archived/bug-fix/2026-08-06-host-backed-web-preferences.md)按页面本地性选择偏好存储，因此非回环页面把 Appearance、Language、繁忙态 Enter 与欢迎提示的确认留在一份进程内副本中。可信远程主机，以及配置了公共 URL 的部署，因而在重新加载时丢失全部选择，尽管 Connection 认证完整的 settings API。这套第二种模式也割裂了共享运行时：主题、语言、设置外壳、Models 页面与欢迎提示各自都在渲染一行对远程页面永远无法持久化的界面。
+通过 Host settings 持久化 Web 用户偏好按页面本地性选择偏好存储，因此非回环页面把 Appearance、Language、繁忙态 Enter 与欢迎提示的确认留在一份进程内副本中。可信远程主机，以及配置了公共 URL 的部署，因而在重新加载时丢失全部选择，尽管 Connection 认证完整的 settings API。这套第二种模式也割裂了共享运行时：主题、语言、设置外壳、Models 页面与欢迎提示各自都在渲染一行对远程页面永远无法持久化的界面。
 
 ## 决策
 

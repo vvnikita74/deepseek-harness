@@ -16,7 +16,7 @@ Status: implemented
 
 manifest 请求 `display: "standalone"`，把 `theme_color` 与 `background_color` 定为 `#ffffff`，并列出三个位图。`apps/web/index.html` 增加 `apple-touch-icon` 链接、`mobile-web-app-capable` 与 `apple-mobile-web-app-title`。它不添加 `theme-color`：该节点由 `ThemePresenter` 独占并跟随解析后的应用内主题，这是静态媒体查询做不到的。标签页 favicon 保持不变。
 
-本决策取代[已归档的 Web 安装 manifest 记录](../../archived/feature/2026-08-06-web-install-manifest.md)中的图标条目与显示模式；其指向 manifest 的链接、产品名、简称与根路径身份仍然有效。
+本决策取代已归档的 Web 安装 manifest 记录中的图标条目与显示模式；其指向 manifest 的链接、产品名、简称与根路径身份仍然有效。
 
 ## Alternatives considered
 

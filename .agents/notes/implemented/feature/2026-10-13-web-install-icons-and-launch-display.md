@@ -16,7 +16,7 @@ A launcher masks the icon it puts on the home screen and chooses that icon itsel
 
 The manifest requests `display: "standalone"`, names `#ffffff` as its `theme_color` and `background_color`, and lists the three rasters. `apps/web/index.html` adds the `apple-touch-icon` link, `mobile-web-app-capable`, and `apple-mobile-web-app-title`. It adds no `theme-color`: `ThemePresenter` owns the single such node and follows the resolved in-application theme, which a static media query cannot. The tab favicons are unchanged.
 
-This supersedes the icon entry and the display mode in the [archived Web install manifest note](../../archived/feature/2026-08-06-web-install-manifest.md); its link to the manifest, product name, compact name, and root identity remain current.
+This supersedes the icon entry and the display mode in the archived Web install manifest note; its link to the manifest, product name, compact name, and root identity remain current.
 
 ## Alternatives considered
 

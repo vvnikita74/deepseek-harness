@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import type { Nodes } from 'mdast'
 import { markdownHeadingLines, parseMarkdown, visitMarkdown } from './markdown.ts'
-import { isArchivedAgentNotePath, uniqueRepoFiles } from './repo-files.ts'
+import { uniqueRepoFiles } from './repo-files.ts'
 
 const root = resolve(import.meta.dirname, '..')
 
@@ -37,7 +37,7 @@ const PATTERNS = [
  * @returns forward-slash source paths relative to scanRoot.
  */
 export function markdownLinkSourcePaths(scanRoot: string = root): string[] {
-  return uniqueRepoFiles(scanRoot, PATTERNS, isArchivedAgentNotePath)
+  return uniqueRepoFiles(scanRoot, PATTERNS)
     .map(file => relative(scanRoot, file.abs).replaceAll('\\', '/'))
 }
 

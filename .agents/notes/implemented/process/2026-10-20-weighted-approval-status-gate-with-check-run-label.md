@@ -12,7 +12,7 @@ A check run carries that state, but GitHub attaches a check run created through 
 
 ## Decision
 
-The publisher keeps writing the `weighted approval` commit status exactly as before: `pending` while the policy is unmet, `success` when it holds, and `error` when setup or evaluation fails. Branch rules keep requiring that status. That behavior, including keeping an unmet policy `pending`, is what the [archived decision](../../archived/process/2026-09-09-blocked-weighted-approvals-remain-pending.md) records; this change adds the label beside it instead of changing the gate.
+The publisher keeps writing the `weighted approval` commit status exactly as before: `pending` while the policy is unmet, `success` when it holds, and `error` when setup or evaluation fails. Branch rules keep requiring that status. That behavior, including keeping an unmet policy `pending`, is what the archived decision records; this change adds the label beside it instead of changing the gate.
 
 The publisher writes the `weighted approval decision` check run with a token minted from a dedicated approval App (`actions/create-github-app-token` with `vars.DSH_APPROVAL_APP_CLIENT_ID`, `secrets.DSH_APPROVAL_APP_PRIVATE_KEY`, and `vars.DSH_APPROVAL_APP_SLUG`, scoped to `checks: write`). The check suite then belongs to the App and is associated with the pull-request head, so the merge box lists the label without depending on which Actions workflow started first. The conclusion is `action_required` while the policy is unmet, `success` when it holds, and `failure` when setup or evaluation fails; the title carries the score or the blocker. Branch rules do not require the check run, so it never blocks a merge.
 

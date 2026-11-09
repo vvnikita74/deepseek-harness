@@ -23,7 +23,7 @@
 
   一侧的第 `i` 个分节对应另一侧的第 `i` 个分节。每侧的 hash 覆盖该分节的全部顶层块，只排除围栏代码块和生成区域——门禁已要求这两类内容在两侧一致；只是碰巧相同的内容仍计入 hash。没有剩余块的分节没有条目。重新生成区域或在两侧同时修改代码块不会改变记录；修改不同分节会改动记录中不同的行，因此 Git 默认文本合并（包括 GitHub 的合并）能组合它们。只有两个分支都修改了同一分节中计入 hash 的内容时，记录才会冲突；解决 Markdown 冲突后重新记录该配对。失去同步的配对是「按被改一侧的 diff 最小化地修补另一侧」，从不整篇重译；门禁会指出每个发生变化的分节。日常工作会直接完成这份修补；用户显式调用扩展工作流时，`pnpm run gen-translation-brief <pair>` 会从内容能生成所记录条目的最新提交中还原上次确认的文本，以能安全对齐的最窄粒度汇集这次更新，并可由 `--apply` 在结构校验后拼接仅涉及围栏代码块的改动。两侧对齐后，`pnpm run verify-translation-pairing --write <pair>` 重新记录这些条目；那份 YAML diff 就是「确认一致」这个动作本身，可以被评审，也正因如此，`--write` 要求点名你确认过的配对（`--write --all` 是显式的全语料形式）。
 
-  中文文件必须保留指向英文的反向链接；普通撰写的英文源必须保留指向中文的链接，而清单内的生成英文源不作此要求。[已归档的按分节记录配对 Agent Note](../../.agents/notes/archived/process/2026-09-23-section-keyed-translation-pairing-records.md) 记录了格式选择与备选方案。
+  中文文件必须保留指向英文的反向链接；普通撰写的英文源必须保留指向中文的链接，而清单内的生成英文源不作此要求。已归档的按分节记录配对 Agent Note 记录了格式选择与备选方案。
 - **语言切换行。** 中文文件一律在 H1 标题后立即以 `[English](foo.md) | 中文` 链回英文。普通撰写的英文文件在同一位置以 `English | [中文](foo.zh.md)` 互链；清单内的生成英文源省略此行，以便与生成器输出逐字节一致。发布到 GitHub 以外位置的 README（例如 PyPI 项目元数据）可以改用指向同一对侧文件的规范 `https://github.com/deepseek-ai/deepseek-harness/blob/master/<repository-path>` URL，使切换行在该位置仍可访问。
 - **结构与另一侧一一对应。** 标题深度与顺序、列表类型、有序列表起始编号、列表项数量、表格行列数、保留原样 query/fragment 后缀的语义链接目标，以及逐字节一致的代码块在配对两侧一一对应。相对文档链接的目标属于活跃双语语料时，英文侧使用其 `.md` 路径，中文侧使用其 `.zh.md` 路径。该范围内缺少对侧属于配对完整性错误，不得回退；范围外的目标保留原路径。完整保持规则见 [translation-rules.md](translation-rules.zh.md)。既有 Markdown 门禁对 `.zh.md` 文件原样生效（`verify-md-wrap`、`verify-md-links`）。
 
@@ -33,7 +33,7 @@
 
 1. 范围内的每篇文档都有完整配对。发现 README 时，basename 不区分大小写，因此 `missions/readme.md` 与其他文档根一样属于范围。
 2. 任何已存在的配对产物都完整且一致：三个文件齐全、记录为规范形式，且其条目等于根据当前内容计算出的条目（任一侧的语言特有内容改了而没重新确认配对就变红）、中文侧和所有普通撰写的英文源都带语言切换行（清单内的生成英文源除外）、每条普通相对文档链接都使用源文件一侧对应的目标 locale，且结构签名按序一致：标题深度、逐字节一致的代码块（信息字符串与内容）、表格行列数、列表类型、有序列表起始编号、列表项数量，以及除切换行之外保留原样 query/fragment 后缀的语义链接目标。
-3. 列为 `excluded` 的文件完全没有 `.zh.md`，也没有 `.i18n.yaml`。`.agents/notes/archived/` 下冻结的 Agent Note 不受这个持续演进的门禁约束；专用校验器会要求其现有的三个配对文件完整，并将其封存。
+3. 列为 `excluded` 的文件完全没有 `.zh.md`，也没有 `.i18n.yaml`。
 
 面向源码的代码门禁会把精确的 `.zh.md` 围栏序列视为其无后缀兄弟文件的派生内容，而不会再次编译相同代码或在 manifest（元数据清单）中重复登记。该序列必须在长度、顺序、围栏类型和按字节精确的正文上一致；否则两份副本仍会独立受检，配对门禁也会报告结构不匹配。
 
@@ -63,7 +63,6 @@
 - `docs/AGENTS.md`、`.agents/notes/**/AGENTS.md` 以及指向它们的 `CLAUDE.md` 指令符号链接：agent 指令，与根 `AGENTS.md` 一样只以英文维护。
 - `docs/i18n/terminology.md` 与 [style-samples.md](style-samples.md)：二者本身即为中英对照文档。
 - [translation-prompt.md](translation-prompt.md)：自动翻译流水线的提示词模板；正文逐字进入模型请求，配对翻译会改变流水线行为。
-- `.agents/notes/archived/`：冻结的历史三文件配对。[`verify-archived-agent-notes`](../../scripts/verify-archived-agent-notes.ts) 校验其完整性和内容封存记录；翻译维护绝不能重写这些文件。
 
 **统一要求**：当前及今后纳入范围的每篇文档，合并时都必须构成完整的双语配对。[scripts/translation-pairing.manifest.json](../../scripts/translation-pairing.manifest.json) 只包含显式排除项；不存在逐文件推进清单、日期分界或 README 专用政策类别。
 

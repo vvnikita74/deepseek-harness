@@ -12,7 +12,7 @@ check run 可以承载这个状态，但 GitHub 会把通过 API 创建的 check
 
 ## 决定
 
-publisher 继续完全按原样写 `weighted approval` commit status：策略未满足时为 `pending`，满足时为 `success`，安装或评估失败时为 `error`。分支规则继续要求该 status。该行为——包括未满足的策略保持 `pending`——正是[已归档决定](../../archived/process/2026-09-09-blocked-weighted-approvals-remain-pending.md)记录的；本次变更在该门禁旁边新增标签，而不改变门禁。
+publisher 继续完全按原样写 `weighted approval` commit status：策略未满足时为 `pending`，满足时为 `success`，安装或评估失败时为 `error`。分支规则继续要求该 status。该行为——包括未满足的策略保持 `pending`——正是已归档决定记录的；本次变更在该门禁旁边新增标签，而不改变门禁。
 
 publisher 用从专用批准 App 铸造的 token（`actions/create-github-app-token`，使用 `vars.DSH_APPROVAL_APP_CLIENT_ID`、`secrets.DSH_APPROVAL_APP_PRIVATE_KEY` 与 `vars.DSH_APPROVAL_APP_SLUG`，权限限定为 `checks: write`）写 `weighted approval decision` check run。check suite 因此归 App 所有并与 PR head 关联，合并框会列出该标签，不再取决于哪个 Actions workflow 先启动。策略未满足时结论为 `action_required`，满足时为 `success`，安装或评估失败时为 `failure`；标题携带分数或 blocker。分支规则不要求该 check run，因此它从不阻止合并。
 

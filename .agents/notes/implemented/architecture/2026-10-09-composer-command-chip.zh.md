@@ -6,7 +6,7 @@ Status: implemented
 
 ## 问题
 
-[Lexical 输入框决策](../../archived/architecture/2026-08-20-web-composer-lexical-editor.md)把已认领命令保留为行首字面文本。一个 TextNode transform 给 token 加样式，并把输入进去的溢出文字拆出来；提交状态机在草稿字符串以 token 开头时保持认领。token 交界处的每次编辑都会经过这个 transform。Lexical 会在溢出节点自身的 transform 执行前合并样式相同的相邻节点，于是拆分与合并循环往复，直到 Lexical 以错误码 14 中止这次更新，DOM 与编辑器状态随之分叉（issue #4490）。PR #5480 针对报告的手势清除了被复制的样式；认领后粘贴图片和 IME 组字会进入同一个 transform，仍未验证。纯文本引用实体也需要一条优先级规则来避开已认领的 token。
+Lexical 输入框决策把已认领命令保留为行首字面文本。一个 TextNode transform 给 token 加样式，并把输入进去的溢出文字拆出来；提交状态机在草稿字符串以 token 开头时保持认领。token 交界处的每次编辑都会经过这个 transform。Lexical 会在溢出节点自身的 transform 执行前合并样式相同的相邻节点，于是拆分与合并循环往复，直到 Lexical 以错误码 14 中止这次更新，DOM 与编辑器状态随之分叉（issue #4490）。PR #5480 针对报告的手势清除了被复制的样式；认领后粘贴图片和 IME 组字会进入同一个 transform，仍未验证。纯文本引用实体也需要一条优先级规则来避开已认领的 token。
 
 ## 决策
 
