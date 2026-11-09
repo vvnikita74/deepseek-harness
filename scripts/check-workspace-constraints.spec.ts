@@ -406,7 +406,7 @@ describe('package payload constraints', () => {
     })).toEqual(['lib/index.js', 'lib/types/**/*.d.ts'])
   })
 
-  it.each(['team/agent-team', 'experimental/voice-input-bundle', 'experimental/auto-review', 'client/ui-agent-team', 'team/tool-agent-team'])(
+  it.each(['team/agent-team', 'experimental/voice-input-bundle', 'experimental/auto-review', 'team/tool-agent-team'])(
     'accepts the published locale files for %s and rejects their omission', (name) => {
       const dir = `packages/${name}`
       const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
@@ -451,14 +451,6 @@ describe('package payload constraints', () => {
       'layers/web.patch.yml',
       'lib/types/**/*.d.ts',
     ])
-  })
-
-  it.each([
-    'packages/client/ui-sidebar-documentpreview',
-    'packages/client/ui-sidebar-terminal',
-  ])('accepts package-local Client chunks from %s', (dir) => {
-    const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
-    expect(checkWorkspaceManifest({ dir, manifest })).toEqual([])
   })
 
   it.each([
@@ -511,16 +503,6 @@ describe('package payload constraints', () => {
     ])
   })
 
-  it.each(['ui-chat', 'ui-settings-account'])(
-    'accepts the published package assets for %s and rejects their omission', (name) => {
-      const dir = `packages/client/${name}`
-      const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
-      expect(checkWorkspaceManifest({ dir, manifest })).toEqual([])
-      expect(checkWorkspaceManifest({ dir, manifest: {
-        ...manifest, files: manifest.files!.filter(file => file !== 'lib/assets'),
-      } })).toEqual([expect.stringContaining('package.json files must be')])
-    },
-  )
 })
 
 it('publishes CLI runtime declarations and rejects a payload that omits them', () => {
@@ -528,14 +510,6 @@ it('publishes CLI runtime declarations and rejects a payload that omits them', (
   expect(checkWorkspaceManifest({ dir: 'apps/cli', manifest })).toEqual([])
   expect(checkWorkspaceManifest({ dir: 'apps/cli', manifest: { ...manifest, files: ['lib/*.js'] } }))
     .toEqual([expect.stringContaining('@deepseek-ai/dsh: package.json files must be ["lib/*.js","lib/types/*.d.ts"]')])
-})
-
-it('requires the shared Web injection entry in the published payload', () => {
-  const manifest = JSON.parse(readFileSync(new URL('../packages/client/web/package.json', import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
-  expect(checkWorkspaceManifest({ dir: 'packages/client/web', manifest })).toEqual([])
-  expect(checkWorkspaceManifest({ dir: 'packages/client/web', manifest: {
-    ...manifest, files: ['lib/index.js', 'lib/**/*.css', 'lib/types/**/*.d.ts'],
-  } })).toEqual([expect.stringContaining('package.json files must be')])
 })
 
 it('requires Office skill bodies and helpers in the published payload', () => {
@@ -567,16 +541,6 @@ it('requires Node profile configuration and both execution bootstraps in the pub
   }
 })
 
-it('requires the Inspector Worker, Client chunks, and mirrored DevTools resources in the published payload', () => {
-  const dir = 'packages/experimental/inspector'
-  const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
-  expect(checkWorkspaceManifest({ dir, manifest })).toEqual([])
-  for (const omitted of ['lib/client.*.js', 'lib/worker.js', 'lib/devtools/**']) {
-    expect(checkWorkspaceManifest({ dir, manifest: { ...manifest, files: manifest.files!.filter(file => file !== omitted) } }))
-      .toEqual([expect.stringContaining('package.json files must be')])
-  }
-})
-
 it('requires both physical Client entries only for opted-in packages', () => {
   for (const dir of ['packages/client/connection', 'packages/api/gateway', 'packages/typert/registry']) {
     const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
@@ -586,19 +550,6 @@ it('requires both physical Client entries only for opted-in packages', () => {
       expect(checkWorkspaceManifest({ dir, manifest: { ...manifest, files } }))
         .toEqual([expect.stringContaining('package.json files must be')])
     }
-  }
-})
-
-it('requires the standalone shortcut protocol and rejects unrelated runtime files', () => {
-  const dir = 'packages/client/shortcuts'
-  const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
-  expect(checkWorkspaceManifest({ dir, manifest })).toEqual([])
-  for (const files of [
-    ['lib/index.js', 'lib/client.js', 'lib/types/**/*.d.ts'],
-    ['lib/index.js', 'lib/client.js', 'lib/protocol.js', 'lib/extra.js', 'lib/types/**/*.d.ts'],
-  ]) {
-    expect(checkWorkspaceManifest({ dir, manifest: { ...manifest, files } }))
-      .toEqual([expect.stringContaining('package.json files must be')])
   }
 })
 

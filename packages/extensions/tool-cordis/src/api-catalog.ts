@@ -7297,8 +7297,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type PromptSubmitResult = {\n    text: string;\n    context?: readonly string[];\n    drop?: undefined;\n} | {\n    drop: string;\n    text?: undefined;\n    context?: undefined;\n};',
   },
   {
+    name: 'ProviderBalance',
+    declaration: 'export interface ProviderBalance {\n    readonly amount: number;\n    readonly currency: string;\n}',
+  },
+  {
     name: 'ProviderLimits',
-    declaration: 'export interface ProviderLimits {\n    readonly provider: string;\n    readonly windows: readonly ProviderLimitWindow[];\n    readonly updatedAt: number;\n}',
+    declaration: 'export interface ProviderLimits {\n    readonly provider: string;\n    readonly windows: readonly ProviderLimitWindow[];\n    readonly balance?: ProviderBalance;\n    readonly updatedAt: number;\n}',
   },
   {
     name: 'ProviderLimitsFrame',

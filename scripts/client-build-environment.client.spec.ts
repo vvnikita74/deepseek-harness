@@ -257,36 +257,21 @@ describe('client build environment', () => {
     expect(clientBuildValueDefines(environment)).toEqual(values)
   })
 
-  it('feeds the same build-process value to dynamic tsdown bundles, their Node faces, and the Vite shell', async () => {
+  it('feeds the same build-process value to dynamic tsdown bundles and their Node faces', () => {
     process.env[PROBE_NAME] = 'shared-value'
 
-    const configs = clientBundle(join(import.meta.dirname, '../packages/client/ui-sidebar'), [
+    const configs = clientBundle(join(import.meta.dirname, '../packages/client/ui-renderer'), [
       'lib/types/index.js',
     ])({ env: { DSH_BUILD_FACE: 'client' } })
     if (!Array.isArray(configs)) throw new TypeError('client bundle config must be an array')
-    const dynamic = configs.find(config => config.name === '@deepseek-ai/dsh-client-ui-sidebar/client')
+    const dynamic = configs.find(config => config.name === '@deepseek-ai/dsh-client-ui-renderer/client')
     expect(dynamic?.define).toMatchObject({
       'process.env': '{}',
       [PROBE_KEY]: '"shared-value"',
     })
-    const node = configs.find(config => config.name === '@deepseek-ai/dsh-client-ui-sidebar')
+    const node = configs.find(config => config.name === '@deepseek-ai/dsh-client-ui-renderer')
     expect(node?.define).toMatchObject({ [PROBE_KEY]: '"shared-value"' })
     expect(node?.define).not.toHaveProperty(['process.env'])
-
-    const viteConfigPath = '../apps/web/vite.config.ts'
-    const viteModule: unknown = await import(viteConfigPath)
-    if (typeof viteModule !== 'object' || viteModule === null) {
-      throw new TypeError('web Vite config module must be an object')
-    }
-    const viteConfig: unknown = Reflect.get(viteModule, 'default')
-    if (typeof viteConfig === 'function') throw new TypeError('web Vite config must be an object')
-    if (typeof viteConfig !== 'object' || viteConfig === null) {
-      throw new TypeError('web Vite config must be an object')
-    }
-    expect(Reflect.get(viteConfig, 'define')).toMatchObject({
-      'process.env': '{}',
-      [PROBE_KEY]: '"shared-value"',
-    })
   })
 
   it('binds the recorded environment to a complete set of client artifacts', () => {

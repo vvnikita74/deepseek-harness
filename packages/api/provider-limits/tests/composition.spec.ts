@@ -88,9 +88,13 @@ describe('provider limits over the real Loader', () => {
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
     cleanups.push(async () => { server.close() })
     const { service } = await bootLimits({ url: `http://127.0.0.1:${(server.address() as AddressInfo).port}/` })
-    await vi.waitFor(() => expect(service.get()).toEqual([
-      { provider: 'timeweb', windows: [], balance: { amount: 77.7, currency: 'RUB' }, updatedAt: expect.any(Number) },
-    ]))
+    await vi.waitFor(() => {
+      const [state] = service.get()
+      expect(state?.provider).toBe('timeweb')
+      expect(state?.windows).toEqual([])
+      expect(state?.balance).toEqual({ amount: 77.7, currency: 'RUB' })
+      expect(typeof state?.updatedAt).toBe('number')
+    })
   })
 
   it('withdraws the namespace when its fiber is disposed', async () => {

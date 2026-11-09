@@ -154,14 +154,14 @@ describe('balance', () => {
   it('reads finances.balance from the Timeweb Cloud response', async () => {
     const real = globalThis.fetch
     let auth = ''
-    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+    globalThis.fetch = async (_url: unknown, init?: RequestInit) => {
       auth = String((init?.headers as Record<string, string>).authorization)
       return Response.json({ finances: { balance: 321.5, currency: 'RUB' } })
-    }) as typeof fetch
+    }
     try {
       expect(await fetchBalance('http://x', 'tok', new AbortController().signal)).toEqual({ amount: 321.5, currency: 'RUB' })
       expect(auth).toBe('Bearer tok')
-      globalThis.fetch = (async () => new Response('{}', { status: 401 })) as typeof fetch
+      globalThis.fetch = async () => new Response('{}', { status: 401 })
       await expect(fetchBalance('http://x', 'tok', new AbortController().signal)).rejects.toThrow('HTTP 401')
     } finally {
       globalThis.fetch = real
