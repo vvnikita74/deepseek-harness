@@ -350,7 +350,8 @@ describe('real Claude Agent SDK 0.3.263 and its distributed Claude Code 2.1.263 
     await expectQuiescent(harness.handles)
   })
 
-  it('maps a real SDK max-turns result to safe query-run facts', async () => {
+  // The distributed Claude Code CLI refuses --dangerously-skip-permissions as root.
+  it.skipIf(process.getuid?.() === 0)('maps a real SDK max-turns result to safe query-run facts', async () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-claude-code-max-turns-'))
     roots.push(root)
     const target = join(root, 'max-turns.txt')
@@ -383,7 +384,7 @@ describe('real Claude Agent SDK 0.3.263 and its distributed Claude Code 2.1.263 
     await expectQuiescent(harness.handles)
   })
 
-  it('runs two named instances concurrently and unloads one without revoking its run', async () => {
+  it.skipIf(process.getuid?.() === 0)('runs two named instances concurrently and unloads one without revoking its run', async () => {
     const safeInstance = await realInstanceFixture({ kind: 'hold' })
     const bypassInstance = await realInstanceFixture({
       kind: 'complete',
@@ -513,7 +514,7 @@ describe('real Claude Agent SDK 0.3.263 and its distributed Claude Code 2.1.263 
     await expectQuiescent(harness.handles)
   })
 
-  it('runs an explicitly selected bypass write in the isolated workspace', async () => {
+  it.skipIf(process.getuid?.() === 0)('runs an explicitly selected bypass write in the isolated workspace', async () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-claude-code-bypass-target-'))
     roots.push(root)
     const target = join(root, 'bypass.txt')

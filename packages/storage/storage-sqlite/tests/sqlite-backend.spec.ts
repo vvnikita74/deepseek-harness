@@ -434,7 +434,7 @@ describe('sqlite backend specifics', () => {
   })
 
   it('propagates filesystem errors other than an existing database file', async () => {
-    if (process.platform === 'win32') return
+    if (process.platform === 'win32' || process.getuid?.() === 0) return
     const dir = await mkdtemp(join(tmpdir(), 'dsh-storage-sqlite-'))
     dirs.push(dir)
     await chmod(dir, 0o500)

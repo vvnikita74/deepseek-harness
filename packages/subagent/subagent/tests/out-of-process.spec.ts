@@ -57,8 +57,8 @@ describe('child cwd resolution', () => {
     }
   })
 
-  // Windows ACLs do not expose the POSIX directory search-bit state this fixture creates.
-  it.skipIf(process.platform === 'win32')('rejects a directory without search permission', () => {
+  // Windows ACLs do not expose the POSIX directory search-bit state this fixture creates; root bypasses it.
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)('rejects a directory without search permission', () => {
     // statSync().isDirectory() is true for a mode-600 directory, but a
     // subprocess cwd needs SEARCH permission — spawn would fail EACCES.
     const tmp = mkdtempSync(join(tmpdir(), 'oop-noexec-'))

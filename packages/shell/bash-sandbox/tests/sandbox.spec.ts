@@ -515,7 +515,8 @@ describe('result facts', () => {
     expect(result.sandbox).toEqual({ mode: 'read-only', denied: false, enforcement: 'full' })
   })
 
-  it('reports a real permission failure as a sandbox denial with the mode it ran under', async () => {
+  // Root bypasses the file permission bits this fixture relies on.
+  it.skipIf(process.getuid?.() === 0)('reports a real permission failure as a sandbox denial with the mode it ran under', async () => {
     const { bash } = await setup()
     const deniedRoot = mkdtempSync(join(tmpdir(), 'dsh-sandbox-denied-'))
     try {

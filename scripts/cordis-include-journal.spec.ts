@@ -95,8 +95,8 @@ it('routes patch-owned fields and inserted rows into the parent file', async () 
   expect(child.store.b!.fiber!.effectiveConfig).toEqual({ value: 2 })
 })
 
-// Windows does not implement POSIX write permission bits.
-it.skipIf(process.platform === 'win32')('retains read-only file changes until a writable retry succeeds', async () => {
+// Windows does not implement POSIX write permission bits; root bypasses them.
+it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)('retains read-only file changes until a writable retry succeeds', async () => {
   const app = await fixture([row('a', 1)])
   try {
     await chmod(app.filename, 0o444)

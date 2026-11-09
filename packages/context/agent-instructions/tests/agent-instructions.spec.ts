@@ -577,8 +577,8 @@ describe('workspace context instruction discovery', () => {
     }
   })
 
-  // POSIX-only fixture: chmod 0 cannot make a file unreadable to its owner on Windows.
-  it.skipIf(process.platform === 'win32')('skips a file that becomes unreadable after discovery without failing the request', async () => {
+  // POSIX-only fixture: chmod 0 cannot make a file unreadable to its owner on Windows, and root bypasses permission bits.
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)('skips a file that becomes unreadable after discovery without failing the request', async () => {
     const root = await tempRepo()
     const home = await tempRepo()
     try {

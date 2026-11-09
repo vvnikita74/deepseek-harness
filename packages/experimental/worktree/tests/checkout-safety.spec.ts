@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { access, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -7,6 +8,10 @@ import { contents, filterCommand, git, harness, repository, testAgent } from './
 
 let ctx: Context | undefined
 const roots: string[] = []
+// Older Git releases predate `check-attr --source` and the GIT_ATTR_SOURCE environment.
+const supportsAttrSource = spawnSync('git', ['check-attr', '--source=HEAD', 'text', '--', '.gitattributes'], {
+  stdio: 'ignore',
+}).status === 0
 
 afterEach(async () => {
   vi.unstubAllEnvs()
@@ -193,7 +198,7 @@ describe('worktree checkout Git configuration', () => {
     expect(await git(other, 'branch', '--list', 'selected')).toBe('')
   })
 
-  it('uses the selected checkout attributes instead of an inherited attribute tree', async () => {
+  it.skipIf(!supportsAttrSource)('uses the selected checkout attributes instead of an inherited attribute tree', async () => {
     const root = await repo()
     const baseCommit = await git(root, 'rev-parse', 'HEAD')
     await git(root, 'checkout', '-b', 'foreign-attributes')
